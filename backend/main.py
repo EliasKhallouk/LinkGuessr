@@ -26,7 +26,7 @@ app.add_middleware(
 def get_graph():
     query = """
     MATCH (a:Person)-[r:CONNAIT]->(b:Person)
-    RETURN a.name AS from, b.name AS to LIMIT 50
+    RETURN a.name AS from, b.name AS to LIMIT 150
     """
     print(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
 
@@ -51,7 +51,7 @@ from fastapi import Query
 def shortest_path(person1: str = Query(...), person2: str = Query(...)):
     query = """
     MATCH p = shortestPath((a:Person {name: $person1})-[:CONNAIT*]-(b:Person {name: $person2}))
-    RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin LIMIT 50
+    RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin 
     """
     with driver.session() as session:
         record = session.run(query, person1=person1, person2=person2).single()
