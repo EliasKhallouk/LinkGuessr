@@ -19,7 +19,7 @@ function App() {
       </main>
 
       <footer className="footer">
-        <span>© {new Date().getFullYear()} LinkGuessr</span>
+        <span>© {new Date().getFullYear()} LinkGuessr - Elias Khallouk</span>
       </footer>
     </div>
   );

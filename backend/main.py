@@ -26,7 +26,7 @@ app.add_middleware(
 def get_graph():
     query = """
     MATCH (a:Person)-[r:CONNAIT]->(b:Person)
-    RETURN a.name AS from, b.name AS to LIMIT 150
+    RETURN a.name AS from, b.name AS to LIMIT 250
     """
     print(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
 

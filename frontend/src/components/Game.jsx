@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Autocomplete from "./Autocomplete";
 
 export default function Game() {
   const [people, setPeople] = useState([]);
@@ -6,6 +7,7 @@ export default function Game() {
   const [p2, setP2] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const isValid = people.includes(p1) && people.includes(p2);
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/graph")
@@ -35,33 +37,38 @@ export default function Game() {
         <div className="form" style={{ gap: 16 }}>
           <div className="row">
             <div>
-              <label>Personne 1</label>
-              <select onChange={e => setP1(e.target.value)} value={p1}>
-                <option value="">Sélectionner...</option>
-                {people.map(p => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
+              <Autocomplete
+                id="ac-person-1"
+                label="Personne 1"
+                options={people}
+                value={p1}
+                onChange={setP1}
+                placeholder="Tapez un nom…"
+              />
             </div>
             <div>
-              <label>Personne 2</label>
-              <select onChange={e => setP2(e.target.value)} value={p2}>
-                <option value="">Sélectionner...</option>
-                {people.map(p => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
+              <Autocomplete
+                id="ac-person-2"
+                label="Personne 2"
+                options={people}
+                value={p2}
+                onChange={setP2}
+                placeholder="Tapez un nom…"
+              />
             </div>
           </div>
 
           <div>
-            <button className="btn" onClick={handleGuess} disabled={!p1 || !p2 || loading}>
+            <button className="btn" onClick={handleGuess} disabled={!isValid || loading}>
               {loading ? "Calcul…" : "Vérifier"}
             </button>
           </div>
 
           {!result && (
-            <p className="muted" style={{ margin: 0 }}>Choisissez deux personnes puis cliquez sur Vérifier.</p>
+            <p className="muted" style={{ margin: 0 }}>
+              Choisissez deux personnes puis cliquez sur Vérifier.
+              {!isValid && (p1 || p2) ? " (nom inconnu)" : ""}
+            </p>
           )}
 
           {result && result.nb_relations !== null && (

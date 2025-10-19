@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DataSet, Network } from "vis-network/standalone";
 
 export default function Graph() {
@@ -66,7 +66,8 @@ export default function Graph() {
           <div
             ref={networkRef} // ✅ au lieu d’un id
             style={{
-              height: "520px",
+              height: "656px",
+              marginBottom: "8px", 
               background: "#111",
               borderRadius: "12px",
               marginTop: "8px",

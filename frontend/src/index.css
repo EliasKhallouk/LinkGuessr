@@ -121,6 +121,31 @@ select, input[type="text"] {
 }
 select:focus, input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(107,200,255,0.15); }
 
+/* Autocomplete */
+.autocomplete { position: relative; }
+.ac-input { width: 100%; }
+.ac-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  margin: 0; padding: 6px;
+  list-style: none;
+  background: #0f1726;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  max-height: 240px;
+  overflow: auto;
+}
+.ac-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.ac-item:hover, .ac-item.active {
+  background: rgba(107,200,255,0.12);
+}
+
 /* Helper */
 .muted { color: var(--muted); }
 .kpi { font-size: 14px; color: var(--muted); }
