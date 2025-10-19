@@ -27,13 +27,29 @@ def get_wikipedia_links(url):
     output_path.write_text(soup.prettify(), encoding="utf-8")
     base_url = f"https://{url.split('/')[2]}"  # ex: fr.wikipedia.org
 
+    excluded_prefixes = (
+        "Fichier:", "Catégorie:", "Aide:", "Portail:", 
+        "Spécial:", "Discussion:", "Modèle:",
+        "File:", "Category:", "Help:", "Portal:",
+        "Special:", "Talk:", "Template:"
+    )
+    
     links = set()  # Collecte des liens uniques (evite les doublons)
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
         # On garde seulement les liens internes de type /wiki/...
         if href.startswith("/wiki/"):
-            full_url = urljoin(base_url, href)
-            links.add(full_url)
+            # Décode l'URL pour vérifier les préfixes
+            decoded_href = unquote(href)
+            # Extrait la partie après /wiki/
+            page_name = decoded_href.split("/wiki/", 1)[1] if "/wiki/" in decoded_href else ""
+            
+            # Vérifie si le lien commence par un préfixe exclu
+            if not any(page_name.startswith(prefix) for prefix in excluded_prefixes):
+                # Construit l'URL complète et la décode
+                full_url = urljoin(base_url, href)
+                decoded_full_url = unquote(full_url)
+                links.add(decoded_full_url)
 
     return sorted(links)
 
