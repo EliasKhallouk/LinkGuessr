@@ -12,7 +12,7 @@ _SESSION.headers.update({
 def get_wikipedia_title(url):
     """Extrait le titre de la page à partir de l'URL Wikipédia"""
     path = urlparse(url).path
-    # ex: '/wiki/Emmanuel_Macron' -> 'Emmanuel_Macron'
+    # ex: '/wiki/Prenom_Nom' -> 'Prenom_Nom'
     return unquote(path.split('/')[-1])
 
 
@@ -73,19 +73,3 @@ def detect_wikipedia_entity_type(url):
     if not qid:
         return False
     return is_human(qid)
-
-# ================================
-# 🔍 Exemples d’utilisation
-# ================================
-"""urls = [
-    "https://fr.wikipedia.org/wiki/Emmanuel_Macron",
-    "https://fr.wikipedia.org/wiki/Paris",
-    "https://en.wikipedia.org/wiki/Albert_Einstein",
-    "https://fr.wikipedia.org/wiki/Tesla,_Inc."
-]
-"""
-"""
-for url in urls:
-    print(detect_wikipedia_entity_type(url))
-
-"""

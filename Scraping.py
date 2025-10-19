@@ -1,10 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, unquote
-from pathlib import Path
 from TypeOfPage import detect_wikipedia_entity_type
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partial
 
 
 def get_wikipedia_links(url):
@@ -22,9 +20,7 @@ def get_wikipedia_links(url):
 
     soup = BeautifulSoup(r.text, "html.parser")
 
-    # Temporary: save the soup to a file for debugging
-    output_path = Path(__file__).resolve().parent / "soup.html"
-    output_path.write_text(soup.prettify(), encoding="utf-8")
+
     base_url = f"https://{url.split('/')[2]}"  # ex: fr.wikipedia.org
 
     excluded_prefixes = (
@@ -71,27 +67,9 @@ def filter_links_by_person(links, max_workers=10, limit=None):
             url = futures[fut]
             try:
                 is_person = fut.result()
-            except Exception as e:
-                # En cas d'erreur, on ignore ou on peut logger
+            except Exception:
                 is_person = False
             if is_person:
                 results.append(url)
 
     return sorted(results)
-
-# ==========================
-# 🔍 Exemple d’utilisation
-# ==========================
-if __name__ == "__main__":
-    url = "https://fr.wikipedia.org/wiki/Emmanuel_Macron"
-    result = get_wikipedia_links(url)
-
-    print(f"🔗 {len(result)} liens trouvés sur {url}\n")
-    output_path = Path(__file__).resolve().parent / "all_links.txt"
-    # Ouvre en mode 'w' pour écraser le contenu existant
-    with output_path.open("w", encoding="utf-8") as f:
-        # Décode les URLs pour afficher correctement les caractères accentués
-        decoded_links = [unquote(link) for link in result]
-        f.write("\n".join(decoded_links))
-    #for link in result:  # on affiche les 20 premiers
-     #   print(link)
