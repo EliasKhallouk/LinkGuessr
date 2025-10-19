@@ -52,3 +52,8 @@ if __name__ == "__main__":
     t0 = time.time()
     crawl_person(start_url, max_depth=2)
     print(f"Exploration complète en {time.time() - t0:.2f}s ✅")
+
+# Note:
+#  - Ajouter que les personne avec le plus de vue sur le page wiki
+#  - Peut etre limiter a 100 personnes par niveau pour eviter explosion
+#  - Enlever les boucles des personnes deja visitees
