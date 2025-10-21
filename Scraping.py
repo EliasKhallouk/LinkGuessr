@@ -1,62 +1,66 @@
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag, NavigableString
 from urllib.parse import urljoin, unquote
-from TypeOfPage import detect_wikipedia_entity_type
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+import unicodedata
+from TypeOfPage import detect_wikipedia_entity_type
 
+def normalize_heading(s: str) -> str:
+    if not s:
+        return ""
+    s = unicodedata.normalize("NFKD", s.strip().lower())
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    return s.replace(" ", "_")
 
-def get_wikipedia_links(url):
-    """Récupère tous les liens internes d'une page Wikipédia (bruts, pas filtrés).
+def nettoyer_sections_exclues(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    mots_cles_exclus = [
+        "notes", "références", "references", "voir aussi",
+        "bibliographie", "liens externes", "sources", "notes et références"
+    ]
 
-    Ne filtre pas encore par type; on collecte d'abord les URLs puis on les
-    traite en parallèle si nécessaire. Cela évite d'appeler detect_* pour
-    chaque balise et améliore la clarté.
-    """
-    headers = {
-        "User-Agent": "LinkGuessr/1.0 (https://github.com/EliasKhallouk/LinkGuessr; contact@example.com) Python/requests"
-    }
+    main_div = soup.find("div", id="mw-content-text")
+    if not main_div:
+        return html
+
+    # supprimer tout le contenu après la première section à exclure
+    for heading in main_div.find_all(["h1","h2","h3","h4","h5"]):
+        titre = normalize_heading(heading.get_text(strip=True))
+        if any(mot in titre for mot in mots_cles_exclus):
+            for elem in list(heading.find_all_next()):
+                elem.decompose()
+            break
+
+    # sauvegarde pour debug
+    Path("soup.html").write_text(str(soup), encoding="utf-8")
+    return str(soup)
+
+def get_wikipedia_links(url: str):
+    headers = {"User-Agent": "LinkGuessr/1.0 (https://github.com/EliasKhallouk/LinkGuessr) Python/requests"}
     r = requests.get(url, headers=headers, timeout=10)
     r.raise_for_status()
 
-    soup = BeautifulSoup(r.text, "html.parser")
-
-
-    base_url = f"https://{url.split('/')[2]}"  # ex: fr.wikipedia.org
-
+    soup = BeautifulSoup(nettoyer_sections_exclues(r.text), "html.parser")
+    base_url = f"https://{url.split('/')[2]}"
     excluded_prefixes = (
-        "Fichier:", "Catégorie:", "Aide:", "Portail:", 
+        "Fichier:", "Catégorie:", "Aide:", "Portail:",
         "Spécial:", "Discussion:", "Modèle:",
         "File:", "Category:", "Help:", "Portal:",
         "Special:", "Talk:", "Template:"
     )
-    
-    links = set()  # Collecte des liens uniques (evite les doublons)
+
+    links = set()
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
-        # On garde seulement les liens internes de type /wiki/...
         if href.startswith("/wiki/"):
-            # Décode l'URL pour vérifier les préfixes
-            decoded_href = unquote(href)
-            # Extrait la partie après /wiki/
-            page_name = decoded_href.split("/wiki/", 1)[1] if "/wiki/" in decoded_href else ""
-            
-            # Vérifie si le lien commence par un préfixe exclu
+            page_name = unquote(href.split("/wiki/", 1)[1])
             if not any(page_name.startswith(prefix) for prefix in excluded_prefixes):
-                # Construit l'URL complète et la décode
-                full_url = urljoin(base_url, href)
-                decoded_full_url = unquote(full_url)
-                links.add(decoded_full_url)
+                links.add(unquote(urljoin(base_url, href)))
 
     return sorted(links)
 
-
 def filter_links_by_person(links, max_workers=10, limit=None):
-    """Filtre la liste de liens pour ne garder que ceux représentant des personnes.
-
-    - links: iterable d'URLs
-    - max_workers: nombre de threads pour la vérification
-    - limit: si défini, limite le nombre de liens à traiter (utile pour testing)
-    """
     if limit:
         links = list(links)[:limit]
 
@@ -66,10 +70,9 @@ def filter_links_by_person(links, max_workers=10, limit=None):
         for fut in as_completed(futures):
             url = futures[fut]
             try:
-                is_person = fut.result()
+                if fut.result():
+                    results.append(url)
             except Exception:
-                is_person = False
-            if is_person:
-                results.append(url)
+                pass
 
     return sorted(results)

@@ -14,7 +14,7 @@ function App() {
       </header>
 
       <main className="grid">
-        <Graph />
+        {/* <Graph /> */}
         <Game />
       </main>
 

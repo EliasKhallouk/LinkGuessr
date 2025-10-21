@@ -36,6 +36,7 @@ def crawl_person(url, depth=1, max_depth=2, visited=None):
     print(f"{'  ' * (depth - 1)}➡️  Niveau {depth}: {main_name}")
 
     links = get_wikipedia_links(url)
+    print(len(links), "liens trouvés sur la page.")
     people = filter_links_by_person(links, max_workers=20)
 
     with driver.session() as session:
@@ -48,12 +49,9 @@ def crawl_person(url, depth=1, max_depth=2, visited=None):
         crawl_person(link, depth + 1, max_depth, visited)
 
 if __name__ == "__main__":
-    start_url = "https://fr.wikipedia.org/wiki/Emmanuel_Macron"
+    start_url = "https://fr.wikipedia.org/wiki/Taylor_Swift" #834
     t0 = time.time()
     crawl_person(start_url, max_depth=2)
     print(f"Exploration complète en {time.time() - t0:.2f}s ✅")
+    
 
-# Note:
-#  - Ajouter que les personne avec le plus de vue sur le page wiki
-#  - Peut etre limiter a 100 personnes par niveau pour eviter explosion
-#  - Enlever les boucles des personnes deja visitees
