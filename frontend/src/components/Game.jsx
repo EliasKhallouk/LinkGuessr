@@ -9,6 +9,17 @@ export default function Game() {
   const [loading, setLoading] = useState(false);
   const isValid = people.includes(p1) && people.includes(p2);
 
+  // helper to title-case and prettify node labels
+  const formatNode = (label) =>
+    (label || "")
+      .toString()
+      .replaceAll("_", " ")
+      .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+  // A SUPPRIMER A L'AVENIR CAR NOM DANS LA BDD AVEC DES _ (DEJA BIEN FORMATÉ)
+  // helper to build FR Wikipedia URL from a raw label
+  const getWikiUrl = (label) => `https://fr.wikipedia.org/wiki/${encodeURIComponent(label || "")}`;
+
   useEffect(() => {
     fetch("http://127.0.0.1:8000/graph")
       .then(res => res.json())
@@ -76,9 +87,16 @@ export default function Game() {
               <div className="panel-body">
                 <p className="kpi">Nombre minimal de relations</p>
                 <p style={{ fontSize: 28, margin: 0, fontWeight: 700 }}>{result.nb_relations}</p>
-                {result.chemin && (
+                {Array.isArray(result.chemin) && result.chemin.length > 0 && (
                   <p className="muted" style={{ marginTop: 8 }}>
-                    Chemin : {result.chemin.join(" → ")}
+                    Chemin : {result.chemin.map((node, idx) => (
+                      <span key={`${node}-${idx}`}>
+                        <a href={getWikiUrl(node)} target="_blank" rel="noopener noreferrer" className="chemin-link">
+                          {formatNode(node)}
+                        </a>
+                        {idx < result.chemin.length - 1 ? " → " : ""}
+                      </span>
+                    ))}
                   </p>
                 )}
               </div>

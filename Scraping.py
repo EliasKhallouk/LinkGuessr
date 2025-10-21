@@ -33,7 +33,7 @@ def nettoyer_sections_exclues(html: str) -> str:
             break
 
     # sauvegarde pour debug
-    Path("soup.html").write_text(str(soup), encoding="utf-8")
+    #Path("soup.html").write_text(str(soup), encoding="utf-8")
     return str(soup)
 
 def get_wikipedia_links(url: str):

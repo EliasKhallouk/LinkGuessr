@@ -151,6 +151,39 @@ select:focus, input[type="text"]:focus { border-color: var(--accent); box-shadow
 .kpi { font-size: 14px; color: var(--muted); }
 .kpi strong { font-size: 20px; color: var(--text); }
 
+/* Chemin links */
+.chemin-link {
+  position: relative;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: all .2s ease;
+  background: linear-gradient(135deg, rgba(107,200,255,0.08), rgba(164,139,255,0.06));
+}
+.chemin-link:hover {
+  color: var(--accent-2);
+  background: linear-gradient(135deg, rgba(107,200,255,0.16), rgba(164,139,255,0.12));
+  box-shadow: 0 0 16px rgba(107,200,255,0.28), inset 0 0 12px rgba(107,200,255,0.1);
+  transform: translateY(-1px);
+  text-decoration: none;
+
+}
+.chemin-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 4px; right: 4px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.chemin-link:hover::after {
+  opacity: 0.8;
+}
+
 /* Subtle fade-in */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(8px); }

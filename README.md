@@ -14,12 +14,11 @@ A Faire :
     - Classement mondiale
     - Rajouter des personnes (Million)
     - Rendre plus amusant le front-end
-    - Rendre le graphe simple ou orienté ? 
-    - Mettre les liens des personnes donnée lors du PCC 
-        |-> Affiché sous forme de graphe ?
+    - Affiché sous forme de graphe ?
     - Enlver les relations de bas de page de Taylor Swift de macron aussi (TOUS)
     -Moahmed Ali - Bezema - Createur DBZ- kameto - 
     - Corriger l'erreur si la personne met 2x le meme nom
+    - Rajouter l'option anglais ou francais
 
 # Note:
 #  - Ajouter que les personne avec le plus de vue sur le page wiki ?
