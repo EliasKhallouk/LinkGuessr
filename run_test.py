@@ -21,7 +21,7 @@ def add_person_with_relation(tx, main_name, person_name):
 
 def get_person_name_from_url(url):
     """Convertit une URL Wikipedia en nom propre proprement formaté"""
-    return unquote(url.split('/')[-1]).strip()
+    return unquote(url.split('/')[-1])
 
 def crawl_person(url, depth=1, max_depth=2, visited=None):
     """Explore récursivement les relations jusqu'à max_depth.
@@ -62,7 +62,7 @@ def crawl_person(url, depth=1, max_depth=2, visited=None):
         crawl_person(link, depth + 1, max_depth, visited)
 
 if __name__ == "__main__":
-    start_url = "https://fr.wikipedia.org/wiki/Mohamed_Ali" #834
+    start_url = "https://fr.wikipedia.org/wiki/Karim_Benzema"
     t0 = time.time()
     crawl_person(start_url, max_depth=2)
     print(f"Exploration complète en {time.time() - t0:.2f}s ✅")
