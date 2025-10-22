@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from neo4j import GraphDatabase
 import os
+from fastapi.responses import JSONResponse
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -49,6 +51,14 @@ from fastapi import Query
 
 @app.get("/shortest_path")
 def shortest_path(person1: str = Query(...), person2: str = Query(...)):
+    if person1.strip().lower() == person2.strip().lower():
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Les deux personnes sont identiques.",
+                "message": "Veuillez entrer deux personnes différentes."
+            }
+        )
     query = """
     MATCH p = shortestPath((a:Person {name: $person1})-[:CONNAIT*]-(b:Person {name: $person2}))
     RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin 

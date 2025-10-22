@@ -24,15 +24,25 @@ def get_person_name_from_url(url):
     return unquote(url.split('/')[-1]).strip()
 
 def crawl_person(url, depth=1, max_depth=2, visited=None):
-    """Explore récursivement les relations jusqu'à max_depth"""
+    """Explore récursivement les relations jusqu'à max_depth.
+
+    IMPORTANT: visited tracks page *names* (titles), not raw URLs, to avoid
+    créer des boucles causées par variantes d'URL. On n'insère jamais d'URL
+    dans la BDD — seulement les noms (labels) extraits par
+    `get_person_name_from_url`.
+    """
     if visited is None:
         visited = set()
 
-    if url in visited or depth > max_depth:
+    if depth > max_depth:
         return
-    visited.add(url)
 
     main_name = get_person_name_from_url(url)
+    # éviter de réexplorer le même nom
+    if main_name in visited:
+        return
+    visited.add(main_name)
+
     print(f"{'  ' * (depth - 1)}➡️  Niveau {depth}: {main_name}")
 
     links = get_wikipedia_links(url)
@@ -42,14 +52,17 @@ def crawl_person(url, depth=1, max_depth=2, visited=None):
     with driver.session() as session:
         for link in people:
             person_name = get_person_name_from_url(link)
+            # éviter la relation vers soi-même
+            if person_name == main_name:
+                continue
             session.execute_write(add_person_with_relation, main_name, person_name)
 
-    # récursion sur les personnes trouvées
+    # récursion sur les personnes trouvées (on passe l'URL d'origine de la personne)
     for link in people:
         crawl_person(link, depth + 1, max_depth, visited)
 
 if __name__ == "__main__":
-    start_url = "https://fr.wikipedia.org/wiki/Prince_(musicien)" #834
+    start_url = "https://fr.wikipedia.org/wiki/Mohamed_Ali" #834
     t0 = time.time()
     crawl_person(start_url, max_depth=2)
     print(f"Exploration complète en {time.time() - t0:.2f}s ✅")

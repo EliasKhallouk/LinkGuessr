@@ -15,12 +15,5 @@ A Faire :
     - Rajouter des personnes (Million)
     - Rendre plus amusant le front-end
     - Affiché sous forme de graphe ?
-    - Enlver les relations de bas de page de Taylor Swift de macron aussi (TOUS)
-    -Moahmed Ali - Bezema - Createur DBZ- kameto - 
-    - Corriger l'erreur si la personne met 2x le meme nom
+    - Emmanuel Macron - Gad Elmaleh - Taylor Swift - Adolf Hitler - Moahmed Ali - Bezema - Createur DBZ- kameto - 
     - Rajouter l'option anglais ou francais
-
-# Note:
-#  - Ajouter que les personne avec le plus de vue sur le page wiki ?
-#  - Peut etre limiter a 100 personnes par niveau pour eviter explosion
-#  - Enlever les boucles des personnes deja visitees

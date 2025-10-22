@@ -184,6 +184,28 @@ select:focus, input[type="text"]:focus { border-color: var(--accent); box-shadow
   opacity: 0.8;
 }
 
+/* Error box */
+.error-box {
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.08), rgba(255, 107, 107, 0.04));
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 10px;
+  color: #ff8a8a;
+  box-shadow: 0 0 16px rgba(255, 107, 107, 0.12), inset 0 0 12px rgba(255, 107, 107, 0.05);
+  animation: slideInDown .3s ease both;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Subtle fade-in */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(8px); }

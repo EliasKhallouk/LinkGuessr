@@ -7,7 +7,9 @@ export default function Game() {
   const [p2, setP2] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const isValid = people.includes(p1) && people.includes(p2);
+  const isSamePerson = p1 && p2 && p1.trim().toLowerCase() === p2.trim().toLowerCase();
 
   // helper to title-case and prettify node labels
   const formatNode = (label) =>
@@ -30,7 +32,13 @@ export default function Game() {
 
   const handleGuess = async () => {
     setLoading(true);
+    setError(null);
     try {
+      if (p1.trim().toLowerCase() === p2.trim().toLowerCase()) {
+        setError("Les deux personnes doivent être différentes !");
+        setLoading(false);
+        return;
+      }
       const res = await fetch(`http://127.0.0.1:8000/shortest_path?person1=${encodeURIComponent(p1)}&person2=${encodeURIComponent(p2)}`);
       const data = await res.json();
       setResult(data);
@@ -70,15 +78,23 @@ export default function Game() {
           </div>
 
           <div>
-            <button className="btn" onClick={handleGuess} disabled={!isValid || loading}>
+            <button className="btn" onClick={handleGuess} disabled={!isValid || loading || isSamePerson}>
               {loading ? "Calcul…" : "Vérifier"}
             </button>
           </div>
 
-          {!result && (
+          {error && (
+            <div className="error-box">
+              <p style={{ margin: 0, marginBottom: 4 }}>⚠️ Erreur</p>
+              <p style={{ margin: 0, fontSize: 14 }}>{error}</p>
+            </div>
+          )}
+
+          {!result && !error && (
             <p className="muted" style={{ margin: 0 }}>
               Choisissez deux personnes puis cliquez sur Vérifier.
               {!isValid && (p1 || p2) ? " (nom inconnu)" : ""}
+              {isSamePerson ? " (personnes identiques)" : ""}
             </p>
           )}
 
