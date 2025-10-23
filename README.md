@@ -10,10 +10,19 @@ lancer front : elias@hp-info-01:~/PROJECT/LinkGuessr/frontend$ npm start
 
 A Faire : 
     - Devine le nombre de relation entre 2 personnes
-    - Systeme de point + temps
-    - Classement mondiale
-    - Rajouter des personnes (Million)
+        - Systeme de point + temps
+        - Classement mondiale
     - Rendre plus amusant le front-end
-    - Affiché sous forme de graphe ?
-    - Emmanuel Macron - Gad Elmaleh - Taylor Swift - Adolf Hitler - Moahmed Ali - Bezema - Createur DBZ- kameto - 
+    - Affiché sous forme de graphe ? Avec tout les PCC identique
+    - Rajouter des personnes (Million)
+        - Emmanuel Macron 
+        - Gad Elmaleh 
+        - Taylor Swift 
+        - Adolf Hitler 
+        - Moahmed Ali 
+        - Karim Bezema 
+        - Createur DBZ
+        - kameto 
+        - Squeezie
+        
     - Rajouter l'option anglais ou francais

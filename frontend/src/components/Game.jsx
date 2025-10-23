@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Autocomplete from "./Autocomplete";
 
 export default function Game() {
@@ -8,8 +8,26 @@ export default function Game() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const isValid = people.includes(p1) && people.includes(p2);
-  const isSamePerson = p1 && p2 && p1.trim().toLowerCase() === p2.trim().toLowerCase();
+
+  // Canonicalize a display value to a DB key (lowercase + underscores)
+  const canonicalize = (s) => (s || "").toString().trim().toLowerCase().replace(/\s+/g, "_");
+
+  // Map from canonical key to the exact DB label as returned by the backend
+  const canonicalToDb = useMemo(() => {
+    const m = new Map();
+    for (const label of people) {
+      m.set(canonicalize(label), label);
+    }
+    return m;
+  }, [people]);
+
+  const resolveDbLabel = (input) => {
+    const key = canonicalize(input);
+    return canonicalToDb.get(key) || null;
+  };
+
+  const isValid = !!resolveDbLabel(p1) && !!resolveDbLabel(p2);
+  const isSamePerson = !!p1 && !!p2 && canonicalize(p1) === canonicalize(p2);
 
   // helper to title-case and prettify node labels
   const formatNode = (label) =>
@@ -34,12 +52,20 @@ export default function Game() {
     setLoading(true);
     setError(null);
     try {
-      if (p1.trim().toLowerCase() === p2.trim().toLowerCase()) {
+      if (isSamePerson) {
         setError("Les deux personnes doivent être différentes !");
         setLoading(false);
         return;
       }
-      const res = await fetch(`http://127.0.0.1:8000/shortest_path?person1=${encodeURIComponent(p1)}&person2=${encodeURIComponent(p2)}`);
+      const dbP1 = resolveDbLabel(p1);
+      const dbP2 = resolveDbLabel(p2);
+      if (!dbP1 || !dbP2) {
+        setError("Nom inconnu. Veuillez sélectionner des personnes valides.");
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch(`http://127.0.0.1:8000/shortest_path?person1=${encodeURIComponent(dbP1)}&person2=${encodeURIComponent(dbP2)}`);
       const data = await res.json();
       setResult(data);
     } finally {

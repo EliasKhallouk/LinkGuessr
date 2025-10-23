@@ -14,12 +14,17 @@ export default function Autocomplete({
   const listId = id ? `${id}-listbox` : undefined;
 
   const suggestions = useMemo(() => {
-    const q = (value || "").toLowerCase().trim();
+    const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "_");
+    const q = norm((value || "").trim());
     if (!q) return options.slice(0, 8);
-    return options
-      .filter((o) => o.toLowerCase().includes(q))
-      .slice(0, 8);
+    return options.filter((o) => norm(o).includes(q)).slice(0, 8);
   }, [options, value]);
+
+  const formatNode = (label) =>
+    (label || "")
+      .toString()
+      .replaceAll("_", " ")
+      .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 
   useEffect(() => {
     if (open && suggestions.length === 0) {
@@ -51,7 +56,8 @@ export default function Autocomplete({
       case "Enter":
         if (open && activeIndex >= 0 && suggestions[activeIndex]) {
           e.preventDefault();
-          onChange?.(suggestions[activeIndex]);
+          // write back a prettified (spaces) version for display
+          onChange?.(formatNode(suggestions[activeIndex]));
           setOpen(false);
         }
         break;
@@ -64,7 +70,8 @@ export default function Autocomplete({
   };
 
   const handleSelect = (option) => {
-    onChange?.(option);
+    // write back a prettified (spaces) version for display
+    onChange?.(formatNode(option));
     setOpen(false);
     // focus back to input for continuity
     requestAnimationFrame(() => inputRef.current?.focus());
@@ -117,7 +124,7 @@ export default function Autocomplete({
               }}
               onMouseEnter={() => setActiveIndex(idx)}
             >
-              {opt}
+              {formatNode(opt)}
             </li>
           ))}
         </ul>

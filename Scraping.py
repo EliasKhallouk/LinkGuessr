@@ -5,6 +5,21 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import unicodedata
 from TypeOfPage import detect_wikipedia_entity_type
+"""Affichage progressif optionnel via tqdm, avec repli si non installé."""
+try:
+    from tqdm import tqdm  # type: ignore
+except Exception:
+    class tqdm:
+        def __init__(self, iterable=None, total=None, desc=None, unit=None, leave=False, **kwargs):
+            self.iterable = iterable
+        def __iter__(self):
+            return iter(self.iterable) if self.iterable is not None else iter([])
+        def update(self, n: int = 1):
+            pass
+        def set_postfix_str(self, s: str):
+            pass
+        def close(self):
+            pass
 
 def normalize_heading(s: str) -> str:
     if not s:
@@ -60,19 +75,26 @@ def get_wikipedia_links(url: str):
 
     return sorted(links)
 
-def filter_links_by_person(links, max_workers=10, limit=None):
+def filter_links_by_person(links, max_workers=10, limit=None, show_progress=True, position=None):
     if limit:
         links = list(links)[:limit]
 
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futures = {ex.submit(detect_wikipedia_entity_type, url): url for url in links}
-        for fut in as_completed(futures):
+        iterator = as_completed(futures)
+        pbar = tqdm(total=len(futures), desc="Filtrage (personnes)", unit="lien", leave=False, position=position) if show_progress else None
+        for fut in iterator:
             url = futures[fut]
             try:
                 if fut.result():
                     results.append(url)
             except Exception:
                 pass
+            finally:
+                if pbar:
+                    pbar.update(1)
+        if pbar:
+            pbar.close()
 
     return sorted(results)

@@ -4,6 +4,23 @@ from urllib.parse import unquote
 from Scraping import get_wikipedia_links, filter_links_by_person
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
+"""Ajout d'une barre de progression console (tqdm) avec repli gracieux.
+Si tqdm n'est pas installé, le code fonctionne sans affichage.
+"""
+try:
+    from tqdm import tqdm  # type: ignore
+except Exception:  # pas de dépendance dure à tqdm
+    class tqdm:  # léger stub compatible avec l'API utilisée
+        def __init__(self, iterable=None, total=None, desc=None, unit=None, leave=False, **kwargs):
+            self.iterable = iterable
+        def __iter__(self):
+            return iter(self.iterable) if self.iterable is not None else iter([])
+        def update(self, n: int = 1):
+            pass
+        def set_postfix_str(self, s: str):
+            pass
+        def close(self):
+            pass
 
 load_dotenv()
 
@@ -23,7 +40,7 @@ def get_person_name_from_url(url):
     """Convertit une URL Wikipedia en nom propre proprement formaté"""
     return unquote(url.split('/')[-1])
 
-def crawl_person(url, depth=1, max_depth=2, visited=None):
+def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0):
     """Explore récursivement les relations jusqu'à max_depth.
 
     IMPORTANT: visited tracks page *names* (titles), not raw URLs, to avoid
@@ -46,11 +63,12 @@ def crawl_person(url, depth=1, max_depth=2, visited=None):
     print(f"{'  ' * (depth - 1)}➡️  Niveau {depth}: {main_name}")
 
     links = get_wikipedia_links(url)
-    print(len(links), "liens trouvés sur la page.")
-    people = filter_links_by_person(links, max_workers=20)
 
+    people = filter_links_by_person(links, max_workers=20, show_progress=True, position=base_pos + 1)
+    print(len(people), "personnes trouvées sur la page.")
+    # Ajout des relations avec barre de progression
     with driver.session() as session:
-        for link in people:
+        for link in tqdm(people, desc=f"Relations (niveau {depth})", unit="pers.", leave=False, position=base_pos + 1):
             person_name = get_person_name_from_url(link)
             # éviter la relation vers soi-même
             if person_name == main_name:
@@ -58,11 +76,20 @@ def crawl_person(url, depth=1, max_depth=2, visited=None):
             session.execute_write(add_person_with_relation, main_name, person_name)
 
     # récursion sur les personnes trouvées (on passe l'URL d'origine de la personne)
+    # Exploration récursive des personnes trouvées avec barre de progression
+    pbar = tqdm(total=len(people), desc=f"Exploration niveau {depth + 1}", unit="pers.", leave=False, position=base_pos)
     for link in people:
-        crawl_person(link, depth + 1, max_depth, visited)
+        current = get_person_name_from_url(link)
+        try:
+            pbar.set_postfix_str(current)
+        except Exception:
+            pass
+        crawl_person(link, depth + 1, max_depth, visited, base_pos=base_pos + 1)
+        pbar.update(1)
+    pbar.close()
 
 if __name__ == "__main__":
-    start_url = "https://fr.wikipedia.org/wiki/Karim_Benzema"
+    start_url = "http://fr.wikipedia.org/wiki/Karim_Benzema"
     t0 = time.time()
     crawl_person(start_url, max_depth=2)
     print(f"Exploration complète en {time.time() - t0:.2f}s ✅")
