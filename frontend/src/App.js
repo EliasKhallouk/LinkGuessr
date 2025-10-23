@@ -1,6 +1,7 @@
 import "./App.css";
 import Game from "./components/Game";
 import GuessRelations from "./components/GuessRelations";
+import Leaderboard from "./components/Leaderboard";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         {/* <Graph /> */}
         <Game />
         <GuessRelations />
+        <Leaderboard />
       </main>
 
       <footer className="footer">

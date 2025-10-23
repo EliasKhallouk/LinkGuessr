@@ -3,6 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from neo4j import GraphDatabase
 import os
 from fastapi.responses import JSONResponse
+from fastapi import Body, Query
+from pydantic import BaseModel, Field, validator
+from typing import List, Optional
+from pathlib import Path
+import json
+import time
+import threading
 
 from dotenv import load_dotenv
 
@@ -47,7 +54,95 @@ def get_graph():
         nodes = [{"id": name, "label": name} for name in nodes_set]
         return {"nodes": nodes, "edges": edges}
 
-from fastapi import Query
+#############################
+# Leaderboard persistence
+#############################
+
+LEADERBOARD_FILE = Path(os.getenv("LEADERBOARD_PATH", "backend/leaderboard.json"))
+_lb_lock = threading.Lock()
+
+
+class ScoreSubmission(BaseModel):
+    name: str = Field(..., min_length=1, max_length=32)
+    score: int = Field(..., ge=0)
+    duration: int = Field(..., ge=1)
+
+    @validator("name")
+    def strip_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Le nom ne peut pas être vide")
+        return v
+
+
+class ScoreEntry(ScoreSubmission):
+    ts: int  # epoch seconds
+
+
+def _load_leaderboard() -> List[ScoreEntry]:
+    if not LEADERBOARD_FILE.exists():
+        return []
+    try:
+        data = json.loads(LEADERBOARD_FILE.read_text(encoding="utf-8"))
+        # tolerate legacy or empty file
+        entries = []
+        for item in data or []:
+            # minimal schema validation
+            if not all(k in item for k in ("name", "score", "duration", "ts")):
+                continue
+            entries.append(ScoreEntry(**item))
+        return entries
+    except Exception:
+        return []
+
+
+def _save_leaderboard(entries: List[ScoreEntry]) -> None:
+    LEADERBOARD_FILE.parent.mkdir(parents=True, exist_ok=True)
+    # write atomically
+    tmp = LEADERBOARD_FILE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps([e.dict() for e in entries], ensure_ascii=False), encoding="utf-8")
+    tmp.replace(LEADERBOARD_FILE)
+
+
+def _sorted(entries: List[ScoreEntry]) -> List[ScoreEntry]:
+    # Higher score first; tie-breaker: shorter duration first; then most recent first
+    return sorted(entries, key=lambda e: (-e.score, e.duration, -e.ts))
+
+
+@app.post("/submit_score")
+def submit_score(payload: ScoreSubmission = Body(...)):
+    entry = ScoreEntry(**payload.dict(), ts=int(time.time()))
+    with _lb_lock:
+        entries = _load_leaderboard()
+        entries.append(entry)
+        entries = _sorted(entries)
+        _save_leaderboard(entries)
+        # compute rank of this exact entry instance (by identity not possible; match by ts+name+score+duration then first index)
+        rank = None
+        for idx, e in enumerate(entries, start=1):
+            if e.ts == entry.ts and e.name == entry.name and e.score == entry.score and e.duration == entry.duration:
+                rank = idx
+                break
+        return {
+            "ok": True,
+            "rank": rank,
+            "total": len(entries),
+            "entry": entry.dict(),
+        }
+
+
+@app.get("/leaderboard")
+def leaderboard(limit: int = Query(50, ge=1, le=500)):
+    with _lb_lock:
+        entries = _sorted(_load_leaderboard())
+        sliced = entries[:limit]
+        return {
+            "total": len(entries),
+            "limit": limit,
+            "entries": [
+                {"rank": i + 1, **e.dict()} for i, e in enumerate(sliced)
+            ],
+        }
 
 @app.get("/shortest_path")
 def shortest_path(person1: str = Query(...), person2: str = Query(...)):
