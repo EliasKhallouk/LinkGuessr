@@ -1,6 +1,6 @@
 import "./App.css";
 import Game from "./components/Game";
-import Graph from "./components/Graph";
+import GuessRelations from "./components/GuessRelations";
 
 function App() {
   return (
@@ -16,6 +16,7 @@ function App() {
       <main className="grid">
         {/* <Graph /> */}
         <Game />
+        <GuessRelations />
       </main>
 
       <footer className="footer">
