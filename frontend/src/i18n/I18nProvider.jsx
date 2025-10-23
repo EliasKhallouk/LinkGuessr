@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { translations } from "./translations";
 
 const I18nContext = createContext({ t: (k, p) => k, lang: "fr", setLang: () => {} });
@@ -9,7 +9,17 @@ function format(template, params) {
 }
 
 export function I18nProvider({ children, defaultLang = "fr" }) {
-  const [lang, setLang] = useState(defaultLang);
+  const [lang, setLang] = useState(() => {
+    try {
+      const saved = localStorage.getItem("lang");
+      if (saved && (saved === "fr" || saved === "en")) return saved;
+    } catch {}
+    return defaultLang;
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem("lang", lang); } catch {}
+  }, [lang]);
 
   const t = useMemo(() => {
     const dict = translations[lang] || translations.fr;

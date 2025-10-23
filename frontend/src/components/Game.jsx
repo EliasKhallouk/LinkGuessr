@@ -81,7 +81,7 @@ export default function Game() {
         <span className="panel-title">{t("game.titlePath")}</span>
       </div>
       <div className="panel-body">
-        <div className="form" style={{ gap: 16 }}>
+        <form className="form" style={{ gap: 16 }} onSubmit={(e) => { e.preventDefault(); if (!loading && isValid && !isSamePerson) handleGuess(); }}>
           <div className="row">
             <div>
               <Autocomplete
@@ -106,7 +106,7 @@ export default function Game() {
           </div>
 
           <div>
-            <button className="btn" onClick={handleGuess} disabled={!isValid || loading || isSamePerson}>
+            <button type="submit" className="btn" disabled={!isValid || loading || isSamePerson}>
               {loading ? t("game.calculating") : t("game.check")}
             </button>
           </div>
@@ -146,7 +146,7 @@ export default function Game() {
               </div>
             </div>
           )}
-        </div>
+  </form>
       </div>
     </section>
   );

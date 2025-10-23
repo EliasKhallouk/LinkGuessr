@@ -64,10 +64,11 @@ LEADERBOARD_FILE = Path(os.getenv("LEADERBOARD_PATH", "backend/leaderboard.json"
 _lb_lock = threading.Lock()
 MAX_ENTRIES_PER_NAME = int(os.getenv("LEADERBOARD_MAX_ENTRIES_PER_NAME", "3"))
 MIN_SECONDS_BETWEEN_SUBMITS_PER_NAME = int(os.getenv("LEADERBOARD_MIN_SECONDS_BETWEEN", "10"))
+NAME_MAX_LEN = int(os.getenv("LEADERBOARD_NAME_MAX_LENGTH", "16"))
 
 
 class ScoreSubmission(BaseModel):
-    name: str = Field(..., min_length=1, max_length=32)
+    name: str = Field(..., min_length=1, max_length=NAME_MAX_LEN)
     score: int = Field(..., ge=0)
     duration: int = Field(..., ge=1)
 
@@ -127,7 +128,7 @@ def _normalize_name(name: str) -> str:
     if not s:
         s = "Anonyme"
     # Cap length strictly
-    return s[:32]
+    return s[:NAME_MAX_LEN]
 
 
 @app.post("/submit_score")

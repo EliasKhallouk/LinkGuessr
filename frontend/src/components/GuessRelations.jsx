@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider";
 
 export default function GuessRelations() {
@@ -23,6 +23,8 @@ export default function GuessRelations() {
   const [playerName, setPlayerName] = useState("");
   const [lastSubmit, setLastSubmit] = useState(null); // { ok, rank, total }
   const [submitError, setSubmitError] = useState(null);
+  const nextBtnRef = useRef(null);
+  const guessInputRef = useRef(null);
 
   const formatNode = (label) =>
     (label || "")
@@ -60,6 +62,27 @@ export default function GuessRelations() {
     const ss = (s % 60).toString().padStart(2, "0");
     return `${m}:${ss}`;
   };
+
+  // After answering, auto-focus the Next button so Enter triggers it
+  useEffect(() => {
+    if (gameActive && answered && timeLeft > 0) {
+      nextBtnRef.current?.focus();
+    }
+  }, [gameActive, answered, timeLeft]);
+
+  // On each new challenge (answered=false with valid people), focus the guess input
+  useEffect(() => {
+    if (!answered && p1 && p2) {
+      // small delay to ensure input is in DOM and enabled
+      requestAnimationFrame(() => {
+        if (guessInputRef.current) {
+          guessInputRef.current.focus();
+          // select current value for quick overwrite
+          try { guessInputRef.current.select?.(); } catch {}
+        }
+      });
+    }
+  }, [answered, p1, p2]);
 
   const newChallenge = () => {
     setError(null);
@@ -209,10 +232,25 @@ export default function GuessRelations() {
               </a>
             </p>
 
-            <div className="row" style={{ alignItems: "end" }}>
+            <form
+              className="row"
+              style={{ alignItems: "end" }}
+              onSubmit={(e) => { e.preventDefault(); if (canSubmit) handleSubmit(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (canSubmit) {
+                    handleSubmit();
+                  } else if (gameActive && answered && timeLeft > 0) {
+                    newChallenge();
+                  }
+                }
+              }}
+            >
               <div>
                 <label htmlFor="guess" className="muted">{t("guess.estimation")}</label>
                 <input
+                  ref={guessInputRef}
                   id="guess"
                   type="number"
                   inputMode="numeric"
@@ -225,11 +263,11 @@ export default function GuessRelations() {
                 />
               </div>
               <div>
-                <button className="btn" onClick={handleSubmit} disabled={!canSubmit}>
+                <button type="submit" className="btn" disabled={!canSubmit}>
                   {loading ? t("guess.verifying") : t("guess.verify")}
                 </button>
               </div>
-            </div>
+            </form>
 
             {error && (
               <div className="error-box" style={{ marginTop: 12 }}>
@@ -262,7 +300,7 @@ export default function GuessRelations() {
                   )}
                   {gameActive && timeLeft > 0 && (
                     <div style={{ marginTop: 8 }}>
-                      <button className="btn" onClick={newChallenge}>{t("guess.next")}</button>
+                      <button ref={nextBtnRef} className="btn" onClick={newChallenge}>{t("guess.next")}</button>
                     </div>
                   )}
                 </div>
@@ -286,7 +324,7 @@ export default function GuessRelations() {
                       <input
                         id="playerName"
                         type="text"
-                        maxLength={32}
+                        maxLength={16}
                         value={playerName}
                         onChange={(e) => setPlayerName(e.target.value)}
                         placeholder={t("guess.exampleName")}
