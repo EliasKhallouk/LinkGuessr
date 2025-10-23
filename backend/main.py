@@ -10,6 +10,8 @@ from pathlib import Path
 import json
 import time
 import threading
+import unicodedata
+import re
 
 from dotenv import load_dotenv
 
@@ -60,6 +62,8 @@ def get_graph():
 
 LEADERBOARD_FILE = Path(os.getenv("LEADERBOARD_PATH", "backend/leaderboard.json"))
 _lb_lock = threading.Lock()
+MAX_ENTRIES_PER_NAME = int(os.getenv("LEADERBOARD_MAX_ENTRIES_PER_NAME", "3"))
+MIN_SECONDS_BETWEEN_SUBMITS_PER_NAME = int(os.getenv("LEADERBOARD_MIN_SECONDS_BETWEEN", "10"))
 
 
 class ScoreSubmission(BaseModel):
@@ -109,22 +113,69 @@ def _sorted(entries: List[ScoreEntry]) -> List[ScoreEntry]:
     return sorted(entries, key=lambda e: (-e.score, e.duration, -e.ts))
 
 
+def _normalize_name(name: str) -> str:
+    # Strip and remove emojis/unsupported chars
+    s = name.strip()
+    # Normalize unicode to NFKD and remove diacritics
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    # Keep only allowed chars: letters, digits, space, underscore, hyphen
+    s = re.sub(r"[^A-Za-z0-9 _-]", "", s)
+    # Collapse multiple spaces
+    s = re.sub(r"\s+", " ", s)
+    s = s.strip()
+    if not s:
+        s = "Anonyme"
+    # Cap length strictly
+    return s[:32]
+
+
 @app.post("/submit_score")
 def submit_score(payload: ScoreSubmission = Body(...)):
-    entry = ScoreEntry(**payload.dict(), ts=int(time.time()))
+    now = int(time.time())
+    # Sanitize name
+    sanitized_name = _normalize_name(payload.name)
+    entry = ScoreEntry(name=sanitized_name, score=payload.score, duration=payload.duration, ts=now)
     with _lb_lock:
         entries = _load_leaderboard()
+        # Rate limit per name
+        last_ts = None
+        for e in entries:
+            if e.name.lower() == entry.name.lower():
+                if last_ts is None or e.ts > last_ts:
+                    last_ts = e.ts
+        if last_ts is not None and (now - last_ts) < MIN_SECONDS_BETWEEN_SUBMITS_PER_NAME:
+            return JSONResponse(status_code=429, content={
+                "ok": False,
+                "error": f"Trop de soumissions pour ce pseudo, réessayez dans {MIN_SECONDS_BETWEEN_SUBMITS_PER_NAME - (now - last_ts)}s.",
+            })
+
+        # Append and sort
         entries.append(entry)
         entries = _sorted(entries)
+
+        # Enforce per-name cap, keeping the best entries for each name
+        kept: List[ScoreEntry] = []
+        counts = {}
+        for e in entries:
+            key = e.name.lower()
+            c = counts.get(key, 0)
+            if c < MAX_ENTRIES_PER_NAME:
+                kept.append(e)
+                counts[key] = c + 1
+        entries = kept
         _save_leaderboard(entries)
-        # compute rank of this exact entry instance (by identity not possible; match by ts+name+score+duration then first index)
+
+        # compute rank of this exact entry instance after capping
         rank = None
         for idx, e in enumerate(entries, start=1):
             if e.ts == entry.ts and e.name == entry.name and e.score == entry.score and e.duration == entry.duration:
                 rank = idx
                 break
+        stored = rank is not None
         return {
             "ok": True,
+            "stored": stored,
             "rank": rank,
             "total": len(entries),
             "entry": entry.dict(),
@@ -132,7 +183,7 @@ def submit_score(payload: ScoreSubmission = Body(...)):
 
 
 @app.get("/leaderboard")
-def leaderboard(limit: int = Query(50, ge=1, le=500)):
+def leaderboard(limit: int = Query(10, ge=1, le=500)):
     with _lb_lock:
         entries = _sorted(_load_leaderboard())
         sliced = entries[:limit]

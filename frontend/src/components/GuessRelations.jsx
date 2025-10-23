@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "../i18n/I18nProvider";
 
 export default function GuessRelations() {
+  const { t } = useI18n();
   const [people, setPeople] = useState([]);
   const [p1, setP1] = useState(null); // DB label
   const [p2, setP2] = useState(null); // DB label
@@ -20,6 +22,7 @@ export default function GuessRelations() {
   const [totalCorrect, setTotalCorrect] = useState(0);
   const [playerName, setPlayerName] = useState("");
   const [lastSubmit, setLastSubmit] = useState(null); // { ok, rank, total }
+  const [submitError, setSubmitError] = useState(null);
 
   const formatNode = (label) =>
     (label || "")
@@ -36,7 +39,7 @@ export default function GuessRelations() {
         const labels = data.nodes.map((n) => n.label);
         setPeople(labels);
       })
-      .catch(() => setError("Impossible de récupérer la liste des personnes."));
+    .catch(() => setError(t("guess.errorLoadPeople")));
   }, []);
 
   // Countdown timer effect
@@ -98,7 +101,7 @@ export default function GuessRelations() {
         `http://127.0.0.1:8000/shortest_path?person1=${encodeURIComponent(p1)}&person2=${encodeURIComponent(p2)}`
       );
       const data = await res.json();
-      if (data && typeof data.nb_relations === "number") {
+  if (data && typeof data.nb_relations === "number") {
         const actual = data.nb_relations;
         const correct = Number(guess) === actual;
         setOutcome({ actual, chemin: Array.isArray(data.chemin) ? data.chemin : [], correct });
@@ -126,10 +129,10 @@ export default function GuessRelations() {
           setTotalAnswered((ta) => ta + 1);
         }
       } else {
-        setError("Aucun chemin trouvé entre ces deux personnes. Essayez un nouveau défi.");
+        setError(t("guess.errorNoPath"));
       }
     } catch (e) {
-      setError("Erreur lors du calcul du chemin.");
+      setError(t("guess.errorCompute"));
     } finally {
       setLoading(false);
     }
@@ -154,38 +157,38 @@ export default function GuessRelations() {
   return (
     <section className="panel fade-in">
       <div className="panel-header">
-        <span className="panel-title">Devinez le nombre de relations</span>
+  <span className="panel-title">{t("guess.titleNumber")}</span>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {gameActive ? (
             <>
               <span className="muted" style={{ fontSize: 12 }}>⏱ {formatTime(timeLeft)}</span>
               <span className="muted" style={{ fontSize: 12 }}>⭐ {score}</span>
-              <button className="btn" onClick={stopGame}>Arrêter</button>
+              <button className="btn" onClick={stopGame}>{t("guess.stop")}</button>
             </>
           ) : (
             <>
               <button className="btn" onClick={newChallenge} disabled={people.length < 2 || loading}>
-                Nouveau défi
+                {t("guess.newChallenge")}
               </button>
-              <button className="btn" onClick={startGame} disabled={people.length < 2}>Lancer la partie ({GAME_DURATION}s)</button>
+              <button className="btn" onClick={startGame} disabled={people.length < 2}>{t("guess.startGame", { seconds: GAME_DURATION })}</button>
             </>
           )}
         </div>
       </div>
       <div className="panel-body">
         {!p1 || !p2 ? (
-          <p className="muted" style={{ margin: 0 }}>Chargement des personnes…</p>
+          <p className="muted" style={{ margin: 0 }}>{t("guess.loadingPeople")}</p>
         ) : (
           <>
             {gameActive && (
               <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
-                <span className="kpi"><strong>Score:</strong> {score}</span>
-                <span className="kpi"><strong>Série:</strong> {streak}</span>
-                <span className="kpi"><strong>Temps:</strong> {formatTime(timeLeft)}</span>
+                <span className="kpi"><strong>{t("guess.score")}:</strong> {score}</span>
+                <span className="kpi"><strong>{t("guess.streak")}:</strong> {streak}</span>
+                <span className="kpi"><strong>{t("guess.time")}:</strong> {formatTime(timeLeft)}</span>
               </div>
             )}
             <p style={{ marginTop: 0 }}>
-              Entre
+              {t("guess.between")}
               {" "}
               <a
                 href={getWikiUrl(p1)}
@@ -195,7 +198,7 @@ export default function GuessRelations() {
               >
                 {formatNode(p1)}
               </a>
-              {" "}et{" "}
+              {" "}{t("guess.and")} {" "}
               <a
                 href={getWikiUrl(p2)}
                 target="_blank"
@@ -208,7 +211,7 @@ export default function GuessRelations() {
 
             <div className="row" style={{ alignItems: "end" }}>
               <div>
-                <label htmlFor="guess" className="muted">Votre estimation</label>
+                <label htmlFor="guess" className="muted">{t("guess.estimation")}</label>
                 <input
                   id="guess"
                   type="number"
@@ -217,13 +220,13 @@ export default function GuessRelations() {
                   step={1}
                   value={guess}
                   onChange={(e) => setGuess(e.target.value)}
-                  placeholder="Ex: 3"
+                  placeholder={t("guess.exampleNumber")}
                   disabled={gameActive && (answered || timeLeft <= 0)}
                 />
               </div>
               <div>
                 <button className="btn" onClick={handleSubmit} disabled={!canSubmit}>
-                  {loading ? "Vérification…" : "Valider"}
+                  {loading ? t("guess.verifying") : t("guess.verify")}
                 </button>
               </div>
             </div>
@@ -238,16 +241,16 @@ export default function GuessRelations() {
               <div className="panel" style={{ marginTop: 12, borderRadius: 12 }}>
                 <div className="panel-body">
                   {outcome.correct ? (
-                    <p style={{ margin: 0, fontWeight: 600, color: "var(--success)" }}>✅ Bonne réponse !</p>
+                    <p style={{ margin: 0, fontWeight: 600, color: "var(--success)" }}>{t("guess.good")}</p>
                   ) : (
-                    <p style={{ margin: 0, fontWeight: 600, color: "var(--danger)" }}>❌ Mauvaise réponse.</p>
+                    <p style={{ margin: 0, fontWeight: 600, color: "var(--danger)" }}>{t("guess.bad")}</p>
                   )}
                   <p style={{ marginTop: 6 }}>
-                    Nombre minimal de relations: <strong>{outcome.actual}</strong>
+                    {t("guess.minRelations")} <strong>{outcome.actual}</strong>
                   </p>
                   {outcome.chemin && outcome.chemin.length > 0 && (
                     <p className="muted" style={{ marginTop: 8 }}>
-                      Chemin: {outcome.chemin.map((node, idx) => (
+                      {t("guess.path")} {outcome.chemin.map((node, idx) => (
                         <span key={`${node}-${idx}`}>
                           <a href={getWikiUrl(node)} target="_blank" rel="noopener noreferrer" className="chemin-link">
                             {formatNode(node)}
@@ -259,7 +262,7 @@ export default function GuessRelations() {
                   )}
                   {gameActive && timeLeft > 0 && (
                     <div style={{ marginTop: 8 }}>
-                      <button className="btn" onClick={newChallenge}>Suivant</button>
+                      <button className="btn" onClick={newChallenge}>{t("guess.next")}</button>
                     </div>
                   )}
                 </div>
@@ -270,23 +273,23 @@ export default function GuessRelations() {
             {!gameActive && timeLeft === 0 && (
               <div className="panel" style={{ marginTop: 12, borderRadius: 12 }}>
                 <div className="panel-body">
-                  <p style={{ margin: 0, fontWeight: 600 }}>⏳ Temps écoulé !</p>
+                  <p style={{ margin: 0, fontWeight: 600 }}>{t("guess.timeUp")}</p>
                   <p className="kpi" style={{ marginTop: 6 }}>
-                    Score final: <strong>{score}</strong>
+                    {t("guess.finalScore")} <strong>{score}</strong>
                   </p>
                   <p className="kpi" style={{ marginTop: 6 }}>
-                    Exactes: <strong>{totalCorrect}</strong> / Tentatives: <strong>{totalAnswered}</strong>
+                    {t("guess.corrects")} <strong>{totalCorrect}</strong> / {t("guess.attempts")} <strong>{totalAnswered}</strong>
                   </p>
                   <div className="row" style={{ marginTop: 8, alignItems: "end" }}>
                     <div>
-                      <label htmlFor="playerName" className="muted">Votre pseudo</label>
+                      <label htmlFor="playerName" className="muted">{t("guess.yourName")}</label>
                       <input
                         id="playerName"
                         type="text"
                         maxLength={32}
                         value={playerName}
                         onChange={(e) => setPlayerName(e.target.value)}
-                        placeholder="Ex: Elias"
+                        placeholder={t("guess.exampleName")}
                       />
                     </div>
                     <div>
@@ -294,30 +297,48 @@ export default function GuessRelations() {
                         className="btn"
                         onClick={async () => {
                           try {
+                            setSubmitError(null);
+                            // lightweight client-side normalization (server also normalizes)
+                            const name = (playerName || "Anonyme").normalize('NFKD').replace(/\p{Diacritic}/gu, '').replace(/[^A-Za-z0-9 _-]/g, '').trim().slice(0,32) || "Anonyme";
                             const res = await fetch("http://127.0.0.1:8000/submit_score", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ name: playerName || "Anonyme", score, duration: GAME_DURATION })
+                              body: JSON.stringify({ name, score, duration: GAME_DURATION })
                             });
+                            if (!res.ok) {
+                              const err = await res.json().catch(() => ({}));
+                              setSubmitError(err && err.error ? err.error : t("guess.errorSave"));
+                              return;
+                            }
                             const data = await res.json();
                             setLastSubmit({ ok: data.ok, rank: data.rank, total: data.total });
+                            if (data && data.ok) {
+                              // notify leaderboard to refresh
+                              window.dispatchEvent(new Event("leaderboard:refresh"));
+                            }
                           } catch (e) {
                             setLastSubmit({ ok: false });
+                            setSubmitError(t("guess.errorSave"));
                           }
                         }}
                         disabled={!playerName || (lastSubmit && lastSubmit.ok)}
                       >
-                        {lastSubmit && lastSubmit.ok ? "Score enregistré" : "Enregistrer le score"}
+                        {lastSubmit && lastSubmit.ok ? t("guess.scoreSaved") : t("guess.saveScore")}
                       </button>
                     </div>
                   </div>
+                  {submitError && (
+                    <div className="error-box" style={{ marginTop: 8 }}>
+                      <p style={{ margin: 0 }}>{submitError}</p>
+                    </div>
+                  )}
                   {lastSubmit && lastSubmit.ok && (
                     <p className="kpi" style={{ marginTop: 8 }}>
-                      Rang: <strong>#{lastSubmit.rank}</strong> sur {lastSubmit.total}
+                      {t("guess.rank")} <strong>#{lastSubmit.rank}</strong> {t("guess.outOf")} {lastSubmit.total}
                     </p>
                   )}
                   <div style={{ marginTop: 8 }}>
-                    <button className="btn" onClick={startGame}>Rejouer</button>
+                    <button className="btn" onClick={startGame}>{t("guess.retry")}</button>
                   </div>
                 </div>
               </div>

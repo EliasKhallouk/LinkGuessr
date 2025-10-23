@@ -2,8 +2,10 @@ import "./App.css";
 import Game from "./components/Game";
 import GuessRelations from "./components/GuessRelations";
 import Leaderboard from "./components/Leaderboard";
+import { useI18n } from "./i18n/I18nProvider";
 
 function App() {
+  const { t, lang, setLang } = useI18n();
   return (
     <div className="app-shell">
       <header className="header">
@@ -11,7 +13,16 @@ function App() {
           <span className="logo-dot" />
           <h1 className="title">LinkGuessr</h1>
         </div>
-        <p className="tagline">Devinez le chemin le plus court entre deux personnes</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
+          <p className="tagline" style={{ margin: 0 }}>{t("app.tagline")}</p>
+          <div>
+            <label className="muted" style={{ fontSize: 12, marginRight: 6 }}>{t("app.language")}:</label>
+            <select value={lang} onChange={(e) => setLang(e.target.value)}>
+              <option value="fr">Français</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </div>
       </header>
 
       <main className="grid">

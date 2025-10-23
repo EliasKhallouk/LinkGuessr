@@ -1,38 +1,53 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useI18n } from "../i18n/I18nProvider";
 
 export default function Leaderboard() {
+  const { t } = useI18n();
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("http://127.0.0.1:8000/leaderboard?limit=20");
-        const data = await res.json();
-        setEntries(Array.isArray(data.entries) ? data.entries : []);
-      } catch (e) {
-        setError("Impossible de charger le classement.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/leaderboard?limit=10");
+      const data = await res.json();
+      setEntries(Array.isArray(data.entries) ? data.entries : []);
+    } catch (e) {
+        setError(t("leaderboard.error"));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const handler = () => load();
+    window.addEventListener("leaderboard:refresh", handler);
+    return () => window.removeEventListener("leaderboard:refresh", handler);
+  }, [load]);
+
   const fmtDate = (ts) => {
-    try { return new Date(ts * 1000).toLocaleString(); } catch { return ""; }
+    try {
+      const d = new Date(ts * 1000);
+      // Only the date part in user's locale
+      return d.toLocaleDateString();
+    } catch {
+      return "";
+    }
   };
 
   return (
     <section className="panel fade-in">
       <div className="panel-header">
-        <span className="panel-title">Classement mondial</span>
+        <span className="panel-title">{t("leaderboard.title")}</span>
       </div>
       <div className="panel-body">
-        {loading && <p className="muted" style={{ margin: 0 }}>Chargement…</p>}
+        {loading && <p className="muted" style={{ margin: 0 }}>{t("leaderboard.loading")}</p>}
         {error && (
           <div className="error-box"><p style={{ margin: 0 }}>{error}</p></div>
         )}
@@ -41,11 +56,11 @@ export default function Leaderboard() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ textAlign: "left", color: "var(--muted)" }}>
-                  <th style={{ padding: "8px" }}>#</th>
-                  <th style={{ padding: "8px" }}>Joueur</th>
-                  <th style={{ padding: "8px" }}>Score</th>
-                  <th style={{ padding: "8px" }}>Durée (s)</th>
-                  <th style={{ padding: "8px" }}>Date</th>
+                  <th style={{ padding: "8px" }}>{t("leaderboard.rankHeader")}</th>
+                  <th style={{ padding: "8px" }}>{t("leaderboard.playerHeader")}</th>
+                  <th style={{ padding: "8px" }}>{t("leaderboard.scoreHeader")}</th>
+                  <th style={{ padding: "8px" }}>{t("leaderboard.durationHeader")}</th>
+                  <th style={{ padding: "8px" }}>{t("leaderboard.dateHeader")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -60,7 +75,7 @@ export default function Leaderboard() {
                 ))}
                 {entries.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ padding: "8px" }} className="muted">Aucun score pour le moment.</td>
+                    <td colSpan={5} style={{ padding: "8px" }} className="muted">{t("leaderboard.empty")}</td>
                   </tr>
                 )}
               </tbody>

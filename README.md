@@ -9,9 +9,6 @@ lancer front : elias@hp-info-01:~/PROJECT/LinkGuessr/frontend$ npm start
 
 
 A Faire : 
-    - Devine le nombre de relation entre 2 personnes
-        - Systeme de point + temps
-        - Classement mondiale
     - Rendre plus amusant le front-end
     - Affiché sous forme de graphe ? Avec tout les PCC identique
     - Rajouter des personnes (Million)

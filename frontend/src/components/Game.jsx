@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "../i18n/I18nProvider";
 import Autocomplete from "./Autocomplete";
 
 export default function Game() {
+  const { t } = useI18n();
   const [people, setPeople] = useState([]);
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
@@ -53,14 +55,14 @@ export default function Game() {
     setError(null);
     try {
       if (isSamePerson) {
-        setError("Les deux personnes doivent être différentes !");
+        setError(t("game.errorSame"));
         setLoading(false);
         return;
       }
       const dbP1 = resolveDbLabel(p1);
       const dbP2 = resolveDbLabel(p2);
       if (!dbP1 || !dbP2) {
-        setError("Nom inconnu. Veuillez sélectionner des personnes valides.");
+        setError(t("game.errorUnknown"));
         setLoading(false);
         return;
       }
@@ -76,7 +78,7 @@ export default function Game() {
   return (
     <section className="panel fade-in">
       <div className="panel-header">
-        <span className="panel-title">Devinez le chemin</span>
+        <span className="panel-title">{t("game.titlePath")}</span>
       </div>
       <div className="panel-body">
         <div className="form" style={{ gap: 16 }}>
@@ -84,28 +86,28 @@ export default function Game() {
             <div>
               <Autocomplete
                 id="ac-person-1"
-                label="Personne 1"
+                label={t("game.person1")}
                 options={people}
                 value={p1}
                 onChange={setP1}
-                placeholder="Tapez un nom…"
+                placeholder={t("game.typeName")}
               />
             </div>
             <div>
               <Autocomplete
                 id="ac-person-2"
-                label="Personne 2"
+                label={t("game.person2")}
                 options={people}
                 value={p2}
                 onChange={setP2}
-                placeholder="Tapez un nom…"
+                placeholder={t("game.typeName")}
               />
             </div>
           </div>
 
           <div>
             <button className="btn" onClick={handleGuess} disabled={!isValid || loading || isSamePerson}>
-              {loading ? "Calcul…" : "Vérifier"}
+              {loading ? t("game.calculating") : t("game.check")}
             </button>
           </div>
 
@@ -118,20 +120,20 @@ export default function Game() {
 
           {!result && !error && (
             <p className="muted" style={{ margin: 0 }}>
-              Choisissez deux personnes puis cliquez sur Vérifier.
-              {!isValid && (p1 || p2) ? " (nom inconnu)" : ""}
-              {isSamePerson ? " (personnes identiques)" : ""}
+              {t("game.chooseTwo")}
+              {!isValid && (p1 || p2) ? t("game.suffixUnknown") : ""}
+              {isSamePerson ? t("game.suffixSame") : ""}
             </p>
           )}
 
           {result && result.nb_relations !== null && (
             <div className="panel" style={{ borderRadius: 12 }}>
               <div className="panel-body">
-                <p className="kpi">Nombre minimal de relations</p>
+                <p className="kpi">{t("game.minRelations")}</p>
                 <p style={{ fontSize: 28, margin: 0, fontWeight: 700 }}>{result.nb_relations}</p>
                 {Array.isArray(result.chemin) && result.chemin.length > 0 && (
                   <p className="muted" style={{ marginTop: 8 }}>
-                    Chemin : {result.chemin.map((node, idx) => (
+                    {t("game.path")} {result.chemin.map((node, idx) => (
                       <span key={`${node}-${idx}`}>
                         <a href={getWikiUrl(node)} target="_blank" rel="noopener noreferrer" className="chemin-link">
                           {formatNode(node)}
