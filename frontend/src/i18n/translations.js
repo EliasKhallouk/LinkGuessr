@@ -7,6 +7,34 @@ export const translations = {
       themeLight: "Clair",
       themeDark: "Sombre",
     },
+    nav: {
+      home: "Accueil",
+      about: "À propos",
+      contact: "Contact",
+      privacy: "Politique de confidentialité",
+      navigation: "Navigation",
+    },
+    pages: {
+      about: {
+        title: "À propos",
+        p1: "LinkGuessr est un jeu qui s'appuie sur les liens entre personnalités pour vous faire deviner des chemins et des nombres de relations. Les données proviennent de graphes construits à partir de sources publiques (par ex. Wikipédia).",
+        p2: "Objectif: proposer une expérience ludique et éducative. Deux modes sont disponibles: \"Devine le chemin\" (trouvez le plus court chemin) et \"Devine le nombre\" (estimez le nombre minimal de relations). Un classement permet de comparer vos scores.",
+        p3: "Ce projet évolue régulièrement: n'hésitez pas à partager vos suggestions !",
+      },
+      contact: {
+        title: "Contact",
+        p1: "Une question, une suggestion, un partenariat ? Écrivez-nous.",
+        emailLabel: "Email:",
+        socials: "Vous pouvez également nous suivre et envoyer un message sur nos réseaux (à venir).",
+      },
+      privacy: {
+        title: "Politique de confidentialité",
+        p1: "Nous respectons votre vie privée. LinkGuessr ne collecte pas de données personnelles sensibles. Les préférences de langue et de thème peuvent être stockées localement dans votre navigateur (localStorage) afin d'améliorer votre expérience.",
+        p2: "Classement: si vous enregistrez un score, un pseudonyme est sauvegardé avec votre score et la durée de la partie. Ce pseudonyme est normalisé, limité en longueur, et destiné uniquement à l'affichage du classement.",
+        p3: "Cookies: le site utilise des technologies similaires (le cas échéant) pour des fonctionnalités essentielles et des mesures d'utilisation anonymisées. Aucune donnée n'est vendue à des tiers.",
+        p4prefix: "Contact: pour toute question sur cette politique, vous pouvez nous écrire à",
+      },
+    },
     tabs: {
       path: "Devine le chemin",
       relations: "Relations & Classement",
@@ -84,6 +112,34 @@ export const translations = {
       theme: "Theme",
       themeLight: "Light",
       themeDark: "Dark",
+    },
+    nav: {
+      home: "Home",
+      about: "About",
+      contact: "Contact",
+      privacy: "Privacy Policy",
+      navigation: "Navigation",
+    },
+    pages: {
+      about: {
+        title: "About",
+        p1: "LinkGuessr is a game based on links between public figures to help you guess paths and relation counts. Data is derived from graphs built from public sources (e.g., Wikipedia).",
+        p2: "Goal: provide a playful and educational experience. Two modes are available: \"Guess the path\" (find the shortest path) and \"Guess the number\" (estimate the minimum number of relations). A leaderboard lets you compare scores.",
+        p3: "This project evolves regularly—feel free to share suggestions!",
+      },
+      contact: {
+        title: "Contact",
+        p1: "Questions, suggestions, partnerships? Write to us.",
+        emailLabel: "Email:",
+        socials: "You can also follow us and send a message on our socials (coming soon).",
+      },
+      privacy: {
+        title: "Privacy Policy",
+        p1: "We respect your privacy. LinkGuessr does not collect sensitive personal data. Language and theme preferences may be stored locally in your browser (localStorage) to improve your experience.",
+        p2: "Leaderboard: if you save a score, a nickname is saved with your score and game duration. This nickname is normalized, length-limited, and intended only for leaderboard display.",
+        p3: "Cookies: the site may use similar technologies (if applicable) for essential functionality and anonymized usage measurements. No data is sold to third parties.",
+        p4prefix: "Contact: for any question about this policy, you can email",
+      },
     },
     tabs: {
       path: "Guess the path",
