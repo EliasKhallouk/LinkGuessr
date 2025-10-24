@@ -3,6 +3,9 @@ export const translations = {
     app: {
       tagline: "Devinez le chemin le plus court entre deux personnes",
       language: "Langue",
+      theme: "Thème",
+      themeLight: "Clair",
+      themeDark: "Sombre",
     },
     tabs: {
       path: "Devine le chemin",
@@ -78,6 +81,9 @@ export const translations = {
     app: {
       tagline: "Guess the shortest path between two people",
       language: "Language",
+      theme: "Theme",
+      themeLight: "Light",
+      themeDark: "Dark",
     },
     tabs: {
       path: "Guess the path",

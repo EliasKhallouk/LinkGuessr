@@ -1,0 +1,312 @@
+/* ===== PLAYFUL MICRO-INTERACTIONS ===== */
+
+/* Floating effect for cards */
+.panel {
+  animation-delay: calc(var(--animation-order, 0) * 0.1s);
+}
+
+/* Hover magnification effect */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px) scale(1.02);
+  z-index: 10;
+}
+
+/* Sparkle effect on hover */
+.sparkle-on-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.sparkle-on-hover::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  transition: all 0.6s ease;
+}
+
+.sparkle-on-hover:hover::after {
+  opacity: 0.3;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Bouncy button effect */
+.btn-bouncy {
+  animation: gentleBounce 2s ease-in-out infinite;
+}
+
+@keyframes gentleBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Wiggle effect for interactive elements */
+.wiggle {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+/* Score popup animation */
+.score-popup {
+  animation: scorePopup 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scorePopup {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(20px);
+  }
+  50% {
+    transform: scale(1.1) translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Confetti effect container */
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* Rainbow text effect */
+.rainbow-text {
+  background: linear-gradient(
+    90deg,
+    #ff0000 0%,
+    #ff7f00 16.66%,
+    #ffff00 33.33%,
+    #00ff00 50%,
+    #0000ff 66.66%,
+    #8b00ff 83.33%,
+    #ff0000 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: rainbowShift 3s linear infinite;
+}
+
+@keyframes rainbowShift {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* Typing effect */
+.typing-effect {
+  overflow: hidden;
+  border-right: 3px solid var(--accent-primary);
+  white-space: nowrap;
+  animation: typing 2s steps(40) 1s 1 normal both,
+             blinkCursor 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blinkCursor {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--accent-primary); }
+}
+
+/* Gradient border animation */
+.gradient-border {
+  position: relative;
+  background: var(--panel-bg);
+  border-radius: var(--radius-md);
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-md);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.gradient-border:hover::before {
+  opacity: 1;
+  animation: rotateBorder 3s linear infinite;
+}
+
+@keyframes rotateBorder {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* Shake on error */
+.shake-error {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+}
+
+/* Success checkmark animation */
+.checkmark {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: block;
+  stroke-width: 3;
+  stroke: var(--accent-success);
+  stroke-miterlimit: 10;
+  margin: 10% auto;
+  box-shadow: inset 0 0 0 var(--accent-success);
+  animation: fillCheckmark 0.4s ease-in-out 0.4s forwards,
+             scaleCheckmark 0.3s ease-in-out 0.9s both;
+}
+
+.checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 3;
+  stroke-miterlimit: 10;
+  stroke: var(--accent-success);
+  fill: none;
+  animation: strokeCheckmark 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: strokeCheckmark 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes strokeCheckmark {
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes scaleCheckmark {
+  0%, 100% { transform: none; }
+  50% { transform: scale3d(1.1, 1.1, 1); }
+}
+
+@keyframes fillCheckmark {
+  100% { box-shadow: inset 0 0 0 30px var(--accent-success); }
+}
+
+/* Ripple effect */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Neon glow effect */
+.neon-glow {
+  text-shadow:
+    0 0 7px var(--accent-primary),
+    0 0 10px var(--accent-primary),
+    0 0 21px var(--accent-primary),
+    0 0 42px var(--accent-secondary),
+    0 0 82px var(--accent-secondary);
+  animation: neonFlicker 1.5s infinite alternate;
+}
+
+@keyframes neonFlicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    opacity: 1;
+  }
+  20%, 24%, 55% {
+    opacity: 0.8;
+  }
+}
+
+/* Particle burst effect */
+@keyframes particleBurst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(0);
+  }
+}
+
+/* Smooth reveal from bottom */
+.reveal-bottom {
+  animation: revealBottom 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes revealBottom {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Number counter animation */
+.counter {
+  animation: countUp 1s ease-out;
+}
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

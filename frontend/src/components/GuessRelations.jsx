@@ -25,6 +25,7 @@ export default function GuessRelations() {
   const [submitError, setSubmitError] = useState(null);
   const nextBtnRef = useRef(null);
   const guessInputRef = useRef(null);
+  const [showScorePopup, setShowScorePopup] = useState(false);
 
   const formatNode = (label) =>
     (label || "")
@@ -144,6 +145,9 @@ export default function GuessRelations() {
             points += 20 * streak;
             setStreak((s) => s + 1);
             setTotalCorrect((c) => c + 1);
+            // Show score popup for perfect answers
+            setShowScorePopup(true);
+            setTimeout(() => setShowScorePopup(false), 3000);
           } else {
             setStreak(0);
           }
@@ -178,14 +182,15 @@ export default function GuessRelations() {
   };
 
   return (
+    <>
     <section className="panel fade-in">
       <div className="panel-header">
   <span className="panel-title">{t("guess.titleNumber")}</span>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {gameActive ? (
             <>
-              <span className="muted" style={{ fontSize: 12 }}>⏱ {formatTime(timeLeft)}</span>
-              <span className="muted" style={{ fontSize: 12 }}>⭐ {score}</span>
+              <span className="kpi">⏱ <strong>{formatTime(timeLeft)}</strong></span>
+              <span className="kpi">⭐ <strong>{score}</strong></span>
               <button className="btn" onClick={stopGame}>{t("guess.stop")}</button>
             </>
           ) : (
@@ -204,12 +209,15 @@ export default function GuessRelations() {
         ) : (
           <>
             {gameActive && (
-              <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
-                <span className="kpi"><strong>{t("guess.score")}:</strong> {score}</span>
-                <span className="kpi"><strong>{t("guess.streak")}:</strong> {streak}</span>
-                <span className="kpi"><strong>{t("guess.time")}:</strong> {formatTime(timeLeft)}</span>
+              <div style={{ display: "flex", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
+                <span className="kpi">{t("guess.score")}: <strong>{score}</strong></span>
+                <span className="kpi">{t("guess.streak")}: <strong>{streak}</strong> 🔥</span>
+                <span className="kpi">{t("guess.time")}: <strong>{formatTime(timeLeft)}</strong></span>
               </div>
             )}
+            
+            
+            
             <p style={{ marginTop: 0 }}>
               {t("guess.between")}
               {" "}
@@ -385,5 +393,13 @@ export default function GuessRelations() {
         )}
       </div>
     </section>
+    {showScorePopup && (
+      <div className="toast-bottom">
+        <div className="success-box" style={{ maxWidth: 420 }}>
+          <strong>🎉 +100 {t("guess.score")}!</strong> {t("guess.good")}
+        </div>
+      </div>
+    )}
+    </>
   );
 }

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import "./App.css";
 import AdSlot from "./components/AdSlot";
 import Game from "./components/Game";
@@ -5,9 +6,18 @@ import GuessRelations from "./components/GuessRelations";
 import Leaderboard from "./components/Leaderboard";
 import Tabs from "./components/Tabs";
 import { useI18n } from "./i18n/I18nProvider";
+import "./playful-effects.css";
+import PlayfulDemo from "./components/PlayfulDemo";
 
 function App() {
   const { t, lang, setLang } = useI18n();
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem("theme") || "dark"; } catch { return "dark"; }
+  });
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem("theme", theme); } catch {}
+  }, [theme]);
   return (
     <div className="app-shell">
       <header className="header">
@@ -15,13 +25,22 @@ function App() {
           <span className="logo-dot" />
           <h1 className="title">LinkGuessr</h1>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
-          <p className="tagline" style={{ margin: 0 }}>{t("app.tagline")}</p>
-          <div>
-            <label className="muted" style={{ fontSize: 12, marginRight: 6 }}>{t("app.language")}:</label>
-            <select value={lang} onChange={(e) => setLang(e.target.value)}>
-              <option value="fr">Français</option>
-              <option value="en">English</option>
+        <p className="tagline">{t("app.tagline")}</p>
+        
+        <div className="header-controls">
+          <div className="control-group">
+            <label htmlFor="lang-select">{t("app.language")}</label>
+            <select id="lang-select" value={lang} onChange={(e) => setLang(e.target.value)}>
+              <option value="fr">🇫🇷 Français</option>
+              <option value="en">🇬🇧 English</option>
+            </select>
+          </div>
+          
+          <div className="control-group">
+            <label htmlFor="theme-select">{t("app.theme")}</label>
+            <select id="theme-select" value={theme} onChange={(e) => setTheme(e.target.value)}>
+              <option value="light">☀️ {t("app.themeLight")}</option>
+              <option value="dark">🌙 {t("app.themeDark")}</option>
             </select>
           </div>
         </div>
@@ -36,6 +55,7 @@ function App() {
                 <>
                   <GuessRelations />
                   <Leaderboard />
+                  <PlayfulDemo />
                 </>
               ) },
             ]}

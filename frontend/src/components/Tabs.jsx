@@ -8,13 +8,13 @@ export default function Tabs({ tabs = [], initial = 0, onChange }) {
         {tabs.map((t, i) => (
           <button
             key={t.key}
-            className={`tab ${i === active ? "active" : ""}`}
+            className={`tab ripple ${i === active ? "active" : ""}`}
             onClick={() => {
               setActive(i);
               onChange?.(i);
             }}
           >
-            {t.title}
+            <span>{t.title}</span>
           </button>
         ))}
       </div>
