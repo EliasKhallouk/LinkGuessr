@@ -1,23 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { NavLink, Route, Routes } from "react-router-dom";
 import "./App.css";
-import AdSlot from "./components/AdSlot";
-import Game from "./components/Game";
-import GuessRelations from "./components/GuessRelations";
-import Leaderboard from "./components/Leaderboard";
-import Tabs from "./components/Tabs";
 import { useI18n } from "./i18n/I18nProvider";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Home from "./pages/Home";
+import Privacy from "./pages/Privacy";
 import "./playful-effects.css";
-import PlayfulDemo from "./components/PlayfulDemo";
 
 function App() {
   const { t, lang, setLang } = useI18n();
   const [theme, setTheme] = useState(() => {
     try { return localStorage.getItem("theme") || "dark"; } catch { return "dark"; }
   });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem("theme", theme); } catch {}
   }, [theme]);
+  // close menu on outside click
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
   return (
     <div className="app-shell">
       <header className="header">
@@ -26,45 +41,43 @@ function App() {
           <h1 className="title">LinkGuessr</h1>
         </div>
         <p className="tagline">{t("app.tagline")}</p>
-        
-        <div className="header-controls">
-          <div className="control-group">
-            <label htmlFor="lang-select">{t("app.language")}</label>
-            <select id="lang-select" value={lang} onChange={(e) => setLang(e.target.value)}>
-              <option value="fr">🇫🇷 Français</option>
-              <option value="en">🇬🇧 English</option>
-            </select>
-          </div>
-          
-          <div className="control-group">
-            <label htmlFor="theme-select">{t("app.theme")}</label>
-            <select id="theme-select" value={theme} onChange={(e) => setTheme(e.target.value)}>
-              <option value="light">☀️ {t("app.themeLight")}</option>
-              <option value="dark">🌙 {t("app.themeDark")}</option>
-            </select>
-          </div>
+        {/* Nav moved into ellipsis menu */}
+        <div className="header-ellipsis" ref={menuRef}>
+          <button aria-label="menu" className="btn-ellipsis" onClick={() => setMenuOpen((o) => !o)}>⋯</button>
+          {menuOpen && (
+            <div className="popover">
+              <div className="menu-section">
+                <div className="menu-title">Navigation</div>
+                <NavLink to="/" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>Accueil</NavLink>
+                <NavLink to="/a-propos" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>À propos</NavLink>
+                <NavLink to="/contact" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>Contact</NavLink>
+                <NavLink to="/politique-de-confidentialite" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>Politique de confidentialité</NavLink>
+              </div>
+              <hr className="menu-sep" />
+              <div className="control-group">
+                <label htmlFor="lang-select">{t("app.language")}</label>
+                <select id="lang-select" value={lang} onChange={(e) => setLang(e.target.value)}>
+                  <option value="fr">🇫🇷 Français</option>
+                  <option value="en">🇬🇧 English</option>
+                </select>
+              </div>
+              <div className="control-group" style={{ marginTop: 8 }}>
+                <label htmlFor="theme-select">{t("app.theme")}</label>
+                <select id="theme-select" value={theme} onChange={(e) => setTheme(e.target.value)}>
+                  <option value="light">☀️ {t("app.themeLight")}</option>
+                  <option value="dark">🌙 {t("app.themeDark")}</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
       </header>
-
-      <main className="grid">
-        <div className="col-main">
-          <Tabs
-            tabs={[
-              { key: "path", title: t("tabs.path"), content: <Game /> },
-              { key: "relations", title: t("tabs.relations"), content: (
-                <>
-                  <GuessRelations />
-                  <Leaderboard />
-                  <PlayfulDemo />
-                </>
-              ) },
-            ]}
-          />
-        </div>
-        <div className="col-side">
-          <AdSlot />
-        </div>
-      </main>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/a-propos" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/politique-de-confidentialite" element={<Privacy />} />
+      </Routes>
 
       <footer className="footer">
         <span>© {new Date().getFullYear()} LinkGuessr - Elias Khallouk</span>
