@@ -1,7 +1,9 @@
 import "./App.css";
+import AdSlot from "./components/AdSlot";
 import Game from "./components/Game";
 import GuessRelations from "./components/GuessRelations";
 import Leaderboard from "./components/Leaderboard";
+import Tabs from "./components/Tabs";
 import { useI18n } from "./i18n/I18nProvider";
 
 function App() {
@@ -26,10 +28,22 @@ function App() {
       </header>
 
       <main className="grid">
-        {/* <Graph /> */}
-        <Game />
-        <GuessRelations />
-        <Leaderboard />
+        <div className="col-main">
+          <Tabs
+            tabs={[
+              { key: "path", title: t("tabs.path"), content: <Game /> },
+              { key: "relations", title: t("tabs.relations"), content: (
+                <>
+                  <GuessRelations />
+                  <Leaderboard />
+                </>
+              ) },
+            ]}
+          />
+        </div>
+        <div className="col-side">
+          <AdSlot />
+        </div>
       </main>
 
       <footer className="footer">

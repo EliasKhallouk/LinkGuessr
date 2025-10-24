@@ -4,6 +4,13 @@ export const translations = {
       tagline: "Devinez le chemin le plus court entre deux personnes",
       language: "Langue",
     },
+    tabs: {
+      path: "Devine le chemin",
+      relations: "Relations & Classement",
+    },
+    ads: {
+      sponsored: "Sponsorisé",
+    },
     leaderboard: {
       title: "Classement mondial",
       loading: "Chargement…",
@@ -71,6 +78,13 @@ export const translations = {
     app: {
       tagline: "Guess the shortest path between two people",
       language: "Language",
+    },
+    tabs: {
+      path: "Guess the path",
+      relations: "Relations & Leaderboard",
+    },
+    ads: {
+      sponsored: "Sponsored",
     },
     leaderboard: {
       title: "Global Leaderboard",

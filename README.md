@@ -10,7 +10,9 @@ lancer front : elias@hp-info-01:~/PROJECT/LinkGuessr/frontend$ npm start
 
 A Faire : 
     - Rendre plus amusant le front-end
-    - Affiché sous forme de graphe ? Avec tout les PCC identique
+    - Affiché sous forme de graphe ? 
+        - Avec tout les PCC identique
+        - Avec Photo
     - Rajouter des personnes (Million)
         - Emmanuel Macron 
         - Gad Elmaleh 
