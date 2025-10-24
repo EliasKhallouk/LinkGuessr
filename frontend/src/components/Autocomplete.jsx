@@ -14,17 +14,40 @@ export default function Autocomplete({
   const listId = id ? `${id}-listbox` : undefined;
 
   const suggestions = useMemo(() => {
-    const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "_");
-    const q = norm((value || "").trim());
+    // normalize: lower, remove diacritics, replace ligatures, remove punctuation, collapse spaces
+    const strip = (s) => {
+      const str = (s || "").toString();
+      // Replace common ligatures first
+      const lig = str.replace(/œ/g, "oe").replace(/æ/g, "ae");
+      // Remove diacritics via NFKD
+      const noDia = lig.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+      // Normalize separators and keep only a-z0-9 and spaces
+      return noDia
+        .toLowerCase()
+        .replace(/[_-]+/g, ' ')
+        .replace(/[^a-z0-9 ]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const q = strip(value);
     if (!q) return options.slice(0, 8);
-    return options.filter((o) => norm(o).includes(q)).slice(0, 8);
+    const tokens = q.split(' ');
+
+    return options
+      .filter((o) => {
+        const cand = strip(o);
+        // Every token from the query must appear somewhere in the candidate
+        return tokens.every((tok) => cand.includes(tok));
+      })
+      .slice(0, 8);
   }, [options, value]);
 
   const formatNode = (label) =>
     (label || "")
       .toString()
       .replaceAll("_", " ")
-      .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+      //.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 
   useEffect(() => {
     if (open && suggestions.length === 0) {
