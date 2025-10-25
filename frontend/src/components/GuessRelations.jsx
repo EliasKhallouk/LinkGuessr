@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { apiUrl } from "../config";
 import { useI18n } from "../i18n/I18nProvider";
 
 export default function GuessRelations() {
@@ -36,7 +37,7 @@ export default function GuessRelations() {
   const getWikiUrl = (label) => `https://fr.wikipedia.org/wiki/${encodeURIComponent(label || "")}`;
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/graph")
+    fetch(apiUrl("/graph"))
       .then((res) => res.json())
       .then((data) => {
         const labels = data.nodes.map((n) => n.label);
@@ -122,7 +123,7 @@ export default function GuessRelations() {
     setOutcome(null);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/shortest_path?person1=${encodeURIComponent(p1)}&person2=${encodeURIComponent(p2)}`
+        apiUrl(`/shortest_path?person1=${encodeURIComponent(p1)}&person2=${encodeURIComponent(p2)}`)
       );
       const data = await res.json();
   if (data && typeof data.nb_relations === "number") {
@@ -346,7 +347,7 @@ export default function GuessRelations() {
                             setSubmitError(null);
                             // lightweight client-side normalization (server also normalizes)
                             const name = (playerName || "Anonyme").normalize('NFKD').replace(/\p{Diacritic}/gu, '').replace(/[^A-Za-z0-9 _-]/g, '').trim().slice(0,32) || "Anonyme";
-                            const res = await fetch("http://127.0.0.1:8000/submit_score", {
+                            const res = await fetch(apiUrl("/submit_score"), {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ name, score, duration: GAME_DURATION })

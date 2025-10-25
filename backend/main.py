@@ -39,7 +39,6 @@ def get_graph():
     MATCH (a:Person)-[r:CONNAIT]->(b:Person)
     RETURN a.name AS from, b.name AS to
     """
-    print(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
 
     with driver.session() as session:
         result = session.run(query)

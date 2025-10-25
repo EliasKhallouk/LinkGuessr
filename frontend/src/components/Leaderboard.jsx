@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "../config";
 import { useI18n } from "../i18n/I18nProvider";
 
 export default function Leaderboard() {
@@ -11,7 +12,7 @@ export default function Leaderboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://127.0.0.1:8000/leaderboard?limit=10");
+      const res = await fetch(apiUrl("/leaderboard?limit=10"));
       const data = await res.json();
       setEntries(Array.isArray(data.entries) ? data.entries : []);
     } catch (e) {

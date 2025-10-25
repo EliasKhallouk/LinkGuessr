@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { apiUrl } from "../config";
 import { useI18n } from "../i18n/I18nProvider";
 import Autocomplete from "./Autocomplete";
 
@@ -43,7 +44,7 @@ export default function Game() {
   const getWikiUrl = (label) => `https://fr.wikipedia.org/wiki/${encodeURIComponent(label || "")}`;
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/graph")
+    fetch(apiUrl("/graph"))
       .then(res => res.json())
       .then(data => {
         setPeople(data.nodes.map(n => n.label));
@@ -67,7 +68,7 @@ export default function Game() {
         return;
       }
 
-      const res = await fetch(`http://127.0.0.1:8000/shortest_path?person1=${encodeURIComponent(dbP1)}&person2=${encodeURIComponent(dbP2)}`);
+  const res = await fetch(apiUrl(`/shortest_path?person1=${encodeURIComponent(dbP1)}&person2=${encodeURIComponent(dbP2)}`));
       const data = await res.json();
       setResult(data);
     } finally {

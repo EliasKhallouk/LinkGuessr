@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { DataSet, Network } from "vis-network/standalone";
+import { apiUrl } from "../config";
 
 export default function Graph() {
   const [nodes, setNodes] = useState([]);
@@ -9,7 +10,7 @@ export default function Graph() {
 
   useEffect(() => {
     // récupérer le graphe depuis le back-end
-    fetch("http://127.0.0.1:8000/graph")
+      fetch(apiUrl("/graph"))
       .then(res => res.json())
       .then(data => {
         setNodes(data.nodes);
