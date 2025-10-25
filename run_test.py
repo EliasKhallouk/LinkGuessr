@@ -112,10 +112,15 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
 if __name__ == "__main__":
     start_urls = [
-        "http://fr.wikipedia.org/wiki/Anyme023",
-        "http://fr.wikipedia.org/wiki/Elon_Musk",
-        "http://fr.wikipedia.org/wiki/Jeff_Bezos",
-        "http://fr.wikipedia.org/wiki/Bill_Gates",
+        "http://fr.wikipedia.org/wiki/Mark_Zuckerberg",
+        "http://fr.wikipedia.org/wiki/Steve_Jobs",
+        "http://fr.wikipedia.org/wiki/Beyoncé",
+        "http://fr.wikipedia.org/wiki/Rihanna",
+        "http://fr.wikipedia.org/wiki/Kanye_West",
+        "http://fr.wikipedia.org/wiki/Drake_(rappeur)",
+        "http://fr.wikipedia.org/wiki/Donald_Trump",
+        "http://fr.wikipedia.org/wiki/Barack_Obama",
+        "http://fr.wikipedia.org/wiki/Daft_Punk",
     ]
 
     t0 = time.time()
@@ -145,7 +150,7 @@ if __name__ == "__main__":
 # "http://fr.wikipedia.org/wiki/Squeezie",
 # "http://fr.wikipedia.org/wiki/Kameto",
 # "http://fr.wikipedia.org/wiki/Michou_(vidéaste)",
-
+# "http://fr.wikipedia.org/wiki/Anyme023",
 # SPORTIFS:
 # "http://fr.wikipedia.org/wiki/Karim_Benzema",
 # "http://fr.wikipedia.org/wiki/Mohamed_Ali",
@@ -172,17 +177,22 @@ if __name__ == "__main__":
 # "http://fr.wikipedia.org/wiki/Emmanuel_Macron",
 # "http://fr.wikipedia.org/wiki/Adolf_Hitler",
 
+# MILLIONAIRES TECH:
+#"http://fr.wikipedia.org/wiki/Elon_Musk",
+#"http://fr.wikipedia.org/wiki/Jeff_Bezos",
+#"http://fr.wikipedia.org/wiki/Bill_Gates",
+
 ##########################################
 #     LISTE DES PERONNES A AJOUTÉES :    #
 ##########################################
 
 
-#"http://fr.wikipedia.org/wiki/Mark_Zuckerberg",
-#"http://fr.wikipedia.org/wiki/Steve_Jobs",
-#"http://fr.wikipedia.org/wiki/Beyoncé",
-#"http://fr.wikipedia.org/wiki/Rihanna",
-#"http://fr.wikipedia.org/wiki/Kanye_West",
-#"http://fr.wikipedia.org/wiki/Drake_(rappeur)",
-#"http://fr.wikipedia.org/wiki/Donald_Trump",
-#"http://fr.wikipedia.org/wiki/Barack_Obama",
-#"http://fr.wikipedia.org/wiki/Daft_Punk",
+
+
+
+
+
+
+
+
+
