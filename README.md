@@ -358,4 +358,12 @@ To Do :
     - changer quelque pour pas que les gens passe au hasard
     - mettre un niveau de difficulté
         - regarder plus ta de personne en relation plus il est simple a trouver
+    - mettre des themes
+        - exemple une partie avec que des sportif (ou que des polititiens)
+
+    - peut etre rajouter les personnage de manga (verifier si c'est bien détecter en personne (Q5))
+        - les mélangé avec le reste de la BDD (les personnes réel)
+    - nouveau jeux:
+        affiché un chemin, cacher une personne au hasar et lui demander de trouver c'est qui
+
 

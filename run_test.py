@@ -90,11 +90,10 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0):
 
 if __name__ == "__main__":
     start_urls = [
-        "http://fr.wikipedia.org/wiki/Emmanuel_Macron",
-        "http://fr.wikipedia.org/wiki/Akira_Toriyama",
-        "http://fr.wikipedia.org/wiki/Albert_Einstein",
-        "http://fr.wikipedia.org/wiki/Marie_Curie",
-        "http://fr.wikipedia.org/wiki/Léonard_de_Vinci",
+        "http://fr.wikipedia.org/wiki/Isaac_Newton",
+        "http://fr.wikipedia.org/wiki/Gad_Elmaleh",
+        "http://fr.wikipedia.org/wiki/Taylor_Swift",
+        "http://fr.wikipedia.org/wiki/Adolf_Hitler",
     ]
 
     t0 = time.time()
@@ -125,21 +124,25 @@ if __name__ == "__main__":
 
 # MUSICIENS:
 
+# AUTEUR :
+#"http://fr.wikipedia.org/wiki/Akira_Toriyama",
 
 # ACTEURS:
 #"http://fr.wikipedia.org/wiki/Will_Smith",
 
-# POLITIQUES:
+#SCIENTIFIQUES:
+#"http://fr.wikipedia.org/wiki/Albert_Einstein",
+#"http://fr.wikipedia.org/wiki/Marie_Curie",
+#"http://fr.wikipedia.org/wiki/Léonard_de_Vinci",
 
+# POLITIQUES:
+#"http://fr.wikipedia.org/wiki/Emmanuel_Macron",
 
 
 ##########################################
 #     LISTE DES PERONNES A AJOUTÉES :    #
 ##########################################
-#"http://fr.wikipedia.org/wiki/Isaac_Newton",
-#"http://fr.wikipedia.org/wiki/Gad_Elmaleh",
-#"http://fr.wikipedia.org/wiki/Taylor_Swift",
-#"http://fr.wikipedia.org/wiki/Adolf_Hitler",
+
 #"http://fr.wikipedia.org/wiki/Mohamed_Ali",
 #"http://fr.wikipedia.org/wiki/Kameto",
 #"http://fr.wikipedia.org/wiki/Michou_(vidéaste)",
