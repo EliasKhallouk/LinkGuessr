@@ -64,20 +64,24 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
         return
     visited.add(main_name)
 
+    # Pas de barre ici: une seule barre est affichée au niveau racine (N1)
+
     # Construit la chaîne d'ancêtres à afficher (racine > ... > courant)
     current_chain = chain + [main_name]
     racine = current_chain[0] if current_chain else main_name
-    parents = " > ".join(current_chain[:-1]) if len(current_chain) > 1 else "(racine)"
     indent = "  " * (depth - 1)
-    print(f"{indent}➡️  Niveau {depth}: {main_name} | Chaîne: {parents} > {main_name} | Racine: {racine}")
+    # Affichage uniquement pour la racine (N+1)
+    if depth == 1:
+        print(f"➡️  Racine (N1): {main_name}")
 
     links = get_wikipedia_links(url)
 
-    people = filter_links_by_person(links, max_workers=20, show_progress=True, position=base_pos + 1)
-    print(f"{indent}📎 {len(people)} personnes trouvées sur: {main_name} (Niveau {depth}, Racine: {racine})")
+    people = filter_links_by_person(links, max_workers=20, show_progress=False, position=None)
+    if depth == 1:
+        print(f"📎 {len(people)} personnes trouvées sur: {main_name}")
     # Ajout des relations avec barre de progression
     with driver.session() as session:
-        for link in tqdm(people, desc=f"Relations (N{depth}) de {main_name}", unit="pers.", leave=False, position=base_pos + 1):
+        for link in people:
             person_name = get_person_name_from_url(link)
             # éviter la relation vers soi-même
             if person_name == main_name:
@@ -86,23 +90,32 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
     # récursion sur les personnes trouvées (on passe l'URL d'origine de la personne)
     # Exploration récursive des personnes trouvées avec barre de progression
-    pbar = tqdm(total=len(people), desc=f"Exploration N{depth + 1} depuis {main_name} (racine: {racine})", unit="pers.", leave=False, position=base_pos)
-    for link in people:
-        current = get_person_name_from_url(link)
+    # Si on est à la racine, on affiche UNE seule barre dont le total
+    # est le nombre d'enfants directs (N2). La barre avance quand on a
+    # terminé de parcourir chaque enfant et son sous-graphe.
+    if depth == 1:
+        pbar = tqdm(total=len(people), desc=f"Exploration N2 de {main_name}", unit="page", leave=True)
+        for link in people:
+            crawl_person(link, depth + 1, max_depth, visited, base_pos=base_pos + 1, chain=current_chain)
+            try:
+                pbar.update(1)
+            except Exception:
+                pass
         try:
-            pbar.set_postfix_str(f"→ {current} | racine: {racine}")
+            pbar.close()
         except Exception:
             pass
-        crawl_person(link, depth + 1, max_depth, visited, base_pos=base_pos + 1, chain=current_chain)
-        pbar.update(1)
-    pbar.close()
+    else:
+        # Pour N>=2, on explore silencieusement (pas de barre ni de logs verbeux)
+        for link in people:
+            crawl_person(link, depth + 1, max_depth, visited, base_pos=base_pos + 1, chain=current_chain)
 
 if __name__ == "__main__":
     start_urls = [
-        "http://fr.wikipedia.org/wiki/Mohamed_Ali",
-        "http://fr.wikipedia.org/wiki/Kameto",
-        "http://fr.wikipedia.org/wiki/Michou_(vidéaste)",
-        "http://fr.wikipedia.org/wiki/Travis_Scott",
+        "http://fr.wikipedia.org/wiki/Anyme023",
+        "http://fr.wikipedia.org/wiki/Elon_Musk",
+        "http://fr.wikipedia.org/wiki/Jeff_Bezos",
+        "http://fr.wikipedia.org/wiki/Bill_Gates",
     ]
 
     t0 = time.time()
@@ -130,39 +143,40 @@ if __name__ == "__main__":
 
 # YOUTUBEURS:
 # "http://fr.wikipedia.org/wiki/Squeezie",
+# "http://fr.wikipedia.org/wiki/Kameto",
+# "http://fr.wikipedia.org/wiki/Michou_(vidéaste)",
 
 # SPORTIFS:
 # "http://fr.wikipedia.org/wiki/Karim_Benzema",
+# "http://fr.wikipedia.org/wiki/Mohamed_Ali",
 
 # MUSICIENS:
-#"http://fr.wikipedia.org/wiki/Taylor_Swift",
+# "http://fr.wikipedia.org/wiki/Taylor_Swift",
+# "http://fr.wikipedia.org/wiki/Travis_Scott",
 
 # AUTEUR :
-#"http://fr.wikipedia.org/wiki/Akira_Toriyama",
+# "http://fr.wikipedia.org/wiki/Akira_Toriyama",
 
 # ACTEURS:
-#"http://fr.wikipedia.org/wiki/Will_Smith",
-#"http://fr.wikipedia.org/wiki/Gad_Elmaleh",
+# "http://fr.wikipedia.org/wiki/Will_Smith",
+# "http://fr.wikipedia.org/wiki/Gad_Elmaleh",
 
 
-#SCIENTIFIQUES:
-#"http://fr.wikipedia.org/wiki/Albert_Einstein",
-#"http://fr.wikipedia.org/wiki/Marie_Curie",
-#"http://fr.wikipedia.org/wiki/Léonard_de_Vinci",
-#"http://fr.wikipedia.org/wiki/Isaac_Newton",
+# SCIENTIFIQUES:
+# "http://fr.wikipedia.org/wiki/Albert_Einstein",
+# "http://fr.wikipedia.org/wiki/Marie_Curie",
+# "http://fr.wikipedia.org/wiki/Léonard_de_Vinci",
+# "http://fr.wikipedia.org/wiki/Isaac_Newton",
 
 # POLITIQUES:
-#"http://fr.wikipedia.org/wiki/Emmanuel_Macron",
-#"http://fr.wikipedia.org/wiki/Adolf_Hitler",
+# "http://fr.wikipedia.org/wiki/Emmanuel_Macron",
+# "http://fr.wikipedia.org/wiki/Adolf_Hitler",
 
 ##########################################
 #     LISTE DES PERONNES A AJOUTÉES :    #
 ##########################################
 
-#"http://fr.wikipedia.org/wiki/Anyme023",
-#"http://fr.wikipedia.org/wiki/Elon_Musk",
-#"http://fr.wikipedia.org/wiki/Jeff_Bezos",
-#"http://fr.wikipedia.org/wiki/Bill_Gates",
+
 #"http://fr.wikipedia.org/wiki/Mark_Zuckerberg",
 #"http://fr.wikipedia.org/wiki/Steve_Jobs",
 #"http://fr.wikipedia.org/wiki/Beyoncé",
