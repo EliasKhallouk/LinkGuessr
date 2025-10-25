@@ -89,10 +89,71 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0):
     pbar.close()
 
 if __name__ == "__main__":
-    start_url = "http://fr.wikipedia.org/wiki/Squeezie"
-    t0 = time.time()
-    crawl_person(start_url, max_depth=2)
-    print(f"Exploration complète en {time.time() - t0:.2f}s ✅")
-    #print(get_person_name_from_url("https://fr.wikipedia.org/wiki/Prince_(musicien)"))
-    
+    start_urls = [
+        "http://fr.wikipedia.org/wiki/Emmanuel_Macron",
+        "http://fr.wikipedia.org/wiki/Akira_Toriyama",
+        "http://fr.wikipedia.org/wiki/Albert_Einstein",
+        "http://fr.wikipedia.org/wiki/Marie_Curie",
+        "http://fr.wikipedia.org/wiki/Léonard_de_Vinci",
+    ]
 
+    t0 = time.time()
+    # si vous voulez éviter de re-parcourir les mêmes personnes entre URLs,
+    # conservez un ensemble `visited` partagé ; sinon passez None dans crawl_person
+    visited_global = set()
+
+    for url in start_urls:
+        print(f"\nDémarrage pour {url}")
+        crawl_person(url, max_depth=2, visited=visited_global)
+
+    print(f"Exploration complète en {time.time() - t0:.2f}s ✅")
+
+
+
+
+
+
+##########################################
+#   LISTE DES PERONNES DEJA AJOUTÉES :   #
+##########################################
+
+# YOUTUBEURS:
+# "http://fr.wikipedia.org/wiki/Squeezie",
+
+# SPORTIFS:
+# "http://fr.wikipedia.org/wiki/Karim_Benzema",
+
+# MUSICIENS:
+
+
+# ACTEURS:
+#"http://fr.wikipedia.org/wiki/Will_Smith",
+
+# POLITIQUES:
+
+
+
+##########################################
+#     LISTE DES PERONNES A AJOUTÉES :    #
+##########################################
+#"http://fr.wikipedia.org/wiki/Isaac_Newton",
+#"http://fr.wikipedia.org/wiki/Gad_Elmaleh",
+#"http://fr.wikipedia.org/wiki/Taylor_Swift",
+#"http://fr.wikipedia.org/wiki/Adolf_Hitler",
+#"http://fr.wikipedia.org/wiki/Mohamed_Ali",
+#"http://fr.wikipedia.org/wiki/Kameto",
+#"http://fr.wikipedia.org/wiki/Michou_(vidéaste)",
+#"http://fr.wikipedia.org/wiki/Travis_Scott",
+#"http://fr.wikipedia.org/wiki/Anyme023",
+#"http://fr.wikipedia.org/wiki/Elon_Musk",
+#"http://fr.wikipedia.org/wiki/Jeff_Bezos",
+#"http://fr.wikipedia.org/wiki/Bill_Gates",
+#"http://fr.wikipedia.org/wiki/Mark_Zuckerberg",
+#"http://fr.wikipedia.org/wiki/Steve_Jobs",
+#"http://fr.wikipedia.org/wiki/Beyoncé",
+#"http://fr.wikipedia.org/wiki/Rihanna",
+#"http://fr.wikipedia.org/wiki/Kanye_West",
+#"http://fr.wikipedia.org/wiki/Drake_(rappeur)",
+#"http://fr.wikipedia.org/wiki/Donald_Trump",
+#"http://fr.wikipedia.org/wiki/Barack_Obama",
+#"http://fr.wikipedia.org/wiki/Daft_Punk",

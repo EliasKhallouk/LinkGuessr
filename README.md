@@ -347,20 +347,15 @@ lancer backend : (.venv) elias@hp-info-01:~/PROJECT/LinkGuessr$ uvicorn backend.
 lancer front : elias@hp-info-01:~/PROJECT/LinkGuessr/frontend$ npm start
 
 
-A Faire : 
+To Do : 
     - Rendre plus amusant le front-end
     - Affiché sous forme de graphe ? 
         - Avec tout les PCC identique
         - Avec Photo
-    - Rajouter des personnes (Million)
-        - Emmanuel Macron 
-        - Gad Elmaleh 
-        - Taylor Swift 
-        - Adolf Hitler 
-        - Moahmed Ali 
-        - Karim Bezema 
-        - Createur DBZ
-        - kameto 
-        - Squeezie
         
     - affiché un tableau avec les demande de chemin les plus demander
+    - ecrire que c'est un liens
+    - changer quelque pour pas que les gens passe au hasard
+    - mettre un niveau de difficulté
+        - regarder plus ta de personne en relation plus il est simple a trouver
+
