@@ -40,7 +40,7 @@ def get_person_name_from_url(url):
     """Convertit une URL Wikipedia en nom propre proprement formaté"""
     return unquote(url.split('/')[-1])
 
-def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0):
+def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None):
     """Explore récursivement les relations jusqu'à max_depth.
 
     IMPORTANT: visited tracks page *names* (titles), not raw URLs, to avoid
@@ -50,6 +50,10 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0):
     """
     if visited is None:
         visited = set()
+    # Historique des ancêtres pour une meilleure lisibilité
+    # chain=[Niveau1, Niveau2, ..., Courant]
+    if chain is None:
+        chain = []
 
     if depth > max_depth:
         return
@@ -60,15 +64,20 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0):
         return
     visited.add(main_name)
 
-    print(f"{'  ' * (depth - 1)}➡️  Niveau {depth}: {main_name}")
+    # Construit la chaîne d'ancêtres à afficher (racine > ... > courant)
+    current_chain = chain + [main_name]
+    racine = current_chain[0] if current_chain else main_name
+    parents = " > ".join(current_chain[:-1]) if len(current_chain) > 1 else "(racine)"
+    indent = "  " * (depth - 1)
+    print(f"{indent}➡️  Niveau {depth}: {main_name} | Chaîne: {parents} > {main_name} | Racine: {racine}")
 
     links = get_wikipedia_links(url)
 
     people = filter_links_by_person(links, max_workers=20, show_progress=True, position=base_pos + 1)
-    print(len(people), "personnes trouvées sur la page.")
+    print(f"{indent}📎 {len(people)} personnes trouvées sur: {main_name} (Niveau {depth}, Racine: {racine})")
     # Ajout des relations avec barre de progression
     with driver.session() as session:
-        for link in tqdm(people, desc=f"Relations (niveau {depth})", unit="pers.", leave=False, position=base_pos + 1):
+        for link in tqdm(people, desc=f"Relations (N{depth}) de {main_name}", unit="pers.", leave=False, position=base_pos + 1):
             person_name = get_person_name_from_url(link)
             # éviter la relation vers soi-même
             if person_name == main_name:
@@ -77,23 +86,23 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0):
 
     # récursion sur les personnes trouvées (on passe l'URL d'origine de la personne)
     # Exploration récursive des personnes trouvées avec barre de progression
-    pbar = tqdm(total=len(people), desc=f"Exploration niveau {depth + 1}", unit="pers.", leave=False, position=base_pos)
+    pbar = tqdm(total=len(people), desc=f"Exploration N{depth + 1} depuis {main_name} (racine: {racine})", unit="pers.", leave=False, position=base_pos)
     for link in people:
         current = get_person_name_from_url(link)
         try:
-            pbar.set_postfix_str(current)
+            pbar.set_postfix_str(f"→ {current} | racine: {racine}")
         except Exception:
             pass
-        crawl_person(link, depth + 1, max_depth, visited, base_pos=base_pos + 1)
+        crawl_person(link, depth + 1, max_depth, visited, base_pos=base_pos + 1, chain=current_chain)
         pbar.update(1)
     pbar.close()
 
 if __name__ == "__main__":
     start_urls = [
-        "http://fr.wikipedia.org/wiki/Isaac_Newton",
-        "http://fr.wikipedia.org/wiki/Gad_Elmaleh",
-        "http://fr.wikipedia.org/wiki/Taylor_Swift",
-        "http://fr.wikipedia.org/wiki/Adolf_Hitler",
+        "http://fr.wikipedia.org/wiki/Mohamed_Ali",
+        "http://fr.wikipedia.org/wiki/Kameto",
+        "http://fr.wikipedia.org/wiki/Michou_(vidéaste)",
+        "http://fr.wikipedia.org/wiki/Travis_Scott",
     ]
 
     t0 = time.time()
@@ -102,8 +111,11 @@ if __name__ == "__main__":
     visited_global = set()
 
     for url in start_urls:
-        print(f"\nDémarrage pour {url}")
-        crawl_person(url, max_depth=2, visited=visited_global)
+        racine_nom = get_person_name_from_url(url)
+        print("\n" + "=" * 60)
+        print(f"🚀 Démarrage racine: {racine_nom} | URL: {url}")
+        print("=" * 60)
+        crawl_person(url, max_depth=2, visited=visited_global, chain=[])
 
     print(f"Exploration complète en {time.time() - t0:.2f}s ✅")
 
@@ -123,30 +135,30 @@ if __name__ == "__main__":
 # "http://fr.wikipedia.org/wiki/Karim_Benzema",
 
 # MUSICIENS:
+#"http://fr.wikipedia.org/wiki/Taylor_Swift",
 
 # AUTEUR :
 #"http://fr.wikipedia.org/wiki/Akira_Toriyama",
 
 # ACTEURS:
 #"http://fr.wikipedia.org/wiki/Will_Smith",
+#"http://fr.wikipedia.org/wiki/Gad_Elmaleh",
+
 
 #SCIENTIFIQUES:
 #"http://fr.wikipedia.org/wiki/Albert_Einstein",
 #"http://fr.wikipedia.org/wiki/Marie_Curie",
 #"http://fr.wikipedia.org/wiki/Léonard_de_Vinci",
+#"http://fr.wikipedia.org/wiki/Isaac_Newton",
 
 # POLITIQUES:
 #"http://fr.wikipedia.org/wiki/Emmanuel_Macron",
-
+#"http://fr.wikipedia.org/wiki/Adolf_Hitler",
 
 ##########################################
 #     LISTE DES PERONNES A AJOUTÉES :    #
 ##########################################
 
-#"http://fr.wikipedia.org/wiki/Mohamed_Ali",
-#"http://fr.wikipedia.org/wiki/Kameto",
-#"http://fr.wikipedia.org/wiki/Michou_(vidéaste)",
-#"http://fr.wikipedia.org/wiki/Travis_Scott",
 #"http://fr.wikipedia.org/wiki/Anyme023",
 #"http://fr.wikipedia.org/wiki/Elon_Musk",
 #"http://fr.wikipedia.org/wiki/Jeff_Bezos",
