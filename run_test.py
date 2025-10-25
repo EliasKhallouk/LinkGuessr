@@ -112,15 +112,20 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
 if __name__ == "__main__":
     start_urls = [
-        "http://fr.wikipedia.org/wiki/Mark_Zuckerberg",
-        "http://fr.wikipedia.org/wiki/Steve_Jobs",
-        "http://fr.wikipedia.org/wiki/Beyoncé",
-        "http://fr.wikipedia.org/wiki/Rihanna",
-        "http://fr.wikipedia.org/wiki/Kanye_West",
-        "http://fr.wikipedia.org/wiki/Drake_(rappeur)",
-        "http://fr.wikipedia.org/wiki/Donald_Trump",
-        "http://fr.wikipedia.org/wiki/Barack_Obama",
-        "http://fr.wikipedia.org/wiki/Daft_Punk",
+       "https://en.wikipedia.org/wiki/Charlie_Kirk",
+       "https://fr.wikipedia.org/wiki/Jordan_Bardella",
+       "https://fr.wikipedia.org/wiki/Gabriel_Attal",
+       "https://fr.wikipedia.org/wiki/Jean-Luc_Mélenchon",
+       "https://fr.wikipedia.org/wiki/Michel_Barnier",
+       "https://fr.wikipedia.org/wiki/François_Hollande",
+       "https://fr.wikipedia.org/wiki/Kylian_Mbappé",
+       "https://fr.wikipedia.org/wiki/Cristiano_Ronaldo",
+       "https://fr.wikipedia.org/wiki/Edwy_Plenel",
+       "https://fr.wikipedia.org/wiki/Fabrice_Arfi",
+       "https://fr.wikipedia.org/wiki/Jean-Pierre_Elkabbach",
+       "https://fr.wikipedia.org/wiki/Alain_Duhamel",
+       "https://fr.wikipedia.org/wiki/Candace_Owens",
+       "https://fr.wikipedia.org/wiki/Lamine_Yamal",
     ]
 
     t0 = time.time()
@@ -151,6 +156,7 @@ if __name__ == "__main__":
 # "http://fr.wikipedia.org/wiki/Kameto",
 # "http://fr.wikipedia.org/wiki/Michou_(vidéaste)",
 # "http://fr.wikipedia.org/wiki/Anyme023",
+
 # SPORTIFS:
 # "http://fr.wikipedia.org/wiki/Karim_Benzema",
 # "http://fr.wikipedia.org/wiki/Mohamed_Ali",
@@ -158,6 +164,11 @@ if __name__ == "__main__":
 # MUSICIENS:
 # "http://fr.wikipedia.org/wiki/Taylor_Swift",
 # "http://fr.wikipedia.org/wiki/Travis_Scott",
+# "http://fr.wikipedia.org/wiki/Beyoncé",
+# "http://fr.wikipedia.org/wiki/Rihanna",
+# "http://fr.wikipedia.org/wiki/Kanye_West",
+# "http://fr.wikipedia.org/wiki/Drake_(rappeur)",
+# "http://fr.wikipedia.org/wiki/Daft_Punk",
 
 # AUTEUR :
 # "http://fr.wikipedia.org/wiki/Akira_Toriyama",
@@ -176,11 +187,15 @@ if __name__ == "__main__":
 # POLITIQUES:
 # "http://fr.wikipedia.org/wiki/Emmanuel_Macron",
 # "http://fr.wikipedia.org/wiki/Adolf_Hitler",
+# "http://fr.wikipedia.org/wiki/Donald_Trump",
+# "http://fr.wikipedia.org/wiki/Barack_Obama",
 
 # MILLIONAIRES TECH:
-#"http://fr.wikipedia.org/wiki/Elon_Musk",
-#"http://fr.wikipedia.org/wiki/Jeff_Bezos",
-#"http://fr.wikipedia.org/wiki/Bill_Gates",
+# "http://fr.wikipedia.org/wiki/Elon_Musk",
+# "http://fr.wikipedia.org/wiki/Jeff_Bezos",
+# "http://fr.wikipedia.org/wiki/Bill_Gates",
+# "http://fr.wikipedia.org/wiki/Mark_Zuckerberg",
+# "http://fr.wikipedia.org/wiki/Steve_Jobs",
 
 ##########################################
 #     LISTE DES PERONNES A AJOUTÉES :    #
