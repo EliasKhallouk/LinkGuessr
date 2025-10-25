@@ -89,7 +89,7 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0):
     pbar.close()
 
 if __name__ == "__main__":
-    start_url = "http://fr.wikipedia.org/wiki/Karim_Benzema"
+    start_url = "http://fr.wikipedia.org/wiki/Squeezie"
     t0 = time.time()
     crawl_person(start_url, max_depth=2)
     print(f"Exploration complète en {time.time() - t0:.2f}s ✅")

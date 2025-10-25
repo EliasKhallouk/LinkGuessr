@@ -17,13 +17,15 @@ Depuis la racine du projet:
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Installer les dépendances du backend
-pip install -r backend/requirements.txt
+# Installer les dépendances du projet (backend + outils de scraping)
+pip install -r requirements.txt
 ```
 
-Le fichier `backend/requirements.txt` inclut fastapi, uvicorn, neo4j, python-dotenv, pydantic.
+Le fichier `requirements.txt` de la racine inclut:
+- un include de `backend/requirements.txt` (FastAPI, Uvicorn, Neo4j, python-dotenv, pydantic)
+- les dépendances pour les scripts de scraping: `requests`, `beautifulsoup4`, `tqdm` (optionnel)
 
-## 3) Variables d'environnement
+## 3) Variables d'environnement (backend)
 
 Le backend lit ses variables depuis l'environnement (via `python-dotenv`). Créez un fichier `.env` à la racine du projet (même dossier que `backend/`):
 
@@ -42,6 +44,7 @@ LEADERBOARD_NAME_MAX_LENGTH=16
 ```
 
 Adaptez `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` à votre instance Neo4j.
+Si vous utilisez Neo4j Aura, privilégiez un URI sécurisé (`neo4j+s://` ou `bolt+s://`).
 
 ## 4) Lancer en développement (local)
 
@@ -184,7 +187,11 @@ npm install
 npm start
 ```
 
-Configurez l'URL de l'API si nécessaire dans le code frontend (`http://127.0.0.1:8000`).
+Configuration de l'URL de l'API:
+
+- Le frontend lit `REACT_APP_API_BASE_URL` (ex: `http://127.0.0.1:8000`).
+- Définissez-la dans `frontend/.env` ou utilisez un symlink depuis la racine.
+- Par défaut, le code utilise `http://127.0.0.1:8000` si aucune variable n'est fournie.
 
 ## 10) Déploiement sur Render.com
 
@@ -281,6 +288,56 @@ services:
 
 Commitez `render.yaml`, puis « New ➜ Blueprint » sur Render et pointez vers le repo.
 
+---
+
+## 11) Exécuter le script de scraping (run_test.py)
+
+Ce script explore des pages Wikipédia pour alimenter Neo4j. Il nécessite les mêmes variables `.env` que le backend (URI, USER, PASSWORD).
+
+Étapes:
+
+```bash
+# Depuis la racine du projet
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Vérifiez votre .env (à la racine)
+# NEO4J_URI=neo4j+s://xxx.databases.neo4j.io
+# NEO4J_USER=neo4j
+# NEO4J_PASSWORD=...
+
+# Lancer le scraping (exemple)
+python run_test.py
+```
+
+Notes:
+- Le script utilise `tqdm` pour afficher la progression si installé (sinon il s'exécute sans barre de progression).
+- Les relations insérées suivent le modèle attendu par l'API: nœuds `(:Person {name})` et liens `[:CONNAIT]`.
+- Les noms sont extraits proprement depuis l'URL Wikipédia (`.../wiki/Titre` ➜ `Titre`).
+
+---
+
+## 12) Démarrer l'ensemble du projet de A à Z (récapitulatif)
+
+1) Cloner le dépôt et se placer à la racine
+2) Créer et activer un venv
+3) Installer les dépendances de la racine: `pip install -r requirements.txt`
+4) Configurer `.env` (Neo4j)
+5) Démarrer le backend: `uvicorn backend.main:app --reload`
+6) (Optionnel) Lancer le scraping: `python run_test.py`
+7) Démarrer le frontend:
+    ```bash
+    cd frontend
+    npm install
+    npm start
+    ```
+8) (Optionnel) Configurer l'URL API du frontend
+    - `frontend/.env` ➜ `REACT_APP_API_BASE_URL=http://127.0.0.1:8000`
+    - ou symlink: `ln -s ../.env frontend/.env`
+
+Le site sera disponible sur `http://localhost:3000`, l'API sur `http://127.0.0.1:8000`.
+
 
 lancer scraping :(.venv) elias@hp-info-01:~/PROJECT/LinkGuessr$ /home/elias/PROJECT/LinkGuessr/.venv/bin/python /home/elias/PROJECT/LinkGuessr/run_test.py
 
@@ -306,4 +363,4 @@ A Faire :
         - kameto 
         - Squeezie
         
-    - Rajouter l'option anglais ou francais
+    - affiché un tableau avec les demande de chemin les plus demander

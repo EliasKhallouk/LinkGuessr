@@ -1,0 +1,10 @@
+# Root requirements (backend + scraping utilities)
+# This includes the backend deps via an include, plus extras for run_test.py
+-r backend/requirements.txt
+
+# Extras used by run_test.py, Scraping.py, TypeOfPage.py
+beautifulsoup4>=4.12.3
+requests>=2.31.0
+# Optional but recommended to see progress bars in console
+# The code gracefully degrades if tqdm is missing
+tqdm>=4.66.0
