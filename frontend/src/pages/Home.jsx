@@ -2,7 +2,6 @@ import AdSlot from "../components/AdSlot";
 import Game from "../components/Game";
 import GuessRelations from "../components/GuessRelations";
 import Leaderboard from "../components/Leaderboard";
-import PlayfulDemo from "../components/PlayfulDemo";
 import Tabs from "../components/Tabs";
 import { useI18n } from "../i18n/I18nProvider";
 
@@ -18,7 +17,6 @@ export default function Home() {
               <>
                 <GuessRelations />
                 <Leaderboard />
-                <PlayfulDemo />
               </>
             ) },
           ]}
