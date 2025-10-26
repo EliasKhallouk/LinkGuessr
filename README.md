@@ -363,6 +363,7 @@ To Do :
 
     - peut etre rajouter les personnage de manga (verifier si c'est bien détecter en personne (Q5))
         - les mélangé avec le reste de la BDD (les personnes réel)
+        - faire personnage de série ( nul un peut ils se connait que entre série)
     - nouveau jeux:
         affiché un chemin, cacher une personne au hasar et lui demander de trouver c'est qui
 

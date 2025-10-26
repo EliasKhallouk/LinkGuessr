@@ -2,7 +2,7 @@ import time
 import os
 from urllib.parse import unquote
 from Scraping import get_wikipedia_links, filter_links_by_person
-from TypeOfPage import detect_wikipedia_entity_type
+from TypeOfPage import detect_wikipedia_entity_type, classify_person
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
 """Ajout d'une barre de progression console (tqdm) avec repli gracieux.
@@ -41,6 +41,22 @@ def ensure_person_node(tx, person_name):
     tx.run("""
         MERGE (b:Person {name: $person_name})
     """, person_name=person_name)
+
+def upsert_person_metadata(tx, node_name, categories):
+    """Ajoute ou met à jour les métadonnées d'une personne.
+
+    - node_name: identifiant unique utilisé dans le graphe (slug wiki avec underscores)
+    - display_name: libellé humain (avec espaces/accents) issu de Wikidata
+    - categories: liste[str] (categorie_generale)
+    """
+    tx.run(
+        """
+        MERGE (p:Person {name: $name})
+        SET p.categorie_generale = $categories
+        """,
+        name=node_name,
+        categories=categories,
+    )
 
 def get_person_name_from_url(url):
     """Convertit une URL Wikipedia en nom propre proprement formaté"""
@@ -92,6 +108,19 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
         current_is_person = False
 
     with driver.session() as session:
+        # Si le courant est une personne, classifier et insérer ses métadonnées
+        if current_is_person:
+            classification = classify_person(url)
+            if classification:
+                try:
+                    session.execute_write(
+                        upsert_person_metadata,
+                        main_name,  # MERGE par slug/underscore
+                        classification.get("categorie_generale", []),
+                    )
+                except Exception:
+                    pass
+
         if current_is_person:
             # le courant est une PERSONNE: relier courant -> personnes trouvées (N+1)
             for link in people:
@@ -99,12 +128,34 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
                 if person_name == main_name:
                     continue
                 session.execute_write(add_person_with_relation, main_name, person_name)
+                # Tenter de classifier les enfants directs (utile pour remplir la BDD)
+                try:
+                    child_cls = classify_person(link)
+                    if child_cls:
+                        session.execute_write(
+                            upsert_person_metadata,
+                            person_name,  # MERGE par slug/underscore
+                            child_cls.get("categorie_generale", []),
+                        )
+                except Exception:
+                    pass
         else:
             # le courant n'est PAS une personne (ex: série): ne PAS créer de nœud courant
             # mais on crée les nœuds enfants (personnes N+1) sans relation depuis le courant
             for link in people:
                 person_name = get_person_name_from_url(link)
                 session.execute_write(ensure_person_node, person_name)
+                # Classifier et stocker leurs métadonnées également
+                try:
+                    child_cls = classify_person(link)
+                    if child_cls:
+                        session.execute_write(
+                            upsert_person_metadata,
+                            person_name,  # MERGE par slug/underscore
+                            child_cls.get("categorie_generale", []),
+                        )
+                except Exception:
+                    pass
 
     # récursion sur les personnes trouvées (on passe l'URL d'origine de la personne)
     # Exploration récursive des personnes trouvées avec barre de progression
@@ -130,8 +181,7 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
 if __name__ == "__main__":
     start_urls = [
-        "https://fr.wikipedia.org/wiki/XXXTentacion",
-        "https://fr.wikipedia.org/wiki/Validé"
+        "https://fr.wikipedia.org/wiki/Emmanuel_Macron",
     ]
 
     t0 = time.time()
@@ -144,7 +194,7 @@ if __name__ == "__main__":
         print("\n" + "=" * 60)
         print(f"🚀 Démarrage racine: {racine_nom} | URL: {url}")
         print("=" * 60)
-        crawl_person(url, max_depth=2, visited=visited_global, chain=[])
+        crawl_person(url, max_depth=1, visited=visited_global, chain=[])
 
     elapsed = int(time.time() - t0)
     hrs, rem = divmod(elapsed, 3600)
@@ -188,6 +238,7 @@ if __name__ == "__main__":
 # "https://fr.wikipedia.org/wiki/Aya_Nakamura",
 # "https://fr.wikipedia.org/wiki/Bob_Marley",
 # "https://fr.wikipedia.org/wiki/Michael_Jackson",
+# "https://fr.wikipedia.org/wiki/XXXTentacion",
 
 # AUTEUR :
 # "http://fr.wikipedia.org/wiki/Akira_Toriyama",
@@ -236,6 +287,10 @@ if __name__ == "__main__":
 # HISTORIQUES:
 # "https://fr.wikipedia.org/wiki/Napoléon_Ier",
 # "http://fr.wikipedia.org/wiki/Adolf_Hitler",
+
+# PAGE:
+# "https://fr.wikipedia.org/wiki/Validé",
+
 
 ##########################################
 #     LISTE DES PERONNES A AJOUTÉES :    #
