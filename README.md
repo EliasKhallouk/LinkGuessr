@@ -366,4 +366,7 @@ To Do :
     - nouveau jeux:
         affiché un chemin, cacher une personne au hasar et lui demander de trouver c'est qui
 
+    - verifié si mon scrap re-check des page deja consulter
+    
+
 

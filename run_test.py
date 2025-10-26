@@ -112,20 +112,20 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
 if __name__ == "__main__":
     start_urls = [
-       "https://en.wikipedia.org/wiki/Charlie_Kirk",
-       "https://fr.wikipedia.org/wiki/Jordan_Bardella",
-       "https://fr.wikipedia.org/wiki/Gabriel_Attal",
-       "https://fr.wikipedia.org/wiki/Jean-Luc_Mélenchon",
-       "https://fr.wikipedia.org/wiki/Michel_Barnier",
-       "https://fr.wikipedia.org/wiki/François_Hollande",
-       "https://fr.wikipedia.org/wiki/Kylian_Mbappé",
-       "https://fr.wikipedia.org/wiki/Cristiano_Ronaldo",
-       "https://fr.wikipedia.org/wiki/Edwy_Plenel",
-       "https://fr.wikipedia.org/wiki/Fabrice_Arfi",
-       "https://fr.wikipedia.org/wiki/Jean-Pierre_Elkabbach",
-       "https://fr.wikipedia.org/wiki/Alain_Duhamel",
-       "https://fr.wikipedia.org/wiki/Candace_Owens",
-       "https://fr.wikipedia.org/wiki/Lamine_Yamal",
+        "https://fr.wikipedia.org/wiki/Amélie_Nothomb",
+        "https://fr.wikipedia.org/wiki/Teddy_Riner",
+        "https://fr.wikipedia.org/wiki/François_Bayrou",
+        "https://fr.wikipedia.org/wiki/Sébastien_Lecornu",
+        "https://fr.wikipedia.org/wiki/Jean_Castex",
+        "https://fr.wikipedia.org/wiki/Léon_Marchand",
+        "https://fr.wikipedia.org/wiki/Napoléon_Ier",
+        "https://fr.wikipedia.org/wiki/Lionel_Messi",
+        "https://fr.wikipedia.org/wiki/Aya_Nakamura",
+        "https://fr.wikipedia.org/wiki/Bob_Marley",
+        "https://fr.wikipedia.org/wiki/Stephen_Hawking",
+        "https://fr.wikipedia.org/wiki/Michael_Jordan",
+        "https://fr.wikipedia.org/wiki/Michael_Jackson",
+        "https://fr.wikipedia.org/wiki/Leonardo_DiCaprio",
     ]
 
     t0 = time.time()
@@ -140,7 +140,10 @@ if __name__ == "__main__":
         print("=" * 60)
         crawl_person(url, max_depth=2, visited=visited_global, chain=[])
 
-    print(f"Exploration complète en {time.time() - t0:.2f}s ✅")
+    elapsed = int(time.time() - t0)
+    hrs, rem = divmod(elapsed, 3600)
+    mins, secs = divmod(rem, 60)
+    print(f"Exploration complète en {hrs:02d}:{mins:02d}:{secs:02d} ✅")
 
 
 
@@ -160,6 +163,9 @@ if __name__ == "__main__":
 # SPORTIFS:
 # "http://fr.wikipedia.org/wiki/Karim_Benzema",
 # "http://fr.wikipedia.org/wiki/Mohamed_Ali",
+# "https://fr.wikipedia.org/wiki/Lamine_Yamal",
+# "https://fr.wikipedia.org/wiki/Kylian_Mbappé",
+# "https://fr.wikipedia.org/wiki/Cristiano_Ronaldo",
 
 # MUSICIENS:
 # "http://fr.wikipedia.org/wiki/Taylor_Swift",
@@ -189,6 +195,11 @@ if __name__ == "__main__":
 # "http://fr.wikipedia.org/wiki/Adolf_Hitler",
 # "http://fr.wikipedia.org/wiki/Donald_Trump",
 # "http://fr.wikipedia.org/wiki/Barack_Obama",
+# "https://fr.wikipedia.org/wiki/Jordan_Bardella",
+# "https://fr.wikipedia.org/wiki/Gabriel_Attal",
+# "https://fr.wikipedia.org/wiki/Jean-Luc_Mélenchon",
+# "https://fr.wikipedia.org/wiki/Michel_Barnier",
+# "https://fr.wikipedia.org/wiki/François_Hollande",
 
 # MILLIONAIRES TECH:
 # "http://fr.wikipedia.org/wiki/Elon_Musk",
@@ -196,6 +207,14 @@ if __name__ == "__main__":
 # "http://fr.wikipedia.org/wiki/Bill_Gates",
 # "http://fr.wikipedia.org/wiki/Mark_Zuckerberg",
 # "http://fr.wikipedia.org/wiki/Steve_Jobs",
+
+# JOURNALISTES:
+# "https://en.wikipedia.org/wiki/Charlie_Kirk",
+# "https://fr.wikipedia.org/wiki/Edwy_Plenel",
+# "https://fr.wikipedia.org/wiki/Fabrice_Arfi",
+# "https://fr.wikipedia.org/wiki/Jean-Pierre_Elkabbach",
+# "https://fr.wikipedia.org/wiki/Alain_Duhamel",
+# "https://fr.wikipedia.org/wiki/Candace_Owens",       
 
 ##########################################
 #     LISTE DES PERONNES A AJOUTÉES :    #
