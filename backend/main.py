@@ -270,28 +270,49 @@ def challenge(max_retries: int = Query(5, ge=1, le=50)):
 
 
 @app.get("/search_people")
-def F(q: str = Query(..., min_length=1, max_length=64), limit: int = Query(8, ge=1, le=50)):
+def search_people(q: str = Query(..., min_length=1, max_length=64), limit: int = Query(8, ge=1, le=50)):
     """Recherche des personnes par nom avec correspondance partielle (insensible à la casse).
 
     - Autorise la saisie avec espaces alors que la BDD a des underscores.
     - Retourne jusqu'à `limit` résultats sous forme de liste de labels exacts (tels que stockés en BDD).
     """
-    # Préparer deux variantes de la requête: avec espaces et avec underscores
+    # Préparer variantes normalisées (sans accents) côté Python
+    def _norm(s: str) -> str:
+        s = (s or "").strip()
+        # ligatures -> ASCII
+        s = s.replace("œ", "oe").replace("æ", "ae")
+        # remove diacritics
+        s = unicodedata.normalize("NFKD", s)
+        s = "".join(ch for ch in s if not unicodedata.combining(ch))
+        return s.lower()
+
     q_clean = (q or "").strip()
     if not q_clean:
         return {"results": []}
-    q_space = q_clean
-    q_unders = q_clean.replace(" ", "_")
+    q_space_norm = _norm(q_clean.replace("_", " "))
+    q_unders_norm = _norm(q_clean.replace(" ", "_"))
 
+    # Normaliser aussi côté Cypher sans APOC (remplacements explicites courants)
     cypher = """
     MATCH (p:Person)
-    WHERE toLower(p.name) CONTAINS toLower($qUnders)
-       OR toLower(replace(p.name, '_', ' ')) CONTAINS toLower($qSpace)
+    WITH p,
+        toLower(p.name) AS raw_u,
+        toLower(replace(p.name, '_', ' ')) AS raw_s
+    WITH p,
+        replace(replace(raw_u, 'œ','oe'),'æ','ae') AS u1,
+        replace(replace(raw_s, 'œ','oe'),'æ','ae') AS s1
+    WITH p,
+        // Remplacements d'accents fréquents (fr)
+        replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(u1,
+         'é','e'),'è','e'),'ê','e'),'ë','e'),'á','a'),'à','a'),'â','a'),'ä','a'),'î','i'),'ï','i'),'ô','o'),'ö','o'),'ù','u'),'û','u'),'ü','u'),'ç','c'),'ñ','n') AS norm_u,
+        replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(s1,
+         'é','e'),'è','e'),'ê','e'),'ë','e'),'á','a'),'à','a'),'â','a'),'ä','a'),'î','i'),'ï','i'),'ô','o'),'ö','o'),'ù','u'),'û','u'),'ü','u'),'ç','c'),'ñ','n') AS norm_s
+    WHERE norm_u CONTAINS $qUndersNorm OR norm_s CONTAINS $qSpaceNorm
     RETURN p.name AS name
     ORDER BY size(p.name) ASC
     LIMIT $limit
     """
     with driver.session() as session:
-        res = session.run(cypher, qUnders=q_unders, qSpace=q_space, limit=limit)
+        res = session.run(cypher, qUndersNorm=q_unders_norm, qSpaceNorm=q_space_norm, limit=limit)
         names = [r["name"] for r in res]
         return {"results": names}
