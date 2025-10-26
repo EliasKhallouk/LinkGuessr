@@ -4,13 +4,13 @@ import { useI18n } from "../i18n/I18nProvider";
 
 export default function GuessRelations() {
   const { t } = useI18n();
-  const [people, setPeople] = useState([]);
   const [p1, setP1] = useState(null); // DB label
   const [p2, setP2] = useState(null); // DB label
   const [guess, setGuess] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [outcome, setOutcome] = useState(null); // { actual: number, chemin: string[], correct: boolean }
+  const [prefetchedAnswer, setPrefetchedAnswer] = useState(null); // { actual, chemin } pré-calculé et caché
 
   // Game session state
   const GAME_DURATION = 60; // seconds
@@ -36,15 +36,6 @@ export default function GuessRelations() {
 
   const getWikiUrl = (label) => `https://fr.wikipedia.org/wiki/${encodeURIComponent(label || "")}`;
 
-  useEffect(() => {
-    fetch(apiUrl("/graph"))
-      .then((res) => res.json())
-      .then((data) => {
-        const labels = data.nodes.map((n) => n.label);
-        setPeople(labels);
-      })
-    .catch(() => setError(t("guess.errorLoadPeople")));
-  }, []);
 
   // Countdown timer effect
   useEffect(() => {
@@ -86,29 +77,34 @@ export default function GuessRelations() {
     }
   }, [answered, p1, p2]);
 
-  const newChallenge = () => {
+  const newChallenge = async () => {
     setError(null);
     setOutcome(null);
+    setPrefetchedAnswer(null);
     setGuess("");
     setAnswered(false);
-    if (people.length < 2) return;
-    const i1 = Math.floor(Math.random() * people.length);
-    let i2 = Math.floor(Math.random() * people.length);
-    // ensure different
-    if (i2 === i1) {
-      i2 = (i2 + 1) % people.length;
+    try {
+      const res = await fetch(apiUrl(`/challenge`));
+      if (!res.ok) throw new Error("challenge");
+      const data = await res.json();
+      if (!data || !data.p1 || !data.p2) throw new Error("challenge");
+      setP1(data.p1);
+      setP2(data.p2);
+      // Pré-calcul: garder la réponse en cache mais ne pas l'afficher avant validation
+      if (typeof data.nb_relations === "number") {
+        setPrefetchedAnswer({ actual: data.nb_relations, chemin: Array.isArray(data.chemin) ? data.chemin : [] });
+      }
+    } catch (e) {
+      setError(t("guess.errorLoadPeople"));
     }
-    setP1(people[i1]);
-    setP2(people[i2]);
   };
 
-  // Start a challenge when people are loaded
+  // Start a challenge once mounted
   useEffect(() => {
-    if (people.length >= 2 && (p1 == null || p2 == null)) {
-      newChallenge();
-    }
+    // Always fetch a first challenge on mount
+    newChallenge();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [people]);
+  }, []);
 
   const canSubmit = useMemo(() => {
     const n = Number(guess);
@@ -122,10 +118,14 @@ export default function GuessRelations() {
     setError(null);
     setOutcome(null);
     try {
-      const res = await fetch(
-        apiUrl(`/shortest_path?person1=${encodeURIComponent(p1)}&person2=${encodeURIComponent(p2)}`)
-      );
-      const data = await res.json();
+      // Si la réponse est pré-calculée depuis /challenge, évite un aller-retour
+      let data = prefetchedAnswer ? { nb_relations: prefetchedAnswer.actual, chemin: prefetchedAnswer.chemin } : null;
+      if (!data) {
+        const res = await fetch(
+          apiUrl(`/shortest_path?person1=${encodeURIComponent(p1)}&person2=${encodeURIComponent(p2)}`)
+        );
+        data = await res.json();
+      }
   if (data && typeof data.nb_relations === "number") {
         const actual = data.nb_relations;
         const correct = Number(guess) === actual;
@@ -196,10 +196,10 @@ export default function GuessRelations() {
             </>
           ) : (
             <>
-              <button className="btn" onClick={newChallenge} disabled={people.length < 2 || loading}>
+              <button className="btn" onClick={newChallenge} disabled={loading}>
                 {t("guess.newChallenge")}
               </button>
-              <button className="btn" onClick={startGame} disabled={people.length < 2}>{t("guess.startGame", { seconds: GAME_DURATION })}</button>
+              <button className="btn" onClick={startGame} disabled={loading}>{t("guess.startGame", { seconds: GAME_DURATION })}</button>
             </>
           )}
         </div>

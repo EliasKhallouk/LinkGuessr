@@ -52,7 +52,7 @@ def get_graph():
             nodes_set.add(to_name)
             edges.append({"from": from_name, "to": to_name})
 
-        nodes = [{"id": name, "label": name} for name in nodes_set]
+        nodes = [{"id": name} for name in nodes_set]
         return {"nodes": nodes, "edges": edges}
 
 #############################
@@ -215,3 +215,55 @@ def shortest_path(person1: str = Query(...), person2: str = Query(...)):
             return {"nb_relations": record["nb_relations"], "chemin": record["chemin"]}
         else:
             return {"nb_relations": None, "chemin": []}
+
+
+@app.get("/challenge")
+def challenge(max_retries: int = Query(5, ge=1, le=50)):
+    """Retourne un défi: deux personnes aléatoires et le plus court chemin entre elles.
+
+    Essaie jusqu'à max_retries paires pour trouver une paire connectée. En cas d'échec,
+    renvoie la dernière paire tirée avec nb_relations=None.
+    """
+    last_pair = (None, None)
+    last_res = {"nb_relations": None, "chemin": []}
+    with driver.session() as session:
+        for _ in range(max_retries):
+            rec = session.run(
+                """
+                MATCH (p:Person)
+                WITH p ORDER BY rand() LIMIT 2
+                RETURN collect(p.name) AS names
+                """
+            ).single()
+            if not rec:
+                continue
+            names = rec.get("names") or []
+            if len(names) < 2:
+                continue
+            p1, p2 = names[0], names[1]
+            if not p1 or not p2 or p1 == p2:
+                continue
+            last_pair = (p1, p2)
+            sp = session.run(
+                """
+                MATCH p = shortestPath((a:Person {name: $p1})-[:CONNAIT*]-(b:Person {name: $p2}))
+                RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin
+                """,
+                p1=p1, p2=p2,
+            ).single()
+            if sp and sp.get("nb_relations") is not None:
+                return {
+                    "p1": p1,
+                    "p2": p2,
+                    "nb_relations": sp["nb_relations"],
+                    "chemin": sp["chemin"],
+                }
+            else:
+                last_res = {"nb_relations": None, "chemin": []}
+    # fallback: dernière paire tirée si aucune connectée trouvée
+    p1, p2 = last_pair
+    return {
+        "p1": p1,
+        "p2": p2,
+        **last_res,
+    }

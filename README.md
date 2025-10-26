@@ -361,13 +361,13 @@ To Do :
     - mettre des themes
         - exemple une partie avec que des sportif (ou que des polititiens)
 
-    - peut etre rajouter les personnage de manga (verifier si c'est bien détecter en personne (Q5))
-        - les mélangé avec le reste de la BDD (les personnes réel)
-        - faire personnage de série ( nul un peut ils se connait que entre série)
+    
     - nouveau jeux:
         affiché un chemin, cacher une personne au hasar et lui demander de trouver c'est qui
 
     - verifié si mon scrap re-check des page deja consulter
+    - ne pas redemander au back le json de tout le monde a chaque fois 
+    
     
 
 
