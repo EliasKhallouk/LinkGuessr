@@ -267,3 +267,31 @@ def challenge(max_retries: int = Query(5, ge=1, le=50)):
         "p2": p2,
         **last_res,
     }
+
+
+@app.get("/search_people")
+def F(q: str = Query(..., min_length=1, max_length=64), limit: int = Query(8, ge=1, le=50)):
+    """Recherche des personnes par nom avec correspondance partielle (insensible à la casse).
+
+    - Autorise la saisie avec espaces alors que la BDD a des underscores.
+    - Retourne jusqu'à `limit` résultats sous forme de liste de labels exacts (tels que stockés en BDD).
+    """
+    # Préparer deux variantes de la requête: avec espaces et avec underscores
+    q_clean = (q or "").strip()
+    if not q_clean:
+        return {"results": []}
+    q_space = q_clean
+    q_unders = q_clean.replace(" ", "_")
+
+    cypher = """
+    MATCH (p:Person)
+    WHERE toLower(p.name) CONTAINS toLower($qUnders)
+       OR toLower(replace(p.name, '_', ' ')) CONTAINS toLower($qSpace)
+    RETURN p.name AS name
+    ORDER BY size(p.name) ASC
+    LIMIT $limit
+    """
+    with driver.session() as session:
+        res = session.run(cypher, qUnders=q_unders, qSpace=q_space, limit=limit)
+        names = [r["name"] for r in res]
+        return {"results": names}

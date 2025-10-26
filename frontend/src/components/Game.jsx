@@ -1,36 +1,41 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { apiUrl } from "../config";
 import { useI18n } from "../i18n/I18nProvider";
 import Autocomplete from "./Autocomplete";
 
 export default function Game() {
   const { t } = useI18n();
-  const [people, setPeople] = useState([]);
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Canonicalize a display value to a DB key (lowercase + underscores)
-  const canonicalize = (s) => (s || "").toString().trim().toLowerCase().replace(/\s+/g, "_");
+  // With server-backed autocomplete and raw selection, values should already be exact DB labels
+  const resolveDbLabel = (input) => (input || "").toString().trim() || null;
 
-  // Map from canonical key to the exact DB label as returned by the backend
-  const canonicalToDb = useMemo(() => {
-    const m = new Map();
-    for (const label of people) {
-      m.set(canonicalize(label), label);
+  // Resolve to the exact DB label by querying the backend search
+  const resolveLabelFromDb = async (input) => {
+    const qs = (input || "").trim();
+    if (!qs) return null;
+    try {
+      const res = await fetch(apiUrl(`/search_people?q=${encodeURIComponent(qs)}&limit=8`));
+      if (!res.ok) return null;
+      const data = await res.json();
+      const results = Array.isArray(data.results) ? data.results : [];
+      if (!results.length) return null;
+      const qLower = qs.toLowerCase();
+      const exact = results.find((r) =>
+        r.toLowerCase() === qLower || r.replace(/_/g, " ").toLowerCase() === qLower
+      );
+      return exact || results[0];
+    } catch {
+      return null;
     }
-    return m;
-  }, [people]);
-
-  const resolveDbLabel = (input) => {
-    const key = canonicalize(input);
-    return canonicalToDb.get(key) || null;
   };
 
   const isValid = !!resolveDbLabel(p1) && !!resolveDbLabel(p2);
-  const isSamePerson = !!p1 && !!p2 && canonicalize(p1) === canonicalize(p2);
+  const isSamePerson = !!p1 && !!p2 && p1.trim().toLowerCase() === p2.trim().toLowerCase();
 
   // helper to title-case and prettify node labels
   const formatNode = (label) =>
@@ -43,13 +48,19 @@ export default function Game() {
   // helper to build FR Wikipedia URL from a raw label
   const getWikiUrl = (label) => `https://fr.wikipedia.org/wiki/${encodeURIComponent(label || "")}`;
 
-  useEffect(() => {
-    fetch(apiUrl("/graph"))
-      .then(res => res.json())
-      .then(data => {
-        setPeople(data.nodes.map(n => n.label));
-      });
-  }, []);
+  // Server-backed search for autocomplete suggestions
+  const queryPeople = async (q) => {
+    const qs = (q || "").trim();
+    if (!qs) return [];
+    try {
+      const res = await fetch(apiUrl(`/search_people?q=${encodeURIComponent(qs)}&limit=8`));
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data.results) ? data.results : [];
+    } catch {
+      return [];
+    }
+  };
 
   const handleGuess = async () => {
     setLoading(true);
@@ -60,8 +71,8 @@ export default function Game() {
         setLoading(false);
         return;
       }
-      const dbP1 = resolveDbLabel(p1);
-      const dbP2 = resolveDbLabel(p2);
+      const dbP1 = await resolveLabelFromDb(p1);
+      const dbP2 = await resolveLabelFromDb(p2);
       if (!dbP1 || !dbP2) {
         setError(t("game.errorUnknown"));
         setLoading(false);
@@ -88,20 +99,24 @@ export default function Game() {
               <Autocomplete
                 id="ac-person-1"
                 label={t("game.person1")}
-                options={people}
+                options={[]}
                 value={p1}
                 onChange={setP1}
                 placeholder={t("game.typeName")}
+                onQuery={queryPeople}
+                useRawOnSelect
               />
             </div>
             <div>
               <Autocomplete
                 id="ac-person-2"
                 label={t("game.person2")}
-                options={people}
+                options={[]}
                 value={p2}
                 onChange={setP2}
                 placeholder={t("game.typeName")}
+                onQuery={queryPeople}
+                useRawOnSelect
               />
             </div>
           </div>

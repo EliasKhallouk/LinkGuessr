@@ -7,13 +7,20 @@ export default function Autocomplete({
   placeholder = "",
   id,
   label,
+  onQuery, // optional async(query) -> Promise<string[]> to override suggestions
+  useRawOnSelect = false, // when true, write back the raw option value instead of prettified display
 }) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [remoteOptions, setRemoteOptions] = useState(null); // null=use local options; array=server suggestions
+  const [pending, setPending] = useState(false);
   const inputRef = useRef(null);
   const listId = id ? `${id}-listbox` : undefined;
 
   const suggestions = useMemo(() => {
+    if (Array.isArray(remoteOptions)) {
+      return remoteOptions.slice(0, 8);
+    }
     // normalize: lower, remove diacritics, replace ligatures, remove punctuation, collapse spaces
     const strip = (s) => {
       const str = (s || "").toString();
@@ -58,8 +65,28 @@ export default function Autocomplete({
   }, [open, suggestions.length]);
 
   const handleInputChange = (e) => {
-    onChange?.(e.target.value);
+    const v = e.target.value;
+    onChange?.(v);
     setOpen(true);
+    // If server-backed search is provided, debounce and fetch
+    if (onQuery) {
+      setPending(true);
+      // small debounce
+      clearTimeout(handleInputChange._t);
+      handleInputChange._t = setTimeout(async () => {
+        try {
+          const res = await onQuery(v);
+          if (Array.isArray(res)) setRemoteOptions(res);
+          else setRemoteOptions([]);
+        } catch {
+          setRemoteOptions([]);
+        } finally {
+          setPending(false);
+        }
+      }, 150);
+    } else {
+      setRemoteOptions(null);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -79,8 +106,8 @@ export default function Autocomplete({
       case "Enter":
         if (open && activeIndex >= 0 && suggestions[activeIndex]) {
           e.preventDefault();
-          // write back a prettified (spaces) version for display
-          onChange?.(formatNode(suggestions[activeIndex]));
+          const chosen = suggestions[activeIndex];
+          onChange?.(useRawOnSelect ? chosen : formatNode(chosen));
           setOpen(false);
         }
         break;
@@ -93,8 +120,7 @@ export default function Autocomplete({
   };
 
   const handleSelect = (option) => {
-    // write back a prettified (spaces) version for display
-    onChange?.(formatNode(option));
+    onChange?.(useRawOnSelect ? option : formatNode(option));
     setOpen(false);
     // focus back to input for continuity
     requestAnimationFrame(() => inputRef.current?.focus());
@@ -120,7 +146,7 @@ export default function Autocomplete({
         id={id}
         ref={inputRef}
         type="text"
-        value={value}
+        value={useRawOnSelect ? formatNode(value) : value}
         onChange={handleInputChange}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
@@ -151,6 +177,9 @@ export default function Autocomplete({
             </li>
           ))}
         </ul>
+      )}
+      {open && pending && (
+        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{"Recherche..."}</div>
       )}
     </div>
   );
