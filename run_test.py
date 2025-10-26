@@ -2,6 +2,7 @@ import time
 import os
 from urllib.parse import unquote
 from Scraping import get_wikipedia_links, filter_links_by_person
+from TypeOfPage import detect_wikipedia_entity_type
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
 """Ajout d'une barre de progression console (tqdm) avec repli gracieux.
@@ -35,6 +36,11 @@ def add_person_with_relation(tx, main_name, person_name):
         MERGE (b:Person {name: $person_name})
         MERGE (a)-[:CONNAIT]->(b)
     """, main_name=main_name, person_name=person_name)
+
+def ensure_person_node(tx, person_name):
+    tx.run("""
+        MERGE (b:Person {name: $person_name})
+    """, person_name=person_name)
 
 def get_person_name_from_url(url):
     """Convertit une URL Wikipedia en nom propre proprement formaté"""
@@ -79,14 +85,26 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
     people = filter_links_by_person(links, max_workers=20, show_progress=False, position=None)
     if depth == 1:
         print(f"📎 {len(people)} personnes trouvées sur: {main_name}")
-    # Ajout des relations avec barre de progression
+    # Ajout des relations ou des nœuds selon le type du courant (personne ou non)
+    try:
+        current_is_person = detect_wikipedia_entity_type(url)
+    except Exception:
+        current_is_person = False
+
     with driver.session() as session:
-        for link in people:
-            person_name = get_person_name_from_url(link)
-            # éviter la relation vers soi-même
-            if person_name == main_name:
-                continue
-            session.execute_write(add_person_with_relation, main_name, person_name)
+        if current_is_person:
+            # le courant est une PERSONNE: relier courant -> personnes trouvées (N+1)
+            for link in people:
+                person_name = get_person_name_from_url(link)
+                if person_name == main_name:
+                    continue
+                session.execute_write(add_person_with_relation, main_name, person_name)
+        else:
+            # le courant n'est PAS une personne (ex: série): ne PAS créer de nœud courant
+            # mais on crée les nœuds enfants (personnes N+1) sans relation depuis le courant
+            for link in people:
+                person_name = get_person_name_from_url(link)
+                session.execute_write(ensure_person_node, person_name)
 
     # récursion sur les personnes trouvées (on passe l'URL d'origine de la personne)
     # Exploration récursive des personnes trouvées avec barre de progression
@@ -112,20 +130,8 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
 if __name__ == "__main__":
     start_urls = [
-        "https://fr.wikipedia.org/wiki/Amélie_Nothomb",
-        "https://fr.wikipedia.org/wiki/Teddy_Riner",
-        "https://fr.wikipedia.org/wiki/François_Bayrou",
-        "https://fr.wikipedia.org/wiki/Sébastien_Lecornu",
-        "https://fr.wikipedia.org/wiki/Jean_Castex",
-        "https://fr.wikipedia.org/wiki/Léon_Marchand",
-        "https://fr.wikipedia.org/wiki/Napoléon_Ier",
-        "https://fr.wikipedia.org/wiki/Lionel_Messi",
-        "https://fr.wikipedia.org/wiki/Aya_Nakamura",
-        "https://fr.wikipedia.org/wiki/Bob_Marley",
-        "https://fr.wikipedia.org/wiki/Stephen_Hawking",
-        "https://fr.wikipedia.org/wiki/Michael_Jordan",
-        "https://fr.wikipedia.org/wiki/Michael_Jackson",
-        "https://fr.wikipedia.org/wiki/Leonardo_DiCaprio",
+        "https://fr.wikipedia.org/wiki/XXXTentacion",
+        "https://fr.wikipedia.org/wiki/Validé"
     ]
 
     t0 = time.time()
@@ -166,6 +172,10 @@ if __name__ == "__main__":
 # "https://fr.wikipedia.org/wiki/Lamine_Yamal",
 # "https://fr.wikipedia.org/wiki/Kylian_Mbappé",
 # "https://fr.wikipedia.org/wiki/Cristiano_Ronaldo",
+# "https://fr.wikipedia.org/wiki/Teddy_Riner",
+# "https://fr.wikipedia.org/wiki/Léon_Marchand",
+# "https://fr.wikipedia.org/wiki/Lionel_Messi",
+# "https://fr.wikipedia.org/wiki/Michael_Jordan",
 
 # MUSICIENS:
 # "http://fr.wikipedia.org/wiki/Taylor_Swift",
@@ -175,6 +185,9 @@ if __name__ == "__main__":
 # "http://fr.wikipedia.org/wiki/Kanye_West",
 # "http://fr.wikipedia.org/wiki/Drake_(rappeur)",
 # "http://fr.wikipedia.org/wiki/Daft_Punk",
+# "https://fr.wikipedia.org/wiki/Aya_Nakamura",
+# "https://fr.wikipedia.org/wiki/Bob_Marley",
+# "https://fr.wikipedia.org/wiki/Michael_Jackson",
 
 # AUTEUR :
 # "http://fr.wikipedia.org/wiki/Akira_Toriyama",
@@ -182,17 +195,17 @@ if __name__ == "__main__":
 # ACTEURS:
 # "http://fr.wikipedia.org/wiki/Will_Smith",
 # "http://fr.wikipedia.org/wiki/Gad_Elmaleh",
-
+# "https://fr.wikipedia.org/wiki/Leonardo_DiCaprio",
 
 # SCIENTIFIQUES:
 # "http://fr.wikipedia.org/wiki/Albert_Einstein",
 # "http://fr.wikipedia.org/wiki/Marie_Curie",
 # "http://fr.wikipedia.org/wiki/Léonard_de_Vinci",
 # "http://fr.wikipedia.org/wiki/Isaac_Newton",
+# "https://fr.wikipedia.org/wiki/Stephen_Hawking",
 
 # POLITIQUES:
 # "http://fr.wikipedia.org/wiki/Emmanuel_Macron",
-# "http://fr.wikipedia.org/wiki/Adolf_Hitler",
 # "http://fr.wikipedia.org/wiki/Donald_Trump",
 # "http://fr.wikipedia.org/wiki/Barack_Obama",
 # "https://fr.wikipedia.org/wiki/Jordan_Bardella",
@@ -200,6 +213,9 @@ if __name__ == "__main__":
 # "https://fr.wikipedia.org/wiki/Jean-Luc_Mélenchon",
 # "https://fr.wikipedia.org/wiki/Michel_Barnier",
 # "https://fr.wikipedia.org/wiki/François_Hollande",
+# "https://fr.wikipedia.org/wiki/François_Bayrou",
+# "https://fr.wikipedia.org/wiki/Sébastien_Lecornu",
+# "https://fr.wikipedia.org/wiki/Jean_Castex",
 
 # MILLIONAIRES TECH:
 # "http://fr.wikipedia.org/wiki/Elon_Musk",
@@ -215,6 +231,11 @@ if __name__ == "__main__":
 # "https://fr.wikipedia.org/wiki/Jean-Pierre_Elkabbach",
 # "https://fr.wikipedia.org/wiki/Alain_Duhamel",
 # "https://fr.wikipedia.org/wiki/Candace_Owens",       
+# "https://fr.wikipedia.org/wiki/Amélie_Nothomb",
+
+# HISTORIQUES:
+# "https://fr.wikipedia.org/wiki/Napoléon_Ier",
+# "http://fr.wikipedia.org/wiki/Adolf_Hitler",
 
 ##########################################
 #     LISTE DES PERONNES A AJOUTÉES :    #
