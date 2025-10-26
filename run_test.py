@@ -237,7 +237,7 @@ if __name__ == "__main__":
         print("\n" + "=" * 60)
         print(f"🚀 Démarrage racine: {racine_nom} | URL: {url}")
         print("=" * 60)
-        crawl_person(url, max_depth=1, visited=visited_global, chain=[])
+        crawl_person(url, max_depth=2, visited=visited_global, chain=[])
 
     elapsed = int(time.time() - t0)
     hrs, rem = divmod(elapsed, 3600)
