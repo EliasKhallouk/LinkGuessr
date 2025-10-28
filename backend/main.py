@@ -12,6 +12,7 @@ import time
 import threading
 import unicodedata
 import re
+import random
 
 from dotenv import load_dotenv
 
@@ -316,3 +317,95 @@ def search_people(q: str = Query(..., min_length=1, max_length=64), limit: int =
         res = session.run(cypher, qUndersNorm=q_unders_norm, qSpaceNorm=q_space_norm, limit=limit)
         names = [r["name"] for r in res]
         return {"results": names}
+
+
+@app.get("/random_path")
+def random_path(max_retries: int = Query(30, ge=1, le=200), min_edges: int = Query(2, ge=1, le=50)):
+    """Retourne un chemin aléatoire (chemin le plus court entre deux personnes aléatoires)
+    et un index masqué au hasard (pas les extrémités si possible).
+
+    - min_edges: nombre minimal d'arêtes (relations), par défaut 2 => au moins 3 personnes dans le chemin.
+    """
+    last = None
+    with driver.session() as session:
+        for _ in range(max_retries):
+            rec = session.run(
+                """
+                MATCH (p:Person)
+                WITH p ORDER BY rand() LIMIT 2
+                RETURN collect(p.name) AS names
+                """
+            ).single()
+            if not rec:
+                continue
+            names = rec.get("names") or []
+            if len(names) < 2:
+                continue
+            a, b = names[0], names[1]
+            if not a or not b or a == b:
+                continue
+            sp = session.run(
+                """
+                MATCH p = shortestPath((a:Person {name: $a})-[:CONNAIT*]-(b:Person {name: $b}))
+                RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin
+                """,
+                a=a, b=b,
+            ).single()
+            if not sp:
+                continue
+            nb = sp.get("nb_relations")
+            chemin = sp.get("chemin") or []
+            if nb is None or not chemin:
+                continue
+            last = {"nb_relations": nb, "chemin": chemin}
+            if nb >= min_edges and len(chemin) >= (min_edges + 1):
+                # choisir un index à masquer, idéalement pas les extrémités
+                if len(chemin) >= 3:
+                    idx = random.randint(1, len(chemin) - 2)
+                else:
+                    idx = 0  # fallback si seulement 2 noeuds (devrait être exclu par min_edges)
+                # Récupérer les catégories du noeud masqué (si présentes)
+                cat_rec = session.run(
+                    """
+                    MATCH (p:Person {name: $ans})
+                    RETURN p.categorie_generale AS categories
+                    """,
+                    ans=chemin[idx],
+                ).single()
+                categories = []
+                if cat_rec is not None:
+                    c = cat_rec.get("categories")
+                    if isinstance(c, list):
+                        categories = c
+                return {
+                    "chemin": chemin,
+                    "masked_index": idx,
+                    "answer": chemin[idx],
+                    "categories": categories,
+                }
+    # fallback: retourner le dernier chemin trouvé même s'il est court
+    if last:
+        chemin = last["chemin"]
+        idx = 0 if len(chemin) == 1 else min(1, len(chemin) - 1)
+        # récupérer catégories en fallback aussi
+        cat_rec = None
+        if chemin:
+            cat_rec = session.run(
+                """
+                MATCH (p:Person {name: $ans})
+                RETURN p.categorie_generale AS categories
+                """,
+                ans=chemin[idx],
+            ).single()
+        categories = []
+        if cat_rec is not None:
+            c = cat_rec.get("categories")
+            if isinstance(c, list):
+                categories = c
+        return {
+            "chemin": chemin,
+            "masked_index": idx,
+            "answer": chemin[idx] if chemin else None,
+            "categories": categories,
+        }
+    return {"chemin": [], "masked_index": None, "answer": None, "categories": []}
