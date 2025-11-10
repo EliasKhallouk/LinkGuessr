@@ -409,3 +409,45 @@ def random_path(max_retries: int = Query(30, ge=1, le=200), min_edges: int = Que
             "categories": categories,
         }
     return {"chemin": [], "masked_index": None, "answer": None, "categories": []}
+
+@app.get("/top_degree")
+def top_degree(limit: int = Query(10, ge=1, le=100), direction: str = Query("both", regex="^(out|in|both)$")):
+    """Retourne les top-K personnes par nombre de relations directes (N+1).
+
+    - direction: 'out' compte (p)-[:CONNAIT]->(q)
+                 'in'  compte (q)-[:CONNAIT]->(p)
+                 'both' compte les deux directions (UNION distinct)
+    """
+    if direction == "out":
+        cypher = """
+        MATCH (p:Person)-[:CONNAIT]->(q:Person)
+        RETURN p.name AS name, count(DISTINCT q) AS degree
+        ORDER BY degree DESC
+        LIMIT $limit
+        """
+    elif direction == "in":
+        cypher = """
+        MATCH (p:Person)<-[:CONNAIT]-(q:Person)
+        RETURN p.name AS name, count(DISTINCT q) AS degree
+        ORDER BY degree DESC
+        LIMIT $limit
+        """
+    elif direction == "both":
+        cypher = """
+        MATCH (p:Person)-[:CONNAIT]-(other:Person)
+        RETURN p.name AS name, COUNT(DISTINCT other) AS degree
+        ORDER BY degree DESC
+        LIMIT $limit
+        """
+
+
+    with driver.session() as session:
+        res = session.run(cypher, limit=limit)
+        rows = []
+        for r in res:
+            rows.append({
+                "name": r.get("name"),
+                "degree": int(r.get("degree", 0))
+            })
+
+    return {"results": rows}

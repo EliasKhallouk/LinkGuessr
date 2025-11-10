@@ -13,6 +13,7 @@ export default function GuessWhoPath() {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null); // { correct: boolean }
   const [hints, setHints] = useState({ tries: 0, showLen: false, showFirstLen: false, showCategory: false, categories: [] });
+  const [topList, setTopList] = useState([]);
   const inputRef = useRef(null);
 
   const formatNode = (label) =>
@@ -51,6 +52,23 @@ export default function GuessWhoPath() {
 
   useEffect(() => { fetchChallenge(); }, []);
 
+  useEffect(() => {
+    // fetch top-degree leaderboard
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch(apiUrl('/top_degree?limit=10'));
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!mounted) return;
+        if (data && Array.isArray(data.results)) setTopList(data.results);
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   // Server-backed search for suggestions
   const queryPeople = async (q) => {
     const qs = (q || "").trim();
@@ -81,6 +99,7 @@ export default function GuessWhoPath() {
   };
 
   return (
+    <>
     <section className="panel fade-in">
       <div className="panel-header">
         <span className="panel-title">Devine la personne cachée</span>
@@ -167,9 +186,44 @@ export default function GuessWhoPath() {
                 </div>
               </div>
             )}
+            {/* topList panel moved below the main panel to keep UI consistent */}
           </>
         )}
       </div>
     </section>
+    {topList && topList.length > 0 && (
+      <section className="panel fade-in" style={{ marginTop: 12 }}>
+        <div className="panel-header">
+          <span className="panel-title">Top personnes (N+1 relations)</span>
+        </div>
+        <div className="panel-body">
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: "var(--muted)" }}>
+                  <th style={{ padding: "8px" }}>#</th>
+                  <th style={{ padding: "8px" }}>Personne</th>
+                  <th style={{ padding: "8px" }}>Relations</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topList.map((r, i) => (
+                  <tr key={`${r.name}-${i}`} style={{ borderTop: "1px solid var(--border)" }}>
+                    <td style={{ padding: "8px", width: 36 }}>{i + 1}</td>
+                    <td style={{ padding: "8px" }}>
+                      <a className="chemin-link" href={`https://fr.wikipedia.org/wiki/${encodeURIComponent(r.name)}`} target="_blank" rel="noopener noreferrer">
+                        { (r.name || '').toString().replaceAll('_', ' ') }
+                      </a>
+                    </td>
+                    <td style={{ padding: "8px", width: 80, textAlign: 'right' }}><strong>{r.degree}</strong></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    )}
+    </>
   );
 }
