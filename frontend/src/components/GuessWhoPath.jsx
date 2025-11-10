@@ -153,9 +153,15 @@ export default function GuessWhoPath() {
                       )}
                     </div>
                   )}
-                  {!result.correct && answer && hints.tries >= 4 && (
+                  {/* Show the answer as a clickable Wikipedia link when the user is correct
+                      or after 4 failed attempts. */}
+                  {result && (result.correct || (!result.correct && answer && hints.tries >= 4)) && answer && (
                     <p className="muted" style={{ marginTop: 6 }}>
-                      Réponse: <strong>{formatNode(answer)}</strong>
+                      Réponse: <strong>
+                        <a href={`https://fr.wikipedia.org/wiki/${encodeURIComponent(answer)}`} target="_blank" rel="noopener noreferrer" className="chemin-link">
+                          {formatNode(answer)}
+                        </a>
+                      </strong>
                     </p>
                   )}
                 </div>
