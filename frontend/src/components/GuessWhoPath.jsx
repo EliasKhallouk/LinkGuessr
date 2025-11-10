@@ -194,7 +194,7 @@ export default function GuessWhoPath() {
     {topList && topList.length > 0 && (
       <section className="panel fade-in" style={{ marginTop: 12 }}>
         <div className="panel-header">
-          <span className="panel-title">Top personnes (N+1 relations)</span>
+          <span className="panel-title">Top personnes qui ont le + de relations</span>
         </div>
         <div className="panel-body">
           <div style={{ overflowX: "auto" }}>
