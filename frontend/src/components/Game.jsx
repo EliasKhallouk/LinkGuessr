@@ -11,6 +11,8 @@ export default function Game() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [popularPairs, setPopularPairs] = useState([]);
+  const [ppPeriod, setPpPeriod] = useState('7'); // '7', '30', 'all'
+  const [ppLoading, setPpLoading] = useState(false);
 
   // With server-backed autocomplete and raw selection, values should already be exact DB labels
   const resolveDbLabel = (input) => (input || "").toString().trim() || null;
@@ -64,21 +66,21 @@ export default function Game() {
   };
 
   // fetch popular pairs (most requested shortest_path queries)
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await fetch(apiUrl('/popular_pairs?limit=10'));
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!mounted) return;
-        if (data && Array.isArray(data.results)) setPopularPairs(data.results);
-      } catch (e) {
-        // ignore
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
+  const loadPopularPairs = async (period = ppPeriod) => {
+    setPpLoading(true);
+    try {
+      const res = await fetch(apiUrl(`/popular_pairs?limit=10&period=${encodeURIComponent(period)}`));
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && Array.isArray(data.results)) setPopularPairs(data.results);
+    } catch (e) {
+      // ignore
+    } finally {
+      setPpLoading(false);
+    }
+  };
+
+  useEffect(() => { loadPopularPairs(ppPeriod); }, [ppPeriod]);
 
   const handleGuess = async () => {
     setLoading(true);
@@ -188,6 +190,13 @@ export default function Game() {
       <section className="panel fade-in" style={{ marginTop: 12 }}>
         <div className="panel-header">
           <span className="panel-title">Paires les plus demandées</span>
+          <div style={{ marginLeft: 12 }}>
+            <select value={ppPeriod} onChange={(e) => setPpPeriod(e.target.value)}>
+              <option value="7">7j</option>
+              <option value="30">30j</option>
+              <option value="all">All</option>
+            </select>
+          </div>
         </div>
         <div className="panel-body">
           <div style={{ overflowX: "auto" }}>

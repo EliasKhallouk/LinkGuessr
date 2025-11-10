@@ -69,13 +69,30 @@ NAME_MAX_LEN = int(os.getenv("LEADERBOARD_NAME_MAX_LENGTH", "16"))
 # Popular pairs tracking (most requested shortest_path queries)
 POPULAR_PAIRS_FILE = Path(os.getenv("POPULAR_PAIRS_PATH", "backend/popular_pairs.json"))
 _pp_lock = threading.Lock()
+POPULAR_PAIRS_RETENTION_DAYS = int(os.getenv("POPULAR_PAIRS_RETENTION_DAYS", "365"))
 
 
 def _load_popular_pairs():
     if not POPULAR_PAIRS_FILE.exists():
         return {}
     try:
-        return json.loads(POPULAR_PAIRS_FILE.read_text(encoding="utf-8")) or {}
+        data = json.loads(POPULAR_PAIRS_FILE.read_text(encoding="utf-8")) or {}
+        # Normalize stored values to lists of ints (timestamps)
+        normalized = {}
+        for k, v in (data.items() if isinstance(data, dict) else []):
+            if isinstance(v, list):
+                # keep only integer timestamps
+                normalized[k] = [int(x) for x in v if isinstance(x, (int, float))]
+            elif isinstance(v, int):
+                # legacy: a single integer count; convert to a single synthetic timestamp at file mtime
+                try:
+                    mtime = int(POPULAR_PAIRS_FILE.stat().st_mtime)
+                except Exception:
+                    mtime = int(time.time())
+                normalized[k] = [mtime]
+            else:
+                normalized[k] = []
+        return normalized
     except Exception:
         return {}
 
@@ -83,7 +100,16 @@ def _load_popular_pairs():
 def _save_popular_pairs(d):
     POPULAR_PAIRS_FILE.parent.mkdir(parents=True, exist_ok=True)
     tmp = POPULAR_PAIRS_FILE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    # Ensure JSON serializable (list of ints)
+    safe = {}
+    for k, v in (d.items() if isinstance(d, dict) else []):
+        if isinstance(v, list):
+            safe[k] = [int(x) for x in v]
+        elif isinstance(v, int):
+            safe[k] = [int(v)]
+        else:
+            safe[k] = []
+    tmp.write_text(json.dumps(safe, ensure_ascii=False), encoding="utf-8")
     tmp.replace(POPULAR_PAIRS_FILE)
 
 
@@ -230,16 +256,23 @@ def shortest_path(person1: str = Query(...), person2: str = Query(...)):
     MATCH p = shortestPath((a:Person {name: $person1})-[:CONNAIT*]-(b:Person {name: $person2}))
     RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin 
     """
-    # Log the request to popular_pairs (unordered key) for analytics
+    # Log the request to popular_pairs (unordered key) for analytics as timestamp list
     try:
         a = (person1 or "").strip()
         b = (person2 or "").strip()
         if a and b:
-            # create unordered key so (A,B) == (B,A)
             key = "::".join(sorted([a, b], key=lambda s: s.lower()))
+            ts = int(time.time())
             with _pp_lock:
                 d = _load_popular_pairs()
-                d[key] = d.get(key, 0) + 1
+                lst = d.get(key, [])
+                if not isinstance(lst, list):
+                    lst = []
+                lst.append(ts)
+                # prune entries older than retention (keep only last POPULAR_PAIRS_RETENTION_DAYS days)
+                cutoff = ts - (POPULAR_PAIRS_RETENTION_DAYS * 86400)
+                lst = [int(x) for x in lst if int(x) >= cutoff]
+                d[key] = lst
                 _save_popular_pairs(d)
     except Exception:
         # Don't fail the main request if logging fails
@@ -254,22 +287,30 @@ def shortest_path(person1: str = Query(...), person2: str = Query(...)):
 
 
 @app.get("/popular_pairs")
-def popular_pairs(limit: int = Query(10, ge=1, le=100)):
+def popular_pairs(limit: int = Query(10, ge=1, le=100), period: str = Query("7", regex="^(7|30|all)$")):
     """Retourne les paires (person1, person2) les plus demandées par nombre d'appels à /shortest_path.
 
     Le stockage est simple (fichier JSON) avec clé 'A::B' triée lexicographiquement pour rendre la paire commutative.
     """
+    now_ts = int(time.time())
     with _pp_lock:
         d = _load_popular_pairs()
-        items = sorted(d.items(), key=lambda kv: -kv[1])[:limit]
+        # compute counts within the requested period
+        if period == "all":
+            counts = {k: len(v) for k, v in d.items()}
+        else:
+            days = int(period)
+            cutoff = now_ts - (days * 86400)
+            counts = {k: sum(1 for ts in (v or []) if int(ts) >= cutoff) for k, v in d.items()}
+        items = sorted(counts.items(), key=lambda kv: -kv[1])[:limit]
         results = []
-        for k, count in items:
+        for k, cnt in items:
             try:
                 a, b = k.split("::", 1)
             except Exception:
                 a, b = k, ""
-            results.append({"person1": a, "person2": b, "count": int(count)})
-    return {"results": results}
+            results.append({"person1": a, "person2": b, "count": int(cnt)})
+    return {"results": results, "period": period}
 
 
 @app.get("/challenge")
