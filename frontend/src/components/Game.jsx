@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { apiUrl } from "../config";
 import { useI18n } from "../i18n/I18nProvider";
 import Autocomplete from "./Autocomplete";
@@ -10,6 +10,7 @@ export default function Game() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [popularPairs, setPopularPairs] = useState([]);
 
   // With server-backed autocomplete and raw selection, values should already be exact DB labels
   const resolveDbLabel = (input) => (input || "").toString().trim() || null;
@@ -62,6 +63,23 @@ export default function Game() {
     }
   };
 
+  // fetch popular pairs (most requested shortest_path queries)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch(apiUrl('/popular_pairs?limit=10'));
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!mounted) return;
+        if (data && Array.isArray(data.results)) setPopularPairs(data.results);
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   const handleGuess = async () => {
     setLoading(true);
     setError(null);
@@ -88,6 +106,7 @@ export default function Game() {
   };
 
   return (
+    <>
     <section className="panel fade-in">
       <div className="panel-header">
         <span className="panel-title">{t("game.titlePath")}</span>
@@ -164,6 +183,46 @@ export default function Game() {
           )}
   </form>
       </div>
-    </section>
+  </section>
+    {popularPairs && popularPairs.length > 0 && (
+      <section className="panel fade-in" style={{ marginTop: 12 }}>
+        <div className="panel-header">
+          <span className="panel-title">Paires les plus demandées</span>
+        </div>
+        <div className="panel-body">
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: "var(--muted)" }}>
+                  <th style={{ padding: "8px" }}>#</th>
+                  <th style={{ padding: "8px" }}>Personne A</th>
+                  <th style={{ padding: "8px" }}>Personne B</th>
+                  <th style={{ padding: "8px" }}>Requêtes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {popularPairs.map((r, i) => (
+                  <tr key={`${r.person1}-${r.person2}-${i}`} style={{ borderTop: "1px solid var(--border)" }}>
+                    <td style={{ padding: "8px", width: 36 }}>{i + 1}</td>
+                    <td style={{ padding: "8px" }}>
+                      <a className="chemin-link" href={`https://fr.wikipedia.org/wiki/${encodeURIComponent(r.person1)}`} target="_blank" rel="noopener noreferrer">
+                        { (r.person1 || '').toString().replaceAll('_', ' ') }
+                      </a>
+                    </td>
+                    <td style={{ padding: "8px" }}>
+                      <a className="chemin-link" href={`https://fr.wikipedia.org/wiki/${encodeURIComponent(r.person2)}`} target="_blank" rel="noopener noreferrer">
+                        { (r.person2 || '').toString().replaceAll('_', ' ') }
+                      </a>
+                    </td>
+                    <td style={{ padding: "8px", width: 80, textAlign: 'right' }}><strong>{r.count}</strong></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    )}
+    </>
   );
 }

@@ -353,7 +353,6 @@ To Do :
         - Avec tout les PCC identique
         - Avec Photo
         
-    - affiché un tableau avec les demande de chemin les plus demander
     - ecrire que c'est un liens
     - changer quelque pour pas que les gens passe au hasard
     - mettre un niveau de difficulté
@@ -361,12 +360,7 @@ To Do :
     - mettre des themes
         - exemple une partie avec que des sportif (ou que des polititiens)
 
-    
-    - nouveau jeux:
-        affiché un chemin, cacher une personne au hasar et lui demander de trouver c'est qui
-
     - verifié si mon scrap re-check des page deja consulter
-    - Ajouter un tableau avec les gens qui ont le plus de connexion(n+1)
     
 
 

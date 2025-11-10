@@ -66,6 +66,26 @@ MAX_ENTRIES_PER_NAME = int(os.getenv("LEADERBOARD_MAX_ENTRIES_PER_NAME", "3"))
 MIN_SECONDS_BETWEEN_SUBMITS_PER_NAME = int(os.getenv("LEADERBOARD_MIN_SECONDS_BETWEEN", "10"))
 NAME_MAX_LEN = int(os.getenv("LEADERBOARD_NAME_MAX_LENGTH", "16"))
 
+# Popular pairs tracking (most requested shortest_path queries)
+POPULAR_PAIRS_FILE = Path(os.getenv("POPULAR_PAIRS_PATH", "backend/popular_pairs.json"))
+_pp_lock = threading.Lock()
+
+
+def _load_popular_pairs():
+    if not POPULAR_PAIRS_FILE.exists():
+        return {}
+    try:
+        return json.loads(POPULAR_PAIRS_FILE.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return {}
+
+
+def _save_popular_pairs(d):
+    POPULAR_PAIRS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    tmp = POPULAR_PAIRS_FILE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(POPULAR_PAIRS_FILE)
+
 
 class ScoreSubmission(BaseModel):
     name: str = Field(..., min_length=1, max_length=NAME_MAX_LEN)
@@ -210,12 +230,46 @@ def shortest_path(person1: str = Query(...), person2: str = Query(...)):
     MATCH p = shortestPath((a:Person {name: $person1})-[:CONNAIT*]-(b:Person {name: $person2}))
     RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin 
     """
+    # Log the request to popular_pairs (unordered key) for analytics
+    try:
+        a = (person1 or "").strip()
+        b = (person2 or "").strip()
+        if a and b:
+            # create unordered key so (A,B) == (B,A)
+            key = "::".join(sorted([a, b], key=lambda s: s.lower()))
+            with _pp_lock:
+                d = _load_popular_pairs()
+                d[key] = d.get(key, 0) + 1
+                _save_popular_pairs(d)
+    except Exception:
+        # Don't fail the main request if logging fails
+        pass
+
     with driver.session() as session:
         record = session.run(query, person1=person1, person2=person2).single()
         if record:
             return {"nb_relations": record["nb_relations"], "chemin": record["chemin"]}
         else:
             return {"nb_relations": None, "chemin": []}
+
+
+@app.get("/popular_pairs")
+def popular_pairs(limit: int = Query(10, ge=1, le=100)):
+    """Retourne les paires (person1, person2) les plus demandées par nombre d'appels à /shortest_path.
+
+    Le stockage est simple (fichier JSON) avec clé 'A::B' triée lexicographiquement pour rendre la paire commutative.
+    """
+    with _pp_lock:
+        d = _load_popular_pairs()
+        items = sorted(d.items(), key=lambda kv: -kv[1])[:limit]
+        results = []
+        for k, count in items:
+            try:
+                a, b = k.split("::", 1)
+            except Exception:
+                a, b = k, ""
+            results.append({"person1": a, "person2": b, "count": int(count)})
+    return {"results": results}
 
 
 @app.get("/challenge")
