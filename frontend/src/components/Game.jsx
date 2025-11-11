@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { apiUrl } from "../config";
 import { useI18n } from "../i18n/I18nProvider";
 import Autocomplete from "./Autocomplete";
+import Graph from "./Graph";
 
 export default function Game() {
   const { t } = useI18n();
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
   const [result, setResult] = useState(null);
+  const [graphData, setGraphData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [popularPairs, setPopularPairs] = useState([]);
@@ -65,7 +67,7 @@ export default function Game() {
     }
   };
 
-  // fetch popular pairs (most requested shortest_path queries)
+  // fetch popular pairs (most requested /shortest_paths queries)
   const loadPopularPairs = async (period = ppPeriod) => {
     setPpLoading(true);
     try {
@@ -99,9 +101,54 @@ export default function Game() {
         return;
       }
 
-  const res = await fetch(apiUrl(`/shortest_path?person1=${encodeURIComponent(dbP1)}&person2=${encodeURIComponent(dbP2)}`));
+  const res = await fetch(apiUrl(`/shortest_paths?person1=${encodeURIComponent(dbP1)}&person2=${encodeURIComponent(dbP2)}`));
       const data = await res.json();
-      setResult(data);
+      // normalize response to legacy shape { nb_relations, chemin }
+      if (data && typeof data.nb_relations === 'number') {
+        setResult(data);
+        setGraphData(null);
+      } else if (data && typeof data.min_len === 'number') {
+        // prefer the first chemin if available
+        // build result for legacy UI
+        const chemin0 = Array.isArray(data.chemins) && data.chemins.length ? data.chemins[0].chemin : [];
+        setResult({ nb_relations: data.min_len, chemin: chemin0 });
+
+        // build combined graph for all returned chemins
+        const chemins = Array.isArray(data.chemins) ? data.chemins.map((c) => c.chemin || []) : [];
+        const nodesMap = new Map();
+        const edgesSet = new Map();
+
+        // colors palette for distinct paths
+        const palette = ["#ff6b6b", "#4dabf7", "#ffd43b", "#9b7cff", "#2ecc71", "#f77fbe"];
+
+        chemins.forEach((path, pi) => {
+          const color = palette[pi % palette.length];
+          for (let i = 0; i < path.length; i++) {
+            const id = path[i];
+            if (!nodesMap.has(id)) nodesMap.set(id, { id, label: id.replaceAll("_", " ") });
+            if (i < path.length - 1) {
+              const a = path[i];
+              const b = path[i + 1];
+              const key = `${a}::${b}`;
+              // if same directed edge exists, record multiple path counts/colors by appending path index
+              if (!edgesSet.has(key)) {
+                edgesSet.set(key, { from: a, to: b, color, arrows: "to", width: 2, title: `path#${pi + 1}` });
+              } else {
+                // multiple paths sharing same edge: make it wider and keep existing color
+                const e = edgesSet.get(key);
+                e.width = Math.min(8, (e.width || 2) + 1);
+                e.title = (e.title || "") + `, path#${pi + 1}`;
+              }
+            }
+          }
+        });
+
+        const nodes = Array.from(nodesMap.values()).map((n, idx) => ({ id: n.id, label: n.label, title: n.label }));
+        const edges = Array.from(edgesSet.values()).map((e) => ({ ...e }));
+        setGraphData({ nodes, edges });
+      } else {
+        setResult({ nb_relations: null, chemin: [] });
+      }
     } finally {
       setLoading(false);
     }
@@ -179,6 +226,11 @@ export default function Game() {
                       </span>
                     ))}
                   </p>
+                )}
+                {graphData && (
+                  <div style={{ marginTop: 12 }}>
+                    <Graph nodesData={graphData.nodes} edgesData={graphData.edges} height="360px" title={t("Graphe") || 'Chemins retournés'} />
+                  </div>
                 )}
               </div>
             </div>

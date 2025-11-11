@@ -66,7 +66,7 @@ MAX_ENTRIES_PER_NAME = int(os.getenv("LEADERBOARD_MAX_ENTRIES_PER_NAME", "3"))
 MIN_SECONDS_BETWEEN_SUBMITS_PER_NAME = int(os.getenv("LEADERBOARD_MIN_SECONDS_BETWEEN", "10"))
 NAME_MAX_LEN = int(os.getenv("LEADERBOARD_NAME_MAX_LENGTH", "16"))
 
-# Popular pairs tracking (most requested shortest_path queries)
+# Popular pairs tracking (most requested /shortest_paths queries)
 POPULAR_PAIRS_FILE = Path(os.getenv("POPULAR_PAIRS_PATH", "backend/popular_pairs.json"))
 _pp_lock = threading.Lock()
 POPULAR_PAIRS_RETENTION_DAYS = int(os.getenv("POPULAR_PAIRS_RETENTION_DAYS", "365"))
@@ -242,8 +242,8 @@ def leaderboard(limit: int = Query(10, ge=1, le=500)):
             ],
         }
 
-@app.get("/shortest_path")
-def shortest_path(person1: str = Query(...), person2: str = Query(...)):
+@app.get("/shortest_paths")
+def shortest_paths(person1: str = Query(...), person2: str = Query(...), limit: int = Query(3)):
     if person1.strip().lower() == person2.strip().lower():
         return JSONResponse(
             status_code=400,
@@ -252,11 +252,31 @@ def shortest_path(person1: str = Query(...), person2: str = Query(...)):
                 "message": "Veuillez entrer deux personnes différentes."
             }
         )
-    query = """
+
+    # Étape 1 : trouver la longueur minimale du plus court chemin
+    min_len_query = """
     MATCH p = shortestPath((a:Person {name: $person1})-[:CONNAIT*]-(b:Person {name: $person2}))
-    RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin 
+    RETURN length(p) AS minLen
     """
-    # Log the request to popular_pairs (unordered key) for analytics as timestamp list
+
+    with driver.session() as session:
+        result = session.run(min_len_query, person1=person1, person2=person2).single()
+        if not result or result["minLen"] is None:
+            return {"nb_relations": None, "chemins": []}
+
+        min_len = result["minLen"]
+
+        # Étape 2 : récupérer tous les chemins de cette longueur exacte
+        query_all = """
+        MATCH p = (a:Person {name: $person1})-[:CONNAIT*{min_len}]-(b:Person {name: $person2})
+        WHERE length(p) = $min_len
+        RETURN [n IN nodes(p) | n.name] AS chemin, length(p) AS nb_relations
+        LIMIT $limit
+        """.replace("{min_len}", str(min_len))  # ⚠️ on remplace dans la chaîne (Neo4j ne supporte pas de variable ici)
+
+        records = session.run(query_all, person1=person1, person2=person2, min_len=min_len, limit=limit).data()
+
+    # Log du couple (comme dans ta version d’origine)
     try:
         a = (person1 or "").strip()
         b = (person2 or "").strip()
@@ -269,21 +289,16 @@ def shortest_path(person1: str = Query(...), person2: str = Query(...)):
                 if not isinstance(lst, list):
                     lst = []
                 lst.append(ts)
-                # prune entries older than retention (keep only last POPULAR_PAIRS_RETENTION_DAYS days)
                 cutoff = ts - (POPULAR_PAIRS_RETENTION_DAYS * 86400)
                 lst = [int(x) for x in lst if int(x) >= cutoff]
                 d[key] = lst
                 _save_popular_pairs(d)
     except Exception:
-        # Don't fail the main request if logging fails
         pass
 
-    with driver.session() as session:
-        record = session.run(query, person1=person1, person2=person2).single()
-        if record:
-            return {"nb_relations": record["nb_relations"], "chemin": record["chemin"]}
-        else:
-            return {"nb_relations": None, "chemin": []}
+    # Format de sortie
+    chemins = [{"nb_relations": r["nb_relations"], "chemin": r["chemin"]} for r in records]
+    return {"min_len": min_len, "nb_chemins": len(chemins), "chemins": chemins}
 
 
 @app.get("/popular_pairs")
@@ -291,6 +306,7 @@ def popular_pairs(limit: int = Query(10, ge=1, le=100), period: str = Query("7",
     """Retourne les paires (person1, person2) les plus demandées par nombre d'appels à /shortest_path.
 
     Le stockage est simple (fichier JSON) avec clé 'A::B' triée lexicographiquement pour rendre la paire commutative.
+    (attention: le endpoint principal de chemins s'appelle maintenant `/shortest_paths`).
     """
     now_ts = int(time.time())
     with _pp_lock:

@@ -58,7 +58,7 @@ L'API sera accessible sur `http://127.0.0.1:8000`.
 
 Routes principales:
 - `GET /graph` – retourne la liste des personnes et relations (pour le frontend)
-- `GET /shortest_path?person1=...&person2=...` – plus court chemin + nombre de relations
+- `GET /shortest_paths?person1=...&person2=...` – plus court chemin + nombre de relations (peut retourner plusieurs chemins)
 - `GET /leaderboard` – consulter le classement
 - `POST /submit_score` – enregistrer un score
 

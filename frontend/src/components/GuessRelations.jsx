@@ -122,9 +122,14 @@ export default function GuessRelations() {
       let data = prefetchedAnswer ? { nb_relations: prefetchedAnswer.actual, chemin: prefetchedAnswer.chemin } : null;
       if (!data) {
         const res = await fetch(
-          apiUrl(`/shortest_path?person1=${encodeURIComponent(p1)}&person2=${encodeURIComponent(p2)}`)
+          apiUrl(`/shortest_paths?person1=${encodeURIComponent(p1)}&person2=${encodeURIComponent(p2)}`)
         );
         data = await res.json();
+        // Normalize new shape to legacy { nb_relations, chemin }
+        if (data && typeof data.nb_relations !== 'number' && typeof data.min_len === 'number') {
+          const chemin = Array.isArray(data.chemins) && data.chemins.length ? data.chemins[0].chemin : [];
+          data = { nb_relations: data.min_len, chemin };
+        }
       }
   if (data && typeof data.nb_relations === "number") {
         const actual = data.nb_relations;

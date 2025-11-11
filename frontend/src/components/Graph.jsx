@@ -2,62 +2,100 @@ import { useEffect, useRef, useState } from "react";
 import { DataSet, Network } from "vis-network/standalone";
 import { apiUrl } from "../config";
 
-export default function Graph() {
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const networkRef = useRef(null); // ✅ référence vers le conteneur
+// Graph: can fetch the full graph from backend when no props are provided,
+// or render a supplied graph via `nodesData`/`edgesData` props (used by Game.jsx)
+export default function Graph({ nodesData = null, edgesData = null, height = "480px", title = "Graphe des relations" }) {
+  const [nodes, setNodes] = useState(nodesData || []);
+  const [edges, setEdges] = useState(edgesData || []);
+  const [loading, setLoading] = useState(!nodesData || !edgesData);
+  const networkRef = useRef(null);
+  const networkInstance = useRef(null);
 
   useEffect(() => {
-    // récupérer le graphe depuis le back-end
-      fetch(apiUrl("/graph"))
-      .then(res => res.json())
-      .then(data => {
-        setNodes(data.nodes);
-        setEdges(data.edges);
+    let cancelled = false;
 
-        // ✅ attendre que le DOM soit prêt
-        if (networkRef.current) {
-          const visNodes = new DataSet(data.nodes);
-          const visEdges = new DataSet(data.edges);
+    const build = (nodesArr, edgesArr) => {
+      setNodes(nodesArr || []);
+      setEdges(edgesArr || []);
 
-          const network = new Network(
-            networkRef.current,
-            { nodes: visNodes, edges: visEdges },
-            {
-              physics: { stabilization: true },
-              interaction: { hover: true },
-              nodes: {
-                shape: "dot",
-                size: 14,
-                font: { color: "#fff", size: 14 },
-                borderWidth: 1.5,
-              },
-              edges: {
-                color: { color: "#999", highlight: "#f00" },
-                width: 1.5,
-                smooth: true,
-              },
-            }
-          );
+      if (!networkRef.current) return;
 
-          // ✅ interaction : clic sur un nœud
-          network.on("click", (params) => {
-            if (params.nodes.length > 0) {
-              const nodeId = params.nodes[0];
-              const nodeData = visNodes.get(nodeId);
-              alert(`Vous avez cliqué sur : ${nodeData.label || nodeData.id}`);
-            }
-          });
+      // cleanup previous instance
+      if (networkInstance.current) {
+        try {
+          networkInstance.current.destroy();
+        } catch (e) {
+          // ignore
         }
-      })
-      .finally(() => setLoading(false));
-  }, []);
+        networkInstance.current = null;
+      }
+
+      const visNodes = new DataSet(nodesArr || []);
+      const visEdges = new DataSet(edgesArr || []);
+
+      networkInstance.current = new Network(
+        networkRef.current,
+        { nodes: visNodes, edges: visEdges },
+        {
+          physics: { stabilization: true },
+          interaction: { hover: true, multiselect: false },
+          nodes: {
+            shape: "dot",
+            size: 14,
+            font: { color: "#fff", size: 14 },
+            borderWidth: 1.5,
+          },
+          edges: {
+            color: { color: "#999", highlight: "#f00" },
+            width: 1.5,
+            smooth: true,
+          },
+        }
+      );
+
+      networkInstance.current.on("click", (params) => {
+        if (params.nodes && params.nodes.length > 0) {
+          const nodeId = params.nodes[0];
+          const nodeData = visNodes.get(nodeId);
+          alert(`Vous avez cliqué sur : ${nodeData.label || nodeData.id}`);
+        }
+      });
+    };
+
+    if (nodesData && edgesData) {
+      // render supplied graph
+      build(nodesData, edgesData);
+      setLoading(false);
+    } else {
+      // fetch full graph from backend
+      setLoading(true);
+      fetch(apiUrl("/graph"))
+        .then((res) => res.json())
+        .then((data) => {
+          if (cancelled) return;
+          build(data.nodes || [], data.edges || []);
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }
+
+    return () => {
+      cancelled = true;
+      if (networkInstance.current) {
+        try {
+          networkInstance.current.destroy();
+        } catch (e) {}
+        networkInstance.current = null;
+      }
+    };
+  }, [nodesData, edgesData]);
 
   return (
     <section className="panel fade-in">
       <div className="panel-header">
-        <span className="panel-title">Graphe des relations</span>
+        <span className="panel-title">{title}</span>
         <span className="kpi">Nœuds: {nodes.length} · Liens: {edges.length}</span>
       </div>
       <div className="panel-body" style={{ padding: 0 }}>
@@ -65,10 +103,10 @@ export default function Graph() {
           <div style={{ padding: 16 }} className="muted">Chargement du graphe…</div>
         ) : (
           <div
-            ref={networkRef} // ✅ au lieu d’un id
+            ref={networkRef}
             style={{
-              height: "656px",
-              marginBottom: "8px", 
+              height: height,
+              marginBottom: "8px",
               background: "#111",
               borderRadius: "12px",
               marginTop: "8px",

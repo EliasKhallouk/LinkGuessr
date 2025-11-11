@@ -66,7 +66,7 @@ export default function Game() {
         return;
       }
 
-  const res = await fetch(apiUrl(`/shortest_path?person1=${encodeURIComponent(dbP1)}&person2=${encodeURIComponent(dbP2)}`));
+  const res = await fetch(apiUrl(`/shortest_paths?person1=${encodeURIComponent(dbP1)}&person2=${encodeURIComponent(dbP2)}`));
       const data = await res.json();
       setResult(data);
     } finally {
