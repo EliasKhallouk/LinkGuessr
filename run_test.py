@@ -181,7 +181,7 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
 if __name__ == "__main__":
     start_urls = [
-"http://fr.wikipedia.org/wiki/Karim_Benzema",
+        "https://fr.wikipedia.org/wiki/Travis_Scott",
 
     ]
 
@@ -216,6 +216,7 @@ if __name__ == "__main__":
 # "http://fr.wikipedia.org/wiki/Kameto",
 # "http://fr.wikipedia.org/wiki/Michou_(vidéaste)",
 # "http://fr.wikipedia.org/wiki/Anyme023",
+# "https://fr.wikipedia.org/wiki/MrBeast",
 
 # SPORTIFS:
 # "http://fr.wikipedia.org/wiki/Karim_Benzema",

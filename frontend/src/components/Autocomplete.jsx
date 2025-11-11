@@ -48,7 +48,7 @@ export default function Autocomplete({
         return tokens.every((tok) => cand.includes(tok));
       })
       .slice(0, 8);
-  }, [options, value]);
+  }, [options, value, remoteOptions]);
 
   const formatNode = (label) =>
     (label || "")
@@ -151,8 +151,7 @@ export default function Autocomplete({
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        aria-autocomplete="list"
-        aria-expanded={open}
+  aria-autocomplete="list"
         aria-controls={listId}
         aria-activedescendant={activeIndex >= 0 ? `${listId}-item-${activeIndex}` : undefined}
         // reuse global input styles

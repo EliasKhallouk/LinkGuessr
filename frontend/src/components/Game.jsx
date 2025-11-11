@@ -14,7 +14,7 @@ export default function Game() {
   const [error, setError] = useState(null);
   const [popularPairs, setPopularPairs] = useState([]);
   const [ppPeriod, setPpPeriod] = useState('7'); // '7', '30', 'all'
-  const [ppLoading, setPpLoading] = useState(false);
+  // ppLoading removed (was unused) - keep a local loader inside loadPopularPairs if needed
 
   // With server-backed autocomplete and raw selection, values should already be exact DB labels
   const resolveDbLabel = (input) => (input || "").toString().trim() || null;
@@ -69,7 +69,6 @@ export default function Game() {
 
   // fetch popular pairs (most requested /shortest_paths queries)
   const loadPopularPairs = async (period = ppPeriod) => {
-    setPpLoading(true);
     try {
       const res = await fetch(apiUrl(`/popular_pairs?limit=10&period=${encodeURIComponent(period)}`));
       if (!res.ok) return;
@@ -78,11 +77,14 @@ export default function Game() {
     } catch (e) {
       // ignore
     } finally {
-      setPpLoading(false);
     }
   };
 
-  useEffect(() => { loadPopularPairs(ppPeriod); }, [ppPeriod]);
+  useEffect(() => {
+    // loadPopularPairs is stable here; call when ppPeriod changes
+    loadPopularPairs(ppPeriod);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ppPeriod]);
 
   const handleGuess = async () => {
     setLoading(true);

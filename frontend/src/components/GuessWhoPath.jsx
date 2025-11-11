@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { apiUrl } from "../config";
 import { useI18n } from "../i18n/I18nProvider";
 import Autocomplete from "./Autocomplete";
@@ -21,12 +21,9 @@ export default function GuessWhoPath() {
       .toString()
       .replaceAll("_", " ");
 
-  const maskedPath = useMemo(() => {
-    if (!Array.isArray(path) || maskedIndex == null) return [];
-    return path.map((node, idx) => (idx === maskedIndex ? "?" : formatNode(node)));
-  }, [path, maskedIndex]);
+  // maskedPath removed: we render path inline and apply mask on the fly
 
-  const fetchChallenge = async () => {
+  const fetchChallenge = useCallback(async () => {
     setLoading(true);
     setError(null);
     setResult(null);
@@ -48,9 +45,9 @@ export default function GuessWhoPath() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  useEffect(() => { fetchChallenge(); }, []);
+  useEffect(() => { fetchChallenge(); }, [fetchChallenge]);
 
   useEffect(() => {
     // fetch top-degree leaderboard
@@ -108,6 +105,9 @@ export default function GuessWhoPath() {
         </div>
       </div>
       <div className="panel-body">
+        {error && (
+          <div className="error-box"><p style={{ margin: 0 }}>{error}</p></div>
+        )}
         {(!path || path.length === 0) ? (
           <p className="muted" style={{ margin: 0 }}>{t("guess.loadingPeople")}</p>
         ) : (
