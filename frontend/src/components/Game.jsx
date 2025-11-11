@@ -118,8 +118,18 @@ export default function Game() {
         setLoading(false);
         return;
       }
+      await fetchShortestPaths(dbP1, dbP2);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const res = await fetch(apiUrl(`/shortest_paths?person1=${encodeURIComponent(dbP1)}&person2=${encodeURIComponent(dbP2)}`));
+  // Core fetch logic factored out so callers can pass known DB labels directly
+  const fetchShortestPaths = async (dbP1, dbP2) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(apiUrl(`/shortest_paths?person1=${encodeURIComponent(dbP1)}&person2=${encodeURIComponent(dbP2)}`));
       const data = await res.json();
       // normalize response to legacy shape { nb_relations, chemin }
       if (data && typeof data.nb_relations === 'number') {
@@ -167,6 +177,9 @@ export default function Game() {
       } else {
         setResult({ nb_relations: null, chemin: [] });
       }
+    } catch (e) {
+      // in case server returns an error, show a generic message
+      setError(t("game.errorUnknown"));
     } finally {
       setLoading(false);
     }
@@ -294,6 +307,31 @@ export default function Game() {
                       </a>
                     </td>
                     <td style={{ padding: "8px", width: 80, textAlign: 'right' }}><strong>{r.count}</strong></td>
+                    <td style={{ padding: "8px", width: 120, textAlign: 'right' }}>
+                      <button
+                        className="btn"
+                        onClick={async () => {
+                          // compute db labels directly and call fetchShortestPaths to avoid state-timing issues
+                          const humanP1 = r.person1.replaceAll('_', ' ');
+                          const humanP2 = r.person2.replaceAll('_', ' ');
+                          setP1(humanP1);
+                          setP2(humanP2);
+                          try {
+                            const db1 = await resolveLabelFromDb(humanP1);
+                            const db2 = await resolveLabelFromDb(humanP2);
+                            if (!db1 || !db2) {
+                              setError(t("game.errorUnknown"));
+                              return;
+                            }
+                            await fetchShortestPaths(db1, db2);
+                          } catch (e) {
+                            setError(t("game.errorUnknown"));
+                          }
+                        }}
+                        disabled={loading}
+                        title="Essayer cette paire"
+                      >Essayer</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
