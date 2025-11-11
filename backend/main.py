@@ -13,6 +13,7 @@ import threading
 import unicodedata
 import re
 import random
+import difflib
 
 from dotenv import load_dotenv
 
@@ -382,7 +383,7 @@ def challenge(max_retries: int = Query(5, ge=1, le=50)):
 
 
 @app.get("/search_people")
-def search_people(q: str = Query(..., min_length=1, max_length=64), limit: int = Query(8, ge=1, le=50)):
+def search_people(q: str = Query(..., min_length=1, max_length=64), limit: int = Query(8, ge=1, le=50), fuzzy: int = Query(0, ge=0, le=1)):
     """Recherche des personnes par nom avec correspondance partielle (insensible à la casse).
 
     - Autorise la saisie avec espaces alors que la BDD a des underscores.
@@ -401,11 +402,61 @@ def search_people(q: str = Query(..., min_length=1, max_length=64), limit: int =
     q_clean = (q or "").strip()
     if not q_clean:
         return {"results": []}
-    q_space_norm = _norm(q_clean.replace("_", " "))
-    q_unders_norm = _norm(q_clean.replace(" ", "_"))
 
-    # Normaliser aussi côté Cypher sans APOC (remplacements explicites courants)
-    cypher = """
+    # split into tokens (by whitespace) and normalize each token
+    raw_tokens = [tok for tok in re.split(r"\s+", q_clean) if tok]
+    tokens = [_norm(t) for t in raw_tokens]
+
+    # If fuzzy requested, do a Python-side fuzzy search using difflib over candidate names
+    if fuzzy:
+        # fetch candidate names (limit to a reasonable amount to avoid huge memory use)
+        with driver.session() as session:
+            # try to fetch names that contain the first token letter to reduce scan
+            try:
+                first = raw_tokens[0][:2].lower() if raw_tokens else ''
+                q_cypher = "MATCH (p:Person) WHERE toLower(p.name) CONTAINS $first RETURN p.name AS name"
+                rows = session.run(q_cypher, first=first).data()
+                cand_names = [r['name'] for r in rows]
+            except Exception:
+                rows = session.run("MATCH (p:Person) RETURN p.name AS name LIMIT 10000").data()
+                cand_names = [r['name'] for r in rows]
+
+        # Normalize candidate labels for comparison (underscores -> spaces, remove diacritics)
+        norm_map = {}
+        for name in cand_names:
+            n = _norm(name.replace('_', ' '))
+            norm_map[name] = n
+
+        # Build a search key from the raw query (space-normalized)
+        search_key = _norm(q_clean.replace('_', ' '))
+        # Use difflib to get close matches on the normalized strings
+        choices = list(norm_map.values())
+        matches = difflib.get_close_matches(search_key, choices, n=limit, cutoff=0.5)
+        # Map back to original labels, preserving order and uniqueness
+        result = []
+        for m in matches:
+            for orig, nm in norm_map.items():
+                if nm == m and orig not in result:
+                    result.append(orig)
+                    break
+        return {"results": result}
+
+    # Build dynamic WHERE clause: for each token require it to appear (contains)
+    # or be a prefix of a word in the space-normalized name. All tokens must match (AND).
+    where_parts = []
+    params = {"limit": limit}
+    for i, tok in enumerate(tokens):
+        key = f"t{i}"
+        params[key] = tok
+        # Use CONTAINS on both underscored and space-normalized forms, or STARTS WITH on split words
+        part = f"(norm_u CONTAINS ${key} OR norm_s CONTAINS ${key} OR any(w IN split(norm_s, ' ') WHERE w STARTS WITH ${key}))"
+        where_parts.append(part)
+
+    where_clause = " AND ".join(where_parts) if where_parts else "(norm_u CONTAINS $empty OR norm_s CONTAINS $empty)"
+    # supply an empty param to avoid cypher errors if no tokens
+    params["empty"] = ""
+
+    cypher = f"""
     MATCH (p:Person)
     WITH p,
         toLower(p.name) AS raw_u,
@@ -414,18 +465,18 @@ def search_people(q: str = Query(..., min_length=1, max_length=64), limit: int =
         replace(replace(raw_u, 'œ','oe'),'æ','ae') AS u1,
         replace(replace(raw_s, 'œ','oe'),'æ','ae') AS s1
     WITH p,
-        // Remplacements d'accents fréquents (fr)
         replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(u1,
          'é','e'),'è','e'),'ê','e'),'ë','e'),'á','a'),'à','a'),'â','a'),'ä','a'),'î','i'),'ï','i'),'ô','o'),'ö','o'),'ù','u'),'û','u'),'ü','u'),'ç','c'),'ñ','n') AS norm_u,
         replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(s1,
          'é','e'),'è','e'),'ê','e'),'ë','e'),'á','a'),'à','a'),'â','a'),'ä','a'),'î','i'),'ï','i'),'ô','o'),'ö','o'),'ù','u'),'û','u'),'ü','u'),'ç','c'),'ñ','n') AS norm_s
-    WHERE norm_u CONTAINS $qUndersNorm OR norm_s CONTAINS $qSpaceNorm
+    WHERE {where_clause}
     RETURN p.name AS name
     ORDER BY size(p.name) ASC
     LIMIT $limit
     """
+
     with driver.session() as session:
-        res = session.run(cypher, qUndersNorm=q_unders_norm, qSpaceNorm=q_space_norm, limit=limit)
+        res = session.run(cypher, **params)
         names = [r["name"] for r in res]
         return {"results": names}
 

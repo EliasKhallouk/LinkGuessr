@@ -71,10 +71,18 @@ export default function GuessWhoPath() {
     const qs = (q || "").trim();
     if (!qs) return [];
     try {
-      const res = await fetch(apiUrl(`/search_people?q=${encodeURIComponent(qs)}&limit=8`));
+      let res = await fetch(apiUrl(`/search_people?q=${encodeURIComponent(qs)}&limit=8`));
       if (!res.ok) return [];
-      const data = await res.json();
-      return Array.isArray(data.results) ? data.results : [];
+      let data = await res.json();
+      let results = Array.isArray(data.results) ? data.results : [];
+      if (!results.length) {
+        const r2 = await fetch(apiUrl(`/search_people?q=${encodeURIComponent(qs)}&limit=8&fuzzy=1`));
+        if (r2 && r2.ok) {
+          const d2 = await r2.json();
+          results = Array.isArray(d2.results) ? d2.results : [];
+        }
+      }
+      return results;
     } catch {
       return [];
     }

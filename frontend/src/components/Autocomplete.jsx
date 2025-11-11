@@ -1,4 +1,6 @@
+import Fuse from 'fuse.js';
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from 'react-dom';
 
 export default function Autocomplete({
   options = [],
@@ -18,9 +20,8 @@ export default function Autocomplete({
   const listId = id ? `${id}-listbox` : undefined;
 
   const suggestions = useMemo(() => {
-    if (Array.isArray(remoteOptions)) {
-      return remoteOptions.slice(0, 8);
-    }
+    // Use remoteOptions when available, otherwise local options
+    const source = Array.isArray(remoteOptions) ? remoteOptions : options;
     // normalize: lower, remove diacritics, replace ligatures, remove punctuation, collapse spaces
     const strip = (s) => {
       const str = (s || "").toString();
@@ -38,16 +39,41 @@ export default function Autocomplete({
     };
 
     const q = strip(value);
-    if (!q) return options.slice(0, 8);
+    if (!q) return source.slice(0, 8);
     const tokens = q.split(' ');
-
-    return options
+    const filtered = source
       .filter((o) => {
         const cand = strip(o);
-        // Every token from the query must appear somewhere in the candidate
-        return tokens.every((tok) => cand.includes(tok));
+        // split candidate into words for per-word prefix checks
+        const candWords = (cand || '').split(/\s+/).filter(Boolean);
+        // Every token from the query must match somewhere in the candidate
+        return tokens.every((tok) => {
+          if (!tok) return true;
+          // direct substring match
+          if (cand.includes(tok)) return true;
+          // or token matches the start of any candidate word (prefix match)
+          return candWords.some((w) => w.startsWith(tok));
+        });
       })
       .slice(0, 8);
+
+    // If no strict matches, try a fuzzy search with Fuse.js as a fallback
+    if (filtered.length === 0 && source.length > 0 && q.length >= 2) {
+      try {
+        const fuse = new Fuse(source, {
+          includeScore: true,
+          threshold: 0.4,
+          ignoreLocation: true,
+          minMatchCharLength: 2,
+        });
+        const fuzzy = fuse.search(q).slice(0, 8).map(r => r.item);
+        return fuzzy;
+      } catch (e) {
+        return source.slice(0, 8);
+      }
+    }
+
+    return filtered;
   }, [options, value, remoteOptions]);
 
   const formatNode = (label) =>
@@ -62,6 +88,29 @@ export default function Autocomplete({
     } else if (open && suggestions.length > 0) {
       setActiveIndex(0);
     }
+  }, [open, suggestions.length]);
+
+  // Portal positioning: compute a fixed-positioned box below the input so dropdown
+  // can escape parent overflow:hidden containers.
+  const [portalStyle, setPortalStyle] = useState(null);
+  useEffect(() => {
+    if (!open || suggestions.length === 0) {
+      setPortalStyle(null);
+      return;
+    }
+    const compute = () => {
+      const inp = inputRef.current;
+      if (!inp) return setPortalStyle(null);
+      const r = inp.getBoundingClientRect();
+      const top = r.bottom + window.scrollY + 8; // 8px gap
+      const left = r.left + window.scrollX;
+      const width = r.width;
+      setPortalStyle({ position: 'absolute', top: `${top}px`, left: `${left}px`, width: `${width}px`, zIndex: 9999, maxHeight: '280px', overflow: 'auto' });
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    window.addEventListener('scroll', compute, true);
+    return () => { window.removeEventListener('resize', compute); window.removeEventListener('scroll', compute, true); };
   }, [open, suggestions.length]);
 
   const handleInputChange = (e) => {
@@ -157,8 +206,8 @@ export default function Autocomplete({
         // reuse global input styles
         className="ac-input"
       />
-      {open && suggestions.length > 0 && (
-        <ul className="ac-list" role="listbox" id={listId}>
+      {open && suggestions.length > 0 && portalStyle && createPortal(
+        <ul className="ac-list" role="listbox" id={listId} style={portalStyle}>
           {suggestions.map((opt, idx) => (
             <li
               key={opt}
@@ -175,7 +224,8 @@ export default function Autocomplete({
               {formatNode(opt)}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
       {open && pending && (
         <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{"Recherche..."}</div>

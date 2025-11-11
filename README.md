@@ -361,6 +361,8 @@ To Do :
         - exemple une partie avec que des sportif (ou que des polititiens)
 
     - verifié si mon scrap re-check des page deja consulter
-    
+    - rajouter le nombre de relation dans la bdd. 
+        -plus rapide pour le tableau du top 10
+        - l'autocomplete proposera le plus connu en premier
 
 
