@@ -4,7 +4,7 @@
 // REACT_APP_API_BASE_URL=https://your-backend.example.com
 
 // Heuristic: if no explicit base URL is provided and we're on localhost, default to local FastAPI
-let defaultBase = "https://linkguessr-dpj1.onrender.com/";
+let defaultBase = "https://linkguessr-dpj1.onrender.com";
 try {
   const host = window?.location?.hostname;
   if (host === "localhost" || host === "127.0.0.1") {
