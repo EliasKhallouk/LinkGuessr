@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiUrl } from "../config";
 import { useI18n } from "../i18n/I18nProvider";
 import Autocomplete from "./Autocomplete";
