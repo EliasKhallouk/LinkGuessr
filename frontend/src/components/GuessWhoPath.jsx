@@ -9,6 +9,7 @@ export default function GuessWhoPath() {
   const [maskedIndex, setMaskedIndex] = useState(null);
   const [answer, setAnswer] = useState(null); // correct DB label
   const [guess, setGuess] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null); // { correct: boolean }
@@ -29,7 +30,9 @@ export default function GuessWhoPath() {
     setResult(null);
     setGuess("");
     try {
-      const res = await fetch(apiUrl("/random_path?min_edges=2"));
+      let url = `/random_path?min_edges=2`;
+      if (selectedCategory) url += `&category=${encodeURIComponent(selectedCategory)}`;
+      const res = await fetch(apiUrl(url));
       const data = await res.json();
       if (!data || !Array.isArray(data.chemin) || data.chemin.length < 3 || data.masked_index == null) {
         throw new Error("bad-challenge");
@@ -45,7 +48,7 @@ export default function GuessWhoPath() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, selectedCategory]);
 
   useEffect(() => { fetchChallenge(); }, [fetchChallenge]);
 
@@ -108,8 +111,18 @@ export default function GuessWhoPath() {
     <section className="panel fade-in">
       <div className="panel-header">
         <span className="panel-title">Devine la personne cachée</span>
-        <div>
-          <button className="btn" onClick={fetchChallenge} disabled={loading}>{t("guess.newChallenge")}</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+            <option value="">Toutes catégories</option>
+            <option value="divertissement">divertissement</option>
+            <option value="politique_societe">politique_societe</option>
+            <option value="sciences_savoir">sciences_savoir</option>
+            <option value="entrepreneuriat">entrepreneuriat</option>
+            <option value="sport">sport</option>
+          </select>
+          <div>
+            <button className="btn" onClick={fetchChallenge} disabled={loading}>{t("guess.newChallenge")}</button>
+          </div>
         </div>
       </div>
       <div className="panel-body">

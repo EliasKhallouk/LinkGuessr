@@ -221,9 +221,41 @@ export default function Game() {
           </div>
 
           <div>
-            <button type="submit" className="btn" disabled={!isValid || loading || isSamePerson}>
-              {loading ? t("game.calculating") : t("game.check")}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="submit" className="btn" disabled={!isValid || loading || isSamePerson}>
+                {loading ? t("game.calculating") : t("game.check")}
+              </button>
+              <button type="button" className="btn" disabled={loading} onClick={async () => {
+                // fetch a random path from server and autofill endpoints
+                setLoading(true);
+                setError(null);
+                try {
+                  const res = await fetch(apiUrl('/random_path?min_edges=2'));
+                  if (!res.ok) throw new Error('no-random');
+                  const data = await res.json();
+                  if (!data || !Array.isArray(data.chemin) || data.chemin.length < 2) throw new Error('bad-random');
+                  const a = data.chemin[0];
+                  const b = data.chemin[data.chemin.length - 1];
+                  // fill inputs with human-friendly labels and resolve + display
+                  const humanA = a.replaceAll('_', ' ');
+                  const humanB = b.replaceAll('_', ' ');
+                  setP1(humanA);
+                  setP2(humanB);
+                  // resolve to DB labels and render
+                  const db1 = await resolveLabelFromDb(humanA);
+                  const db2 = await resolveLabelFromDb(humanB);
+                  if (!db1 || !db2) {
+                    setError(t('game.errorUnknown'));
+                  } else {
+                    await fetchShortestPaths(db1, db2);
+                  }
+                } catch (e) {
+                  setError(t('game.errorUnknown'));
+                } finally {
+                  setLoading(false);
+                }
+              }}>Aléatoire</button>
+            </div>
           </div>
 
           {error && (

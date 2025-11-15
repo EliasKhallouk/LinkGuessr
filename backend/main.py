@@ -482,7 +482,12 @@ def search_people(q: str = Query(..., min_length=1, max_length=64), limit: int =
 
 
 @app.get("/random_path")
-def random_path(max_retries: int = Query(30, ge=1, le=200), min_edges: int = Query(2, ge=1, le=50)):
+@app.get("/random_path")
+def random_path(
+    max_retries: int = Query(30, ge=1, le=200),
+    min_edges: int = Query(2, ge=1, le=50),
+    category: Optional[str] = Query(None, description="Optional category filter; nodes must contain this category in p.categorie_generale")
+):
     """Retourne un chemin aléatoire (chemin le plus court entre deux personnes aléatoires)
     et un index masqué au hasard (pas les extrémités si possible).
 
@@ -491,13 +496,24 @@ def random_path(max_retries: int = Query(30, ge=1, le=200), min_edges: int = Que
     last = None
     with driver.session() as session:
         for _ in range(max_retries):
-            rec = session.run(
-                """
-                MATCH (p:Person)
-                WITH p ORDER BY rand() LIMIT 2
-                RETURN collect(p.name) AS names
-                """
-            ).single()
+            # pick two random Person nodes, optionally restricted to the requested category
+            if category:
+                rec = session.run(
+                    """
+                    MATCH (p:Person) WHERE $category IN coalesce(p.categorie_generale, [])
+                    WITH p ORDER BY rand() LIMIT 2
+                    RETURN collect(p.name) AS names
+                    """,
+                    category=category,
+                ).single()
+            else:
+                rec = session.run(
+                    """
+                    MATCH (p:Person)
+                    WITH p ORDER BY rand() LIMIT 2
+                    RETURN collect(p.name) AS names
+                    """,
+                ).single()
             if not rec:
                 continue
             names = rec.get("names") or []
@@ -506,13 +522,24 @@ def random_path(max_retries: int = Query(30, ge=1, le=200), min_edges: int = Que
             a, b = names[0], names[1]
             if not a or not b or a == b:
                 continue
-            sp = session.run(
-                """
-                MATCH p = shortestPath((a:Person {name: $a})-[:CONNAIT*]-(b:Person {name: $b}))
-                RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin
-                """,
-                a=a, b=b,
-            ).single()
+            # When category is specified, require all nodes on the path to have that category
+            if category:
+                sp = session.run(
+                    """
+                    MATCH p = shortestPath((a:Person {name: $a})-[:CONNAIT*]-(b:Person {name: $b}))
+                    WHERE all(n IN nodes(p) WHERE $category IN coalesce(n.categorie_generale, []))
+                    RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin
+                    """,
+                    a=a, b=b, category=category,
+                ).single()
+            else:
+                sp = session.run(
+                    """
+                    MATCH p = shortestPath((a:Person {name: $a})-[:CONNAIT*]-(b:Person {name: $b}))
+                    RETURN length(p) AS nb_relations, [n IN nodes(p) | n.name] AS chemin
+                    """,
+                    a=a, b=b,
+                ).single()
             if not sp:
                 continue
             nb = sp.get("nb_relations")

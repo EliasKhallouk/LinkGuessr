@@ -357,12 +357,11 @@ To Do :
     - changer quelque pour pas que les gens passe au hasard
     - mettre un niveau de difficulté
         - regarder plus ta de personne en relation plus il est simple a trouver
-    - mettre des themes
-        - exemple une partie avec que des sportif (ou que des polititiens)
 
     - verifié si mon scrap re-check des page deja consulter
     - rajouter le nombre de relation dans la bdd. 
         -plus rapide pour le tableau du top 10
         - l'autocomplete proposera le plus connu en premier
+    - rajouter la date de derniere modification dans la bdd comme ca je recheck ceux qui sont trop ancien
 
 
