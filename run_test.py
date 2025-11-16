@@ -181,7 +181,7 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
 if __name__ == "__main__":
     start_urls = [
-        "https://fr.wikipedia.org/wiki/Travis_Scott",
+        "https://fr.wikipedia.org/wiki/Léonard_de_Vinci",
 
     ]
 

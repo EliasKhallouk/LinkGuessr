@@ -640,3 +640,44 @@ def top_degree(limit: int = Query(10, ge=1, le=100), direction: str = Query("bot
             })
 
     return {"results": rows}
+
+
+@app.get("/degree_distribution")
+def degree_distribution():
+    """Return distribution of persons by their degree (number of distinct neighbors).
+
+    Returns: { results: [ { degree: int, persons: int }, ... ] }
+    """
+    cypher = """
+    MATCH (p:Person)
+    OPTIONAL MATCH (p)-[:CONNAIT]-(other:Person)
+    WITH p, COUNT(DISTINCT other) AS deg
+    RETURN deg AS degree, COUNT(*) AS persons
+    ORDER BY degree ASC
+    """
+    with driver.session() as session:
+        res = session.run(cypher)
+        rows = []
+        for r in res:
+            rows.append({"degree": int(r.get("degree", 0)), "persons": int(r.get("persons", 0))})
+    return {"results": rows}
+
+
+@app.get("/category_counts")
+def category_counts():
+    """Return counts of persons per categorie_generale.
+
+    Returns: { results: [ { category: str, persons: int }, ... ] }
+    """
+    cypher = """
+    MATCH (p:Person)
+    UNWIND coalesce(p.categorie_generale, []) AS cat
+    RETURN cat AS category, COUNT(DISTINCT p) AS persons
+    ORDER BY persons DESC
+    """
+    with driver.session() as session:
+        res = session.run(cypher)
+        rows = []
+        for r in res:
+            rows.append({"category": r.get("category"), "persons": int(r.get("persons", 0))})
+    return {"results": rows}

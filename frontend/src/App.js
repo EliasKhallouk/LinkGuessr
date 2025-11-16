@@ -6,6 +6,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Home from "./pages/Home";
 import Privacy from "./pages/Privacy";
+import Stats from "./pages/Stats";
 import "./playful-effects.css";
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
                 <NavLink to="/" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.home")}</NavLink>
                 <NavLink to="/a-propos" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.about")}</NavLink>
                 <NavLink to="/contact" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.contact")}</NavLink>
+                <NavLink to="/stats" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>Stats</NavLink>
                 <NavLink to="/politique-de-confidentialite" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.privacy")}</NavLink>
               </div>
               <hr className="menu-sep" />
@@ -75,6 +77,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/a-propos" element={<About />} />
+  <Route path="/stats" element={<Stats />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/politique-de-confidentialite" element={<Privacy />} />
       </Routes>

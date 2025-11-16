@@ -359,9 +359,15 @@ To Do :
         - regarder plus ta de personne en relation plus il est simple a trouver
 
     - verifié si mon scrap re-check des page deja consulter
-    - rajouter le nombre de relation dans la bdd. 
-        -plus rapide pour le tableau du top 10
-        - l'autocomplete proposera le plus connu en premier
-    - rajouter la date de derniere modification dans la bdd comme ca je recheck ceux qui sont trop ancien
+
+    - rajouter dans BDD
+        - le nombre de relation
+            - plus rapide pour le tableau du top 10
+            - l'autocomplete proposera le plus connu en premier
+        - la date de derniere modification comme ca je recheck ceux qui sont trop ancien
+        - la date de naissance et de mort
+            - si une personne est morte faire une catégorie : historique
+            - si une personne a moins de 25 ans mettre :jeune
+            
 
 
