@@ -681,3 +681,211 @@ def category_counts():
         for r in res:
             rows.append({"category": r.get("category"), "persons": int(r.get("persons", 0))})
     return {"results": rows}
+
+
+@app.get("/domain_heatmap")
+def domain_heatmap(
+    mode: str = Query("counts", regex="^(counts|binary|density|pmi|ratio)$"),
+    exclude_unknown: int = Query(0, ge=0, le=1)
+):
+    """
+    Heatmap des relations entre domaines.
+
+    Modes :
+        - counts : nombre brut de relations
+        - density : count / (sizeA * sizeB)
+        - binary : alias de density
+        - pmi : Pointwise Mutual Information (affinité statistique)
+        - ratio : proportion des relations internes pour chaque domaine
+    """
+
+    # ------------------------------------------------------
+    # 1) Relations groupées par domaine
+    # ------------------------------------------------------
+    cypher_rel = '''
+    MATCH (a:Person)-[r:CONNAIT]-(b:Person)
+    WITH DISTINCT r, a, b,
+        CASE WHEN a.domaine IS NOT NULL THEN [a.domaine]
+             WHEN a.categorie_generale IS NOT NULL THEN coalesce(a.categorie_generale, [])
+             ELSE ['unknown'] END AS domains_a,
+        CASE WHEN b.domaine IS NOT NULL THEN [b.domaine]
+             WHEN b.categorie_generale IS NOT NULL THEN coalesce(b.categorie_generale, [])
+             ELSE ['unknown'] END AS domains_b
+    UNWIND domains_a AS da
+    UNWIND domains_b AS db
+    WITH
+        CASE WHEN da <= db THEN da ELSE db END AS d1,
+        CASE WHEN da <= db THEN db ELSE da END AS d2
+    RETURN d1 AS domain_a, d2 AS domain_b, COUNT(*) AS rels
+    ORDER BY rels DESC
+    '''
+
+    rows = []
+    with driver.session() as session:
+        for rec in session.run(cypher_rel):
+            rows.append({
+                "domain_a": rec["domain_a"] or "unknown",
+                "domain_b": rec["domain_b"] or "unknown",
+                "count": rec["rels"],
+            })
+
+    # Option : ignorer unknown
+    if exclude_unknown:
+        rows = [
+            r for r in rows
+            if r["domain_a"] != "unknown" and r["domain_b"] != "unknown"
+        ]
+
+    # Mode counts → on renvoie direct
+    if mode == "counts":
+        return {"mode": "counts", "results": rows}
+
+    # ------------------------------------------------------
+    # 2) Taille de chaque domaine
+    # ------------------------------------------------------
+    cypher_sizes = '''
+    MATCH (p:Person)
+    WITH p,
+        CASE WHEN p.domaine IS NOT NULL THEN [p.domaine]
+             WHEN p.categorie_generale IS NOT NULL THEN coalesce(p.categorie_generale, [])
+             ELSE ['unknown'] END AS domains
+    UNWIND domains AS d
+    RETURN d AS domain, COUNT(DISTINCT p) AS persons
+    '''
+
+    sizes = {}
+    with driver.session() as session:
+        for rec in session.run(cypher_sizes):
+            sizes[rec["domain"]] = rec["persons"]
+
+    total_persons = sum(sizes.values())
+    total_rels = sum(r["count"] for r in rows)  # pour le PMI
+
+    # ------------------------------------------------------
+    # 3) PRÉPARATION ratio d’interconnexion interne
+    # ------------------------------------------------------
+    # total_rels_by_domain[domaine] = somme des relations impliquant ce domaine
+    total_rels_by_domain = {d: 0 for d in sizes}
+
+    for r in rows:
+        a, b, c = r["domain_a"], r["domain_b"], r["count"]
+        total_rels_by_domain[a] += c
+        if b != a:
+            total_rels_by_domain[b] += c
+
+    # ------------------------------------------------------
+    # 4) Calcul final selon le mode
+    # ------------------------------------------------------
+    results = []
+
+    import math
+
+    for r in rows:
+        a, b = r["domain_a"], r["domain_b"]
+        cnt = r["count"]
+        sa, sb = sizes.get(a, 0), sizes.get(b, 0)
+
+        # Densité
+        denom = sa * sb if sa and sb else 0
+        density = cnt / denom if denom > 0 else 0.0
+
+        # PMI
+        if mode == "pmi":
+            pab = cnt / total_rels if total_rels else 0
+            pa = total_rels_by_domain[a] / total_rels if total_rels else 0
+            pb = total_rels_by_domain[b] / total_rels if total_rels else 0
+
+            if pab > 0 and pa > 0 and pb > 0:
+                pmi = math.log2(pab / (pa * pb))
+            else:
+                pmi = 0.0
+        else:
+            pmi = None
+
+        # Ratio (uniquement si domaine = domaine)
+        if mode == "ratio":
+            if a == b:
+                ratio = cnt / total_rels_by_domain[a] if total_rels_by_domain[a] else 0
+            else:
+                ratio = None
+        else:
+            ratio = None
+
+        results.append({
+            "domain_a": a,
+            "domain_b": b,
+            "count": cnt,
+            "size_a": sa,
+            "size_b": sb,
+            "density": density,
+            "density_pct": round(density * 100, 6),
+            "pmi": round(pmi, 6) if pmi is not None else None,
+            "ratio_internal": round(ratio, 6) if ratio is not None else None,
+        })
+
+    return {
+        "mode": mode,
+        "exclude_unknown": bool(exclude_unknown),
+        "results": results
+    }
+
+
+@app.get("/key_stats")
+def key_stats():
+    """Return key statistics about the graph:
+
+    - total_persons: COUNT(n:Person)
+    - total_relations: COUNT of CONNAIT relationships (undirected count)
+    - average_degree: average number of distinct neighbors per person
+    - max_degree: maximum degree value
+    - top_persons: list of persons having max_degree (name and degree)
+    """
+    # We'll compute: total persons, total relationships (counting each undirected edge once),
+    # degrees per person, average and maximum, and list top persons.
+
+    # Cypher approach:
+    # - COUNT of persons
+    # - COUNT of relationships: count distinct undirected pairs via MATCH ()-[r:CONNAIT]-() RETURN count(r) / 2
+    #   but Neo4j stores each relationship once; matching undirected with -[:CONNAIT]- counts each rel once.
+    # - degree per person: MATCH (p:Person)-[:CONNAIT]-(other:Person) RETURN p.name, count(DISTINCT other) AS deg
+
+    with driver.session() as session:
+        # total persons
+        tp = session.run("MATCH (p:Person) RETURN count(p) AS total").single()
+        total_persons = int(tp["total"] or 0)
+
+        # total relations (undirected). Using MATCH ()-[r:CONNAIT]-() counts each relationship once.
+        tr = session.run("MATCH ()-[r:CONNAIT]-() RETURN count(r) AS total_rels").single()
+        total_relations = int(tr["total_rels"] or 0)
+
+        # degrees per person, compute average and max
+        deg_q = """
+        MATCH (p:Person)
+        OPTIONAL MATCH (p)-[:CONNAIT]-(other:Person)
+        WITH p, COUNT(DISTINCT other) AS deg
+        RETURN avg(deg) AS avg_deg, max(deg) AS max_deg
+        """
+        deg_res = session.run(deg_q).single()
+        avg_deg = float(deg_res["avg_deg"] or 0.0)
+        max_deg = int(deg_res["max_deg"] or 0)
+
+        # Persons with max degree
+        top_persons = []
+        if max_deg > 0:
+            tp_q = """
+            MATCH (p:Person)-[:CONNAIT]-(other:Person)
+            WITH p, COUNT(DISTINCT other) AS deg
+            WHERE deg = $max_deg
+            RETURN p.name AS name, deg
+            ORDER BY p.name ASC
+            """
+            for r in session.run(tp_q, max_deg=max_deg):
+                top_persons.append({"name": r.get("name"), "degree": int(r.get("deg", 0))})
+
+    return {
+        "total_persons": total_persons,
+        "total_relations": total_relations,
+        "average_degree": avg_deg,
+        "max_degree": max_deg,
+        "top_persons": top_persons,
+    }

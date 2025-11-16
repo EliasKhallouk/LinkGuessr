@@ -364,10 +364,14 @@ To Do :
         - le nombre de relation
             - plus rapide pour le tableau du top 10
             - l'autocomplete proposera le plus connu en premier
-        - la date de derniere modification comme ca je recheck ceux qui sont trop ancien
+        - la date de derniere modification 
+            - comme ca je recheck ceux qui sont trop ancien
+            - tableau dans stat
         - la date de naissance et de mort
             - si une personne est morte faire une catégorie : historique
             - si une personne a moins de 25 ans mettre :jeune
-            
+        - ville de naissance 
+            - faire une carte dans stat
+
 
 
