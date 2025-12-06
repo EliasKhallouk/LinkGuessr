@@ -38,6 +38,7 @@ export const translations = {
     tabs: {
       path: "Devine le chemin",
       relations: "Relations & Classement",
+      relay: "Relier les personnes",
     },
     ads: {
       sponsored: "Sponsorisé",
@@ -104,6 +105,24 @@ export const translations = {
       minRelations: "Nombre minimal de relations",
       path: "Chemin :",
     },
+    relay: {
+      title: "Reliez la personne",
+      loading: "Chargement du défi…",
+      new: "Nouveau défi",
+      prompt: "Reliez-vous à :",
+      current: "Vous êtes actuellement sur",
+      noNeighbors: "Aucun voisin direct trouvé.",
+      path: "Chemin parcouru:",
+      success: "Félicitations ! Vous avez atteint la cible en {steps} étapes.",
+      errorLoad: "Impossible de charger un défi.",
+      errorNeighbors: "Impossible de récupérer les voisins.",
+      searchLabel: "Rechercher dans les voisins",
+      searchPlaceholder: "Tapez un nom…",
+      choose: "Choisir",
+      bestTitle: "Chemin optimal (PCC)",
+      minRelations: "Relations minimales:",
+      bestPath: "Chemin:",
+    },
   },
   en: {
     app: {
@@ -116,6 +135,9 @@ export const translations = {
     nav: {
       home: "Home",
       about: "About",
+      searchLabel: "Search neighbors",
+      searchPlaceholder: "Type a name…",
+      choose: "Choose",
       contact: "Contact",
       privacy: "Privacy Policy",
       navigation: "Navigation",
@@ -144,6 +166,24 @@ export const translations = {
     tabs: {
       path: "Guess the path",
       relations: "Relations & Leaderboard",
+    },
+    relay: {
+      title: "Connect to the target",
+      loading: "Loading challenge…",
+      new: "New challenge",
+      prompt: "Reach:",
+      current: "You are currently at",
+      noNeighbors: "No direct neighbors found.",
+      path: "Path taken:",
+      success: "Congrats! You reached the target in {steps} steps.",
+      errorLoad: "Unable to load a challenge.",
+      errorNeighbors: "Unable to fetch neighbors.",
+      searchLabel: "Search neighbors",
+      searchPlaceholder: "Type a name…",
+      choose: "Choose",
+      bestTitle: "Optimal path (SP)",
+      minRelations: "Minimum relations:",
+      bestPath: "Path:",
     },
     ads: {
       sponsored: "Sponsored",

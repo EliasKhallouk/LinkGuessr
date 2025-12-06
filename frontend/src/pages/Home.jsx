@@ -1,4 +1,5 @@
 import AdSlot from "../components/AdSlot";
+import ConnectRelay from "../components/ConnectRelay";
 import Game from "../components/Game";
 import GuessRelations from "../components/GuessRelations";
 import GuessWhoPath from "../components/GuessWhoPath";
@@ -21,6 +22,7 @@ export default function Home() {
                 <Leaderboard />
               </>
             ) },
+            { key: "relay", title: t("tabs.relay"), content: <ConnectRelay /> },
           ]}
         />
       </div>

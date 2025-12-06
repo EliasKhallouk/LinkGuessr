@@ -181,8 +181,7 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
 if __name__ == "__main__":
     start_urls = [
-        "https://fr.wikipedia.org/wiki/Léonard_de_Vinci",
-
+        "https://fr.wikipedia.org/wiki/Validé",
     ]
 
     t0 = time.time()
@@ -290,7 +289,7 @@ if __name__ == "__main__":
 # "https://fr.wikipedia.org/wiki/Napoléon_Ier",
 # "http://fr.wikipedia.org/wiki/Adolf_Hitler",
 
-# PAGE:
+# PAGE: #ne pas faire car possible personne avec 0 relation
 # "https://fr.wikipedia.org/wiki/Validé",
 
 

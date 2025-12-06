@@ -663,6 +663,31 @@ def degree_distribution():
     return {"results": rows}
 
 
+@app.get("/neighbors")
+def neighbors(person: str = Query(..., min_length=1), limit: int = Query(50, ge=1, le=500)):
+    """Return direct neighbors (people connected via CONNAIT) for a given person.
+
+    Response: { results: [ { name: str }, ... ] }
+    """
+    p = (person or "").strip()
+    if not p:
+        return {"results": []}
+
+    cypher = """
+    MATCH (p:Person {name: $person})-[:CONNAIT]-(other:Person)
+    RETURN DISTINCT other.name AS name
+    ORDER BY other.name ASC
+    LIMIT $limit
+    """
+    with driver.session() as session:
+        try:
+            res = session.run(cypher, person=p, limit=limit)
+            rows = [ {"name": r.get("name")} for r in res ]
+            return {"results": rows}
+        except Exception:
+            return {"results": []}
+
+
 @app.get("/category_counts")
 def category_counts():
     """Return counts of persons per categorie_generale.
