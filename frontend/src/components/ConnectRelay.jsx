@@ -202,13 +202,10 @@ export default function ConnectRelay() {
               </div>
             )}
             <p style={{ marginTop: 0 }}>
-              {t("relay.prompt")} <strong>{formatNode(currentTarget)}</strong>
+              {t("relay.prompt")} <a href={getWikiUrl(currentTarget)} target="_blank" rel="noreferrer" className="chemin-link"><strong>{formatNode(currentTarget)}</strong></a>
             </p>
 
-            {/* Debug info to verify backend and query state */}
-            <p className="muted" style={{ marginTop: 4 }}>
-              API: <code>{apiUrl("")}</code> · Personne courante: <code>{currentNode}</code> · Voisins: <strong>{neighbors.length}</strong>
-            </p>
+            
 
             <p className="muted">
               {t("relay.current")} <a href={getWikiUrl(currentNode)} target="_blank" rel="noreferrer" className="chemin-link">{formatNode(currentNode)}</a>
