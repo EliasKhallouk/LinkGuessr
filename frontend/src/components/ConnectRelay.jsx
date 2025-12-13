@@ -16,6 +16,9 @@ export default function ConnectRelay() {
   const [success, setSuccess] = useState(false);
   const [bestLen, setBestLen] = useState(null);
   const [bestPath, setBestPath] = useState([]);
+  const [restrictedMode, setRestrictedMode] = useState(false);
+  const [helpMessage, setHelpMessage] = useState("");
+  const [hintShown, setHintShown] = useState(false);
 
   const formatNode = (label) =>
     (label || "")
@@ -32,6 +35,9 @@ export default function ConnectRelay() {
     setSuccess(false);
     setBestLen(null);
     setBestPath([]);
+  setRestrictedMode(false);
+  setHelpMessage("");
+  setHintShown(false);
     setLoading(true);
     try {
       const res = await fetch(apiUrl(`/challenge`));
@@ -46,6 +52,19 @@ export default function ConnectRelay() {
       setCurrentTarget(target);
       setCurrentNode(current);
       setHistory([current]);
+      // preload PCC from current to target
+      try {
+        const res2 = await fetch(apiUrl(`/shortest_paths?person1=${encodeURIComponent(current)}&person2=${encodeURIComponent(target)}`));
+        const d2 = await res2.json();
+        if (d2 && typeof d2.nb_relations === 'number') {
+          setBestLen(d2.nb_relations);
+          setBestPath(Array.isArray(d2.chemin) ? d2.chemin : []);
+        } else if (d2 && typeof d2.min_len === 'number') {
+          const chemin = Array.isArray(d2.chemins) && d2.chemins.length ? d2.chemins[0].chemin : [];
+          setBestLen(d2.min_len);
+          setBestPath(chemin);
+        }
+      } catch {}
       // preload neighbors
       await loadNeighbors(current);
     } catch (e) {
@@ -61,7 +80,9 @@ export default function ConnectRelay() {
       const res = await fetch(apiUrl(`/neighbors?person=${encodeURIComponent(person)}&limit=500`));
       if (!res.ok) throw new Error("neighbors");
       const data = await res.json();
-      setNeighbors(Array.isArray(data.results) ? data.results.map(r => r.name) : []);
+      const list = Array.isArray(data.results) ? data.results.map(r => r.name) : [];
+      // Always update with latest neighbors from backend; restriction will override when needed
+      setNeighbors(list);
     } catch (e) {
       setNeighbors([]);
       setMessage(t("relay.errorNeighbors"));
@@ -107,6 +128,57 @@ export default function ConnectRelay() {
     }
     // otherwise load neighbors of next
     await loadNeighbors(next);
+
+    // Hint: if user's path length so far exceeds PCC by >=2, provide the next correct person
+    // Compute next correct step using local shortest path from currentNode to target
+    if (bestLen !== null) {
+      const userLen = newHistory.length - 1; // edges from initial start
+      if (!hintShown && userLen >= (bestLen + 2)) {
+        try {
+          const r = await fetch(apiUrl(`/shortest_paths?person1=${encodeURIComponent(currentNode)}&person2=${encodeURIComponent(currentTarget)}`));
+          const d = await r.json();
+          let localPath = [];
+          if (d && typeof d.nb_relations === 'number') {
+            localPath = Array.isArray(d.chemin) ? d.chemin : [];
+          } else if (d && typeof d.min_len === 'number') {
+            localPath = Array.isArray(d.chemins) && d.chemins.length ? d.chemins[0].chemin : [];
+          }
+          if (Array.isArray(localPath) && localPath.length >= 2 && localPath[0] === currentNode) {
+            const nextCorrect = localPath[1];
+            setHelpMessage(t("relay.hintNext", { name: formatNode(nextCorrect) }));
+            setHintShown(true);
+          }
+        } catch {}
+      }
+    }
+
+    // Restrict choices to 5 if still off by >=2 after hint: include the correct next PCC node
+    // Restrict choices to 5 if still off by >=2 after hint: include the correct next PCC node
+    if (bestLen !== null) {
+      const userLen2 = newHistory.length - 1; // edges
+      if (userLen2 >= (bestLen + 2)) {
+        try {
+          const r2 = await fetch(apiUrl(`/shortest_paths?person1=${encodeURIComponent(currentNode)}&person2=${encodeURIComponent(currentTarget)}`));
+          const d2 = await r2.json();
+          let localPath2 = [];
+          if (d2 && typeof d2.nb_relations === 'number') {
+            localPath2 = Array.isArray(d2.chemin) ? d2.chemin : [];
+          } else if (d2 && typeof d2.min_len === 'number') {
+            localPath2 = Array.isArray(d2.chemins) && d2.chemins.length ? d2.chemins[0].chemin : [];
+          }
+          const nextCorrect2 = (Array.isArray(localPath2) && localPath2.length >= 2 && localPath2[0] === currentNode) ? localPath2[1] : null;
+          if (nextCorrect2 && neighbors.length > 0) {
+            const others = neighbors.filter(n => n !== nextCorrect2);
+            const shuffled = others.sort(() => Math.random() - 0.5);
+            // Total choices: 4 (1 correct + 3 others)
+            const picked = [nextCorrect2, ...shuffled.slice(0, Math.max(0, 4 - 1))];
+            setNeighbors(picked);
+            setRestrictedMode(true);
+            setHelpMessage(t("relay.restricted"));
+          }
+        } catch {}
+      }
+    }
   };
 
   return (
@@ -122,8 +194,20 @@ export default function ConnectRelay() {
           <p className="muted">{t("relay.loading")}</p>
         ) : (
           <>
+            {helpMessage && (
+              <div className="panel" style={{ marginBottom: 8 }}>
+                <div className="panel-body">
+                  <p style={{ margin: 0 }}>{helpMessage}</p>
+                </div>
+              </div>
+            )}
             <p style={{ marginTop: 0 }}>
               {t("relay.prompt")} <strong>{formatNode(currentTarget)}</strong>
+            </p>
+
+            {/* Debug info to verify backend and query state */}
+            <p className="muted" style={{ marginTop: 4 }}>
+              API: <code>{apiUrl("")}</code> · Personne courante: <code>{currentNode}</code> · Voisins: <strong>{neighbors.length}</strong>
             </p>
 
             <p className="muted">

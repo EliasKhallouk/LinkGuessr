@@ -122,6 +122,8 @@ export const translations = {
       bestTitle: "Chemin optimal (PCC)",
       minRelations: "Relations minimales:",
       bestPath: "Chemin:",
+      hintNext: "Astuce: essayez {name} comme prochaine étape.",
+      restricted: "Choix réduits pour vous aider (4 options)",
     },
   },
   en: {
@@ -184,6 +186,8 @@ export const translations = {
       bestTitle: "Optimal path (SP)",
       minRelations: "Minimum relations:",
       bestPath: "Path:",
+      hintNext: "Hint: try {name} as your next step.",
+      restricted: "Choices reduced to help you (4 options)",
     },
     ads: {
       sponsored: "Sponsored",

@@ -372,6 +372,12 @@ To Do :
             - si une personne a moins de 25 ans mettre :jeune
         - ville de naissance 
             - faire une carte dans stat
+    
+    - Dans le jeu Relier les personnes
+        - Corrigé l'aide au joueur 
+        - ajouter le nombre de relations qu'on les personnes proposé
+        - Mettre la personne de destination en lien
+        - Corrigé probleme -> "Aucun voisin direct trouvé."
 
 
 
