@@ -75,11 +75,12 @@ def get_wikipedia_links(url: str):
 
     return sorted(links)
 
-def filter_links_by_person(links, max_workers=10, limit=None, show_progress=True, position=None):
+def filter_links_by_person(links, max_workers=5, limit=None, show_progress=True, position=None):
     if limit:
         links = list(links)[:limit]
 
     results = []
+    errors = []
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futures = {ex.submit(detect_wikipedia_entity_type, url): url for url in links}
         iterator = as_completed(futures)
@@ -89,12 +90,15 @@ def filter_links_by_person(links, max_workers=10, limit=None, show_progress=True
             try:
                 if fut.result():
                     results.append(url)
-            except Exception:
-                pass
+            except Exception as e:
+                errors.append((url, str(e)))
             finally:
                 if pbar:
                     pbar.update(1)
         if pbar:
             pbar.close()
+
+    if errors and show_progress:
+        print(f"⚠️  {len(errors)} liens ont causé des erreurs lors du filtrage (API rate limit, timeout, etc.)")
 
     return sorted(results)
