@@ -98,7 +98,7 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
     links = get_wikipedia_links(url)
 
-    people = filter_links_by_person(links, max_workers=5, show_progress=False, position=None)
+    people = filter_links_by_person(links, max_workers=20, show_progress=False, position=None)
     if depth == 1:
         print(f"📎 {len(people)} personnes trouvées sur: {main_name}")
     # Ajout des relations ou des nœuds selon le type du courant (personne ou non)
@@ -181,7 +181,7 @@ def crawl_person(url, depth=1, max_depth=2, visited=None, base_pos=0, chain=None
 
 if __name__ == "__main__":
     start_urls = [
-        "https://fr.wikipedia.org/wiki/Karim_Benzema",
+        "https://fr.wikipedia.org/wiki/Emmanuel_Macron",
 
     ]
 

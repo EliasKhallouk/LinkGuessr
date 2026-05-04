@@ -2,12 +2,26 @@ import requests
 from urllib.parse import unquote, urlparse
 from functools import lru_cache
 from typing import Dict, List, Optional, Set, Tuple
+import time
+import threading
 
 # Shared session with proper User-Agent to avoid 403 from Wikimedia
 _SESSION = requests.Session()
 _SESSION.headers.update({
-    "User-Agent": "LinkGuessr/1.0 (https://github.com/EliasKhallouk/LinkGuessr; contact@example.com) Python/requests"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 })
+
+# Rate limiting
+_LAST_REQUEST_TIME = {"time": 0.0}
+_REQUEST_LOCK = threading.Lock()
+
+def _rate_limit():
+    """Minimum 200ms between API calls"""
+    with _REQUEST_LOCK:
+        elapsed = time.time() - _LAST_REQUEST_TIME["time"]
+        if elapsed < 0.2:
+            time.sleep(0.2 - elapsed)
+        _LAST_REQUEST_TIME["time"] = time.time()
 
 
 def get_wikipedia_title(url):
@@ -23,6 +37,7 @@ def get_wikidata_id(title, lang='fr'):
 
     Mise en cache pour éviter les appels répétés au même titre.
     """
+    _rate_limit()
     endpoint = f"https://{lang}.wikipedia.org/w/api.php"
     params = {
         "action": "query",
@@ -47,6 +62,7 @@ def is_human(qid):
     Mise en cache pour éviter de retélécharger les mêmes entités.
     Retourne True/False.
     """
+    _rate_limit()
     url = f"https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"
     r = _SESSION.get(url, timeout=10)
     r.raise_for_status()

@@ -1,1 +1,4 @@
 .env
+__pycache__/run_test.cpython-311.pyc
+__pycache__/Scraping.cpython-311.pyc
+__pycache__/TypeOfPage.cpython-311.pyc

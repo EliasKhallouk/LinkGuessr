@@ -52,7 +52,7 @@ def nettoyer_sections_exclues(html: str) -> str:
     return str(soup)
 
 def get_wikipedia_links(url: str):
-    headers = {"User-Agent": "LinkGuessr/1.0 (https://github.com/EliasKhallouk/LinkGuessr) Python/requests"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
     r = requests.get(url, headers=headers, timeout=10)
     r.raise_for_status()
 
