@@ -30,7 +30,8 @@ async function forward(request) {
     const value = response.headers.get(name);
     if (value) out.set(name, value);
   }
-  return new Response(response.body, { status: response.status, headers: out });
+  // Corps lu en entier (pas en flux) : condition pour que Vercel mette la réponse en cache.
+  return new Response(await response.arrayBuffer(), { status: response.status, headers: out });
 }
 
 export const GET = forward;
