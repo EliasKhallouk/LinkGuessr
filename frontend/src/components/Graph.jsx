@@ -30,6 +30,9 @@ export default function Graph({ nodesData = null, edgesData = null, height = "48
         networkInstance.current = null;
       }
 
+      // vis-network dessine sur un canvas : on lit les couleurs du thème au moment du rendu.
+      const css = getComputedStyle(document.documentElement);
+      const color = (name) => css.getPropertyValue(name).trim();
       const visNodes = new DataSet(nodesArr || []);
       const visEdges = new DataSet(edgesArr || []);
 
@@ -42,11 +45,11 @@ export default function Graph({ nodesData = null, edgesData = null, height = "48
           nodes: {
             shape: "dot",
             size: 14,
-            font: { color: "#fff", size: 14 },
+            font: { color: color("--text-primary"), size: 14 },
             borderWidth: 1.5,
           },
           edges: {
-            color: { color: "#999", highlight: "#f00" },
+            color: { color: color("--text-muted"), highlight: color("--accent-primary") },
             width: 1.5,
             smooth: true,
           },
@@ -107,7 +110,7 @@ export default function Graph({ nodesData = null, edgesData = null, height = "48
             style={{
               height: height,
               marginBottom: "8px",
-              background: "#111",
+              background: "var(--bg-base)",
               borderRadius: "12px",
               marginTop: "8px",
             }}
