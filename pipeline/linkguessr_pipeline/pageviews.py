@@ -121,7 +121,9 @@ def build_pageviews(dumps_dir: Path | None = None) -> None:
     # Un titre « vu » peut être une redirection : ses vues reviennent à la biographie visée.
     redirects = pl.read_parquet(work_path("redirects.parquet")).join(
         humans.rename({"title": "to_title"}), on="to_title", how="inner").select(pl.col("from_title").alias("title"), "qid")
-    title_to_qid = pl.concat([humans, redirects]).unique("title")
+    # Les vrais titres d'articles d'abord : en cas de doublon, ils l'emportent sur les redirections.
+    title_to_qid = pl.concat([humans.select("title", "qid"), redirects.select("title", "qid")]).unique(
+        "title", keep="first", maintain_order=True)
 
     per_month = []
     for m in months:

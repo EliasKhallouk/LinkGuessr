@@ -42,10 +42,15 @@ def show_status() -> None:
         print(f"  {'✅' if got == shards else '⏳'} entities : {got}/{shards} fragments ({100 * got / shards:.0f} %)")
     else:
         print("  ·  humans")
-    print(f"  {'✅' if done('refs.parquet') or done('entities_refs') else '· '} refs")
+    rounds = sorted(work_path("entities_refs").glob("*")) if done("entities_refs") else []
+    frags = sum(len(list(r.glob("*.jsonl.gz"))) for r in rounds)
+    refs_state = "✅" if done("refs.parquet") else ("⏳" if rounds else "· ")
+    print(f"  {refs_state} refs : {frags} fragments téléchargés, {len(rounds)} niveau(x) de hiérarchie"
+          if rounds else f"  {refs_state} refs")
     months = months_before_dump()
-    got = sum((work_path("pageviews_dumps") / f"{m}.tsv.gz").exists() for m in months)
-    print(f"  {'✅' if done('pageviews.parquet') else '· '} pageviews : {got}/12 mois rapatriés de la VM "
-          "(avancement sur la VM : journalctl -u linkguessr-pageviews)")
+    pv_dir = work_path("pageviews_dumps")
+    sizes = {m: (pv_dir / f"{m}.tsv.gz").stat().st_size for m in months if (pv_dir / f"{m}.tsv.gz").exists()}
+    pv_state = "✅" if done("pageviews.parquet") else ("⏳" if sizes else "· ")
+    print(f"  {pv_state} pageviews : {len(sizes)}/12 mois présents sur le PC ({sum(sizes.values()) / 1e6:.0f} Mo)")
     for step, output in [("links", "text_links.parquet"), ("build", "persons.parquet"), ("graph", "final/graph.npz")]:
         print(f"  {'✅' if done(output) else '· '} {step}")
