@@ -23,6 +23,14 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
+try:  # Windows avec un antivirus qui intercepte le TLS : certificats du système (facultatif)
+    import truststore
+
+    os.environ.pop("SSLKEYLOGFILE", None)
+    truststore.inject_into_ssl()
+except ImportError:
+    pass
+
 # Personnes connues (QID) pour les chemins et les fiches ; recherches courantes.
 QIDS = ["Q3052772", "Q1835", "Q517", "Q937", "Q7186", "Q21621995", "Q157", "Q2105", "Q692", "Q255", "Q1339", "Q7259",
         "Q8023", "Q615", "Q11613", "Q76", "Q22686", "Q9696", "Q5582", "Q762"]
