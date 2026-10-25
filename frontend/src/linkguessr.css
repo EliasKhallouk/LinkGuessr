@@ -145,3 +145,8 @@ body.drawer-open { overflow: hidden; }
 /* ----- Retour des joueurs ----- */
 .feedback { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--text-secondary); }
 .btn-ghost { background: transparent; border: 1px solid var(--border-color); box-shadow: none; font-size: 18px; }
+
+/* ----- Présentation sur l'accueil ----- */
+.home-intro { margin-bottom: 12px; }
+.home-intro h2 { margin: 0 0 6px; font-size: clamp(20px, 3vw, 28px); }
+.home-intro p { margin: 0; color: var(--text-secondary); max-width: 720px; line-height: 1.5; }

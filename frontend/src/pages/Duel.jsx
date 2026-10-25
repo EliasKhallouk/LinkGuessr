@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import ConnectRelay from "../components/ConnectRelay";
 import GuessRelations from "../components/GuessRelations";
@@ -48,6 +48,12 @@ export default function Duel() {
       </section>
       {game === "relais" && pair && <ConnectRelay fixedPair={pair} rivalSteps={score} />}
       {game === "nombre" && <GuessRelations rivalScore={score} />}
+      <section className="panel" style={{ marginTop: 16 }}>
+        <div className="panel-body toolbar" style={{ justifyContent: "space-between" }}>
+          <span>{t("home.moreGames")}</span>
+          <Link className="btn btn-primary" to="/">{t("home.discover")}</Link>
+        </div>
+      </section>
     </main>
   );
 }

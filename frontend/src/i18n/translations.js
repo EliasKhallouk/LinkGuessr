@@ -279,6 +279,12 @@ export const translations = {
       send: "Envoyer",
       thanks: "Merci pour ton retour !",
     },
+    home: {
+      title: "Le jeu des liens entre personnalités de Wikipédia",
+      text: "Devine qui relie deux célébrités, relève le défi du jour, estime combien de liens les séparent ou explore les chemins entre elles. Chaque lien vient d'un article de Wikipédia.",
+      discover: "Découvrir tous les jeux",
+      moreGames: "LinkGuessr, c'est aussi un défi du jour et quatre jeux sur les liens entre personnalités.",
+    },
   },
   en: {
     app: {
@@ -562,6 +568,12 @@ export const translations = {
       dislikePlaceholder: "What could we improve? (optional)",
       send: "Send",
       thanks: "Thanks for your feedback!",
+    },
+    home: {
+      title: "The game of links between Wikipedia personalities",
+      text: "Guess who links two celebrities, take the daily challenge, estimate how many links separate them or explore the paths between them. Every link comes from a Wikipedia article.",
+      discover: "Discover all games",
+      moreGames: "LinkGuessr also has a daily challenge and four games about links between public figures.",
     },
   },
 };

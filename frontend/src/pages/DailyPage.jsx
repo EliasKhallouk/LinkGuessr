@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
-import DailyChallenge from "../components/DailyChallenge";
 import PathView from "../components/PathView";
 import PersonChip from "../components/PersonChip";
 import { useI18n } from "../i18n/I18nProvider";
+import Home from "./Home";
 
 // /jour/12 : le défi du jour si c'est celui d'aujourd'hui, sinon l'archive (réponse révélée).
 export default function DailyPage() {
@@ -19,10 +19,10 @@ export default function DailyPage() {
     api.dailyArchive(number).then(setData).catch(() => setError(true));
   }, [number]);
 
-  const playLink = <Link className="btn" to="/">{t("daily.play")}</Link>;
+  const playLink = <Link className="btn btn-primary" to="/">{t("home.discover")}</Link>;
   if (error) return <main className="page"><p className="muted">{t("daily.unknown")}</p>{playLink}</main>;
   if (!data) return <main className="page"><p className="muted">{t("daily.loading")}</p></main>;
-  if (data.current) return <main className="page"><DailyChallenge /></main>;
+  if (data.current) return <Home />;
   if (!data.answer) return <main className="page"><p className="muted">{t("daily.notYet")}</p>{playLink}</main>;
   return (
     <main className="page fade-in">

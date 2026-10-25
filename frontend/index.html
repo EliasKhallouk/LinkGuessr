@@ -5,16 +5,31 @@
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta name="description" content="LinkGuessr : combien de liens séparent deux personnalités de Wikipédia ? Jeux et exploration du réseau." />
+    <meta name="description" content="Jeux gratuits sur Wikipédia : devine qui relie deux personnalités, défi du jour, combien de liens les séparent. 765 000 personnalités de Wikipédia en français, reliées par leurs articles." />
+    <meta property="og:title" content="LinkGuessr · Le jeu des liens entre personnalités de Wikipédia" />
+    <meta property="og:description" content="Qui relie Zidane à Napoléon ? Défi du jour, duels entre amis et exploration de 765 000 personnalités de Wikipédia." />
+    <meta property="og:image" content="https://link-guessr.vercel.app/api/og" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json">
+      {"@context": "https://schema.org", "@type": "WebSite", "name": "LinkGuessr",
+       "alternateName": "Jeu des liens entre personnalités de Wikipédia", "url": "https://link-guessr.vercel.app/",
+       "inLanguage": "fr", "description": "Jeux et exploration du réseau des personnalités de Wikipédia en français."}
+    </script>
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <title>LinkGuessr</title>
+    <title>LinkGuessr · Jeu Wikipédia : devine les liens entre personnalités</title>
     <!-- Mesure d'audience Umami, sans cookie, hébergée par nous (voir la page Confidentialité). -->
     <script defer src="/umami/lg.js" data-website-id="0cc0f88c-c1f5-4422-a55c-28a6fb5eb219" data-host-url="/umami"
       data-domains="link-guessr.vercel.app" data-do-not-track="true"></script>
   </head>
   <body>
-    <noscript>Activez JavaScript pour jouer à LinkGuessr.</noscript>
+    <noscript>
+      <h1>LinkGuessr, le jeu des liens entre personnalités de Wikipédia</h1>
+      <p>Devine qui relie deux célébrités, relève le défi du jour, estime combien de liens les séparent et explore
+        les chemins entre 765 000 personnalités de Wikipédia en français. Activez JavaScript pour jouer.</p>
+      <p><a href="/a-propos">À propos</a> · <a href="/lab">Lab</a></p>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

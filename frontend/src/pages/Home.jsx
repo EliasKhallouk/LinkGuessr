@@ -28,6 +28,10 @@ export default function Home() {
   return (
     <main className="grid grid-single">
       <div className="col-main">
+        <header className="home-intro">
+          <h2>{t("home.title")}</h2>
+          <p>{t("home.text")}</p>
+        </header>
         <StatsBanner />
         <DailyChallenge />
         <Tabs
