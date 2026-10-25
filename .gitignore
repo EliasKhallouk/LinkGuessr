@@ -1,4 +1,17 @@
+# Secrets
 .env
-__pycache__/run_test.cpython-311.pyc
-__pycache__/Scraping.cpython-311.pyc
-__pycache__/TypeOfPage.cpython-311.pyc
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Données du pipeline (dumps, fichiers intermédiaires)
+pipeline/data/
+
+# Node
+node_modules/
+frontend/build/
+frontend/dist/

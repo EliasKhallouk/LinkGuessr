@@ -1,0 +1,26 @@
+[project]
+name = "linkguessr-pipeline"
+version = "0.1.0"
+description = "Construit le graphe des personnes de Wikipédia FR (dumps Wikimedia + Wikidata)"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32",
+    "truststore>=0.10",
+    "polars>=1.0",
+    "pyarrow>=17",
+    "tqdm>=4.66",
+    "numpy>=2.0",
+    "python-igraph>=0.11",
+    "psycopg[binary]>=3.2",
+]
+
+[project.scripts]
+lg = "linkguessr_pipeline.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+# L'antivirus (Avast) intercepte le TLS : on utilise le magasin de certificats du système.
+native-tls = true
