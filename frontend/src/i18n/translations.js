@@ -56,6 +56,8 @@ export const translations = {
       relations: "Relations & Classement",
       relay: "Relier les personnes",
       guesswho: "Qui est caché ?",
+      explore: "Explorer les liens",
+      count: "Deviner le nombre de liens",
     },
     ads: {
       sponsored: "Sponsorisé",
@@ -72,7 +74,7 @@ export const translations = {
       empty: "Aucun score pour le moment.",
     },
     guess: {
-      titleNumber: "Devinez le nombre de relations",
+      titleNumber: "Devinez le nombre de liens",
       loadingPeople: "Chargement des personnes…",
       between: "Entre",
       and: "et",
@@ -109,7 +111,7 @@ export const translations = {
       pathsCount: "plus courts chemins possibles",
     },
     game: {
-      titlePath: "Explorer les liens",
+      titlePath: "Explorer les liens entre deux personnes",
       person1: "Personne 1",
       person2: "Personne 2",
       typeName: "Tapez un nom…",
@@ -281,6 +283,9 @@ export const translations = {
       path: "Guess the path",
       relations: "Relations & Leaderboard",
       guesswho: "Who's hidden?",
+      explore: "Explore links",
+      relay: "Connect people",
+      count: "Guess the number of links",
     },
     relay: {
       title: "Connect two people",
@@ -322,7 +327,7 @@ export const translations = {
       empty: "No scores yet.",
     },
     guess: {
-      titleNumber: "Guess the number of relations",
+      titleNumber: "Guess the number of links",
       loadingPeople: "Loading people…",
       between: "Between",
       and: "and",
@@ -359,7 +364,7 @@ export const translations = {
       pathsCount: "possible shortest paths",
     },
     game: {
-      titlePath: "Explore the links",
+      titlePath: "Explore the links between two people",
       person1: "Person 1",
       person2: "Person 2",
       typeName: "Type a name…",

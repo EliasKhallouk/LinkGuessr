@@ -10,13 +10,21 @@ import StatsBanner from "../components/StatsBanner";
 import Tabs from "../components/Tabs";
 import { useI18n } from "../i18n/I18nProvider";
 
+// Ordre des onglets : les jeux du plus accessible au plus exigeant, l'explorateur en 2e position.
+const TABS = [
+  { key: "guesswho", content: <GuessWhoPath /> },
+  { key: "explore", content: <Game /> },
+  { key: "relay", content: <ConnectRelay /> },
+  { key: "count", content: <><GuessRelations /><Leaderboard /></> },
+];
+
 export default function Home() {
   const { t } = useI18n();
   const [tab, setTab] = useState(0);
   // « Trouver un chemin depuis cette personne » (/?from=Q…) : on bascule sur l'explorateur.
   const [params] = useSearchParams();
   const from = params.get("from");
-  useEffect(() => { if (from) setTab(0); }, [from]);
+  useEffect(() => { if (from) setTab(TABS.findIndex((x) => x.key === "explore")); }, [from]);
   return (
     <main className="grid grid-single">
       <div className="col-main">
@@ -24,17 +32,7 @@ export default function Home() {
         <Tabs
           active={tab}
           onChange={setTab}
-          tabs={[
-            { key: "path", title: t("tabs.path"), content: <Game /> },
-            { key: "guesswho", title: t("tabs.guesswho"), content: <GuessWhoPath /> },
-            { key: "relations", title: t("tabs.relations"), content: (
-              <>
-                <GuessRelations />
-                <Leaderboard />
-              </>
-            ) },
-            { key: "relay", title: t("tabs.relay"), content: <ConnectRelay /> },
-          ]}
+          tabs={TABS.map(({ key, content }) => ({ key, title: t(`tabs.${key}`), content }))}
         />
       </div>
       <PersonDrawer />
