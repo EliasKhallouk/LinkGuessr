@@ -32,7 +32,7 @@ export default function Leaderboard({ game = "guess_count" }) {
     <section className="panel fade-in" style={{ marginTop: 12 }}>
       <div className="panel-header">
         <span className="panel-title">{t("leaderboard.title")}</span>
-        <select value={period} onChange={(e) => setPeriod(e.target.value)}>
+        <select value={period} onChange={(e) => setPeriod(e.target.value)} aria-label={t("leaderboard.period")}>
           <option value="7">{t("period.7")}</option>
           <option value="30">{t("period.30")}</option>
           <option value="all">{t("period.all")}</option>

@@ -157,7 +157,7 @@ export default function Game() {
         <section className="panel fade-in" style={{ marginTop: 12 }}>
           <div className="panel-header">
             <span className="panel-title">{t("game.popularPairs")}</span>
-            <select value={ppPeriod} onChange={(e) => setPpPeriod(e.target.value)}>
+            <select value={ppPeriod} onChange={(e) => setPpPeriod(e.target.value)} aria-label={t("game.popularPeriod")}>
               <option value="7">{t("period.7")}</option>
               <option value="30">{t("period.30")}</option>
               <option value="all">{t("period.all")}</option>

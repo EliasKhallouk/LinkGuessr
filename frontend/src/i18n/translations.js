@@ -66,6 +66,7 @@ export const translations = {
     },
     leaderboard: {
       title: "Classement mondial",
+      period: "Période du classement",
       loading: "Chargement…",
       error: "Impossible de charger le classement.",
       rankHeader: "#",
@@ -137,6 +138,7 @@ export const translations = {
       pathN: "Chemin {n}",
       graphTitle: "Les chemins trouvés",
       popularPairs: "Paires les plus explorées",
+      popularPeriod: "Période des paires les plus explorées",
       try: "Essayer",
     },
     relay: {
@@ -385,6 +387,7 @@ export const translations = {
     },
     leaderboard: {
       title: "Global Leaderboard",
+      period: "Leaderboard period",
       loading: "Loading…",
       error: "Unable to load leaderboard.",
       rankHeader: "#",
@@ -456,6 +459,7 @@ export const translations = {
       pathN: "Path {n}",
       graphTitle: "Paths found",
       popularPairs: "Most explored pairs",
+      popularPeriod: "Period for the most explored pairs",
       try: "Try",
     },
     difficulty: {
