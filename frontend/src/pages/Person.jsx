@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, commonsThumb, lifespan, wikiUrl } from "../api";
+import ImageCredit from "../components/ImageCredit";
+import { Snippet } from "../components/PathView";
 import PersonChip from "../components/PersonChip";
 import { useI18n } from "../i18n/I18nProvider";
 
@@ -40,7 +42,12 @@ export default function Person() {
     <main className="page person-page fade-in">
       <section className="panel">
         <div className="panel-body person-header">
-          {p.image && <img src={commonsThumb(p.image, 320)} alt={p.name} className="person-portrait" />}
+          {p.image && (
+            <figure className="person-figure">
+              <img src={commonsThumb(p.image, 320)} alt={p.name} className="person-portrait" />
+              <ImageCredit file={p.image} />
+            </figure>
+          )}
           <div>
             <h2 style={{ margin: 0 }}>{p.name}</h2>
             {p.description && <p className="muted" style={{ marginTop: 4 }}>{p.description}</p>}
@@ -62,7 +69,7 @@ export default function Person() {
             </div>
           </div>
         </div>
-        {p.lead && <div className="panel-body"><p style={{ margin: 0 }}>{p.lead}</p></div>}
+        {p.lead && <div className="panel-body"><Snippet text={p.lead} article={p} /></div>}
       </section>
 
       {relations.length > 0 && (
@@ -104,7 +111,7 @@ export default function Person() {
               {cites.map((c) => (
                 <li key={c.qid}>
                   <PersonChip person={c} size={28} />
-                  {c.snippet && <q className="hop-snippet">{c.snippet}</q>}
+                  {c.snippet && <Snippet text={c.snippet} article={p} />}
                 </li>
               ))}
             </ul>
@@ -120,7 +127,7 @@ export default function Person() {
               {citedBy.map((c) => (
                 <li key={c.qid}>
                   <PersonChip person={c} size={28} />
-                  {c.snippet && <q className="hop-snippet">{c.snippet}</q>}
+                  {c.snippet && <Snippet text={c.snippet} article={c} />}
                 </li>
               ))}
             </ul>

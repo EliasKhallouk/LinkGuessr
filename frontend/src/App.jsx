@@ -87,6 +87,15 @@ function App() {
 
       <footer className="footer">
         <span>© {new Date().getFullYear()} LinkGuessr - Elias Khallouk</span>
+        <span className="footer-credits">
+          {t("footer.data")}{" "}
+          <a href="https://fr.wikipedia.org" target="_blank" rel="noreferrer">Wikipédia</a>
+          {" "}(<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>),{" "}
+          <a href="https://www.wikidata.org" target="_blank" rel="noreferrer">Wikidata</a> (CC0),{" "}
+          {t("footer.images")}{" "}
+          <a href="https://commons.wikimedia.org" target="_blank" rel="noreferrer">Wikimedia Commons</a>.{" "}
+          <Link to="/a-propos">{t("footer.more")}</Link>
+        </span>
       </footer>
     </div>
   );

@@ -1,4 +1,19 @@
+import { wikiUrl } from "../api";
 import PersonChip from "./PersonChip";
+
+// Phrase extraite d'un article Wikipédia (CC BY-SA 4.0) : on renvoie toujours vers l'article d'origine.
+export function Snippet({ text, article }) {
+  return (
+    <span className="snippet">
+      <q className="hop-snippet">{text}</q>{" "}
+      {article?.title && (
+        <a className="snippet-source" href={wikiUrl(article.title)} target="_blank" rel="noreferrer">
+          Wikipédia · {article.name}
+        </a>
+      )}
+    </span>
+  );
+}
 
 // Pourquoi deux personnes sont liées : relation Wikidata en priorité, sinon la phrase de l'article.
 function HopExplanation({ hop, from, to }) {
@@ -22,7 +37,7 @@ function HopExplanation({ hop, from, to }) {
           </span>
         );
       })}
-      {text?.snippet && <q className="hop-snippet">{text.snippet}</q>}
+      {text?.snippet && <Snippet text={text.snippet} article={text.source_id === from.id ? from : to} />}
     </div>
   );
 }

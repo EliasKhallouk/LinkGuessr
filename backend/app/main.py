@@ -88,13 +88,13 @@ def person(qid: str):
             (pid,),
         ).fetchall()
         cites = conn.execute(
-            """SELECT o.qid, o.name, o.image, t.mentions, t.in_lead, t.in_infobox, t.sections, t.snippet
+            """SELECT o.qid, o.title, o.name, o.image, t.mentions, t.in_lead, t.in_infobox, t.sections, t.snippet
                FROM text_link t JOIN person o ON o.id = t.target_id
                WHERE t.source_id = %s ORDER BY t.in_lead DESC, t.mentions DESC LIMIT 40""",
             (pid,),
         ).fetchall()
         cited_by = conn.execute(
-            """SELECT o.qid, o.name, o.image, t.mentions, t.snippet
+            """SELECT o.qid, o.title, o.name, o.image, t.mentions, t.snippet
                FROM text_link t JOIN person o ON o.id = t.source_id
                WHERE t.target_id = %s ORDER BY o.popularity DESC LIMIT 40""",
             (pid,),

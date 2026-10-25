@@ -56,9 +56,10 @@ User=$APP_USER
 Group=$APP_USER
 WorkingDirectory=$APP_DIR/app/backend
 EnvironmentFile=$APP_DIR/.env
-ExecStart=$APP_DIR/app/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers
+ExecStart=$APP_DIR/app/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers --no-access-log
 Restart=on-failure
 RestartSec=5
+# Pas de journal d'accès (IP) côté API : Nginx le tient déjà, 14 jours.
 # Garde-fous : la VM est partagée avec un autre projet.
 MemoryMax=2G
 NoNewPrivileges=true
