@@ -8,7 +8,7 @@ import re
 from contextlib import asynccontextmanager
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import daily, game
@@ -115,6 +115,29 @@ def person(qid: str):
         ).fetchall()
     return {"person": p, "labels": labels, "facts": facts, "relations": relations,
             "cites": cites, "cited_by": cited_by}
+
+
+@app.get("/person/{qid}/card")
+def person_card(qid: str, response: Response):
+    """Version légère d'une fiche pour les aperçus de partage et le référencement :
+    résumé, position dans le réseau et personnes les plus proches (liens les plus forts)."""
+    pid = id_of(qid)
+    with pool.connection() as conn:
+        p = conn.execute(
+            f"""SELECT {person_columns()}, pageviews_12m, sitelinks, community,
+                       (SELECT count(*) + 1 FROM person o WHERE o.degree > person.degree) AS degree_rank,
+                       (SELECT count(*) FROM person) AS total
+                FROM person WHERE id = %s""",
+            (pid,),
+        ).fetchone()
+        closest = conn.execute(
+            f"""SELECT {person_columns('o')}, e.weight FROM edge e
+                JOIN person o ON o.id = CASE WHEN e.a = %s THEN e.b ELSE e.a END
+                WHERE e.a = %s OR e.b = %s ORDER BY e.weight DESC, o.popularity DESC LIMIT 5""",
+            (pid, pid, pid),
+        ).fetchall()
+    response.headers["Cache-Control"] = "public, max-age=3600, s-maxage=86400"
+    return {"person": p, "closest": closest}
 
 
 @app.get("/path")

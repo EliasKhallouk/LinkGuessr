@@ -207,6 +207,21 @@ def daily(response: Response):
     return _public(_today_row(), reveal=False)
 
 
+@router.get("/daily/archive/{number}")
+def daily_archive(number: int, response: Response):
+    """Un défi passé, réponse comprise (les liens partagés restent consultables après minuit).
+    Le défi du jour et les suivants ne sont jamais révélés ici."""
+    with pool.connection() as conn:
+        row = conn.execute("SELECT * FROM app.daily_challenge WHERE number = %s", (number,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Défi inconnu")
+    if row["day"] >= today():
+        response.headers["Cache-Control"] = "public, max-age=60, s-maxage=300"
+        return {**_public(row, reveal=False), "current": row["day"] == today()}
+    response.headers["Cache-Control"] = "public, max-age=3600, s-maxage=86400"
+    return {**_public(row, reveal=True), "current": False}
+
+
 class GuessIn(BaseModel):
     device: str = Field(..., min_length=8, max_length=64)
     qid: str | None = None  # absent : renvoie seulement l'état de la partie
