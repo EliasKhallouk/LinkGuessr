@@ -11,7 +11,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import admin, daily, game
+from . import admin, daily, game, seo
 from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS
 from .core import id_of, path_details, person_columns, pool, startup, state, summaries
 from .graph import MODES
@@ -37,6 +37,7 @@ app.middleware("http")(http_policy)
 app.include_router(game.router)
 app.include_router(daily.router)
 app.include_router(admin.router)
+app.include_router(seo.router)
 
 
 @app.get("/health")
