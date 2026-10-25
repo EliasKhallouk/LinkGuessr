@@ -66,7 +66,8 @@ if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'
   install -o "$APP_USER" -g "$APP_USER" -m 600 /dev/null "$APP_DIR/.env"
   cat > "$APP_DIR/.env" <<EOF
 DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME
-CORS_ORIGINS=https://linkguessr.vercel.app
+CORS_ORIGINS=https://link-guessr.vercel.app,http://localhost:3000
+CORS_ORIGIN_REGEX=https://link-guessr-[a-z0-9-]+\.vercel\.app
 EOF
   echo "   Mot de passe généré et stocké dans $APP_DIR/.env (lisible uniquement par $APP_USER)"
 fi
