@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Route, Routes } from "react-router-dom";
+import { Link, Navigate, NavLink, Route, Routes } from "react-router-dom";
 import "./App.css";
 import { useI18n } from "./i18n/I18nProvider";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Home from "./pages/Home";
 import Privacy from "./pages/Privacy";
-import Stats from "./pages/Stats";
+import Lab from "./pages/Lab";
+import Person from "./pages/Person";
 import "./playful-effects.css";
 
 function App() {
@@ -39,7 +40,7 @@ function App() {
       <header className="header">
         <div className="brand">
           <span className="logo-dot" />
-          <h1 className="title">LinkGuessr</h1>
+          <h1 className="title"><Link to="/" className="title-link">LinkGuessr</Link></h1>
         </div>
         <p className="tagline">{t("app.tagline")}</p>
         {/* Nav moved into ellipsis menu */}
@@ -52,7 +53,7 @@ function App() {
                 <NavLink to="/" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.home")}</NavLink>
                 <NavLink to="/a-propos" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.about")}</NavLink>
                 <NavLink to="/contact" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.contact")}</NavLink>
-                <NavLink to="/stats" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>Stats</NavLink>
+                <NavLink to="/lab" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>Lab</NavLink>
                 <NavLink to="/politique-de-confidentialite" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.privacy")}</NavLink>
               </div>
               <hr className="menu-sep" />
@@ -77,7 +78,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/a-propos" element={<About />} />
-  <Route path="/stats" element={<Stats />} />
+        <Route path="/lab" element={<Lab />} />
+        <Route path="/stats" element={<Navigate to="/lab" replace />} />
+        <Route path="/personne/:qid" element={<Person />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/politique-de-confidentialite" element={<Privacy />} />
       </Routes>

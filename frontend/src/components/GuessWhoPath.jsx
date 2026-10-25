@@ -1,250 +1,142 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { apiUrl } from "../config";
+import { useCallback, useEffect, useState } from "react";
+import { api, lifespan } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
-import Autocomplete from "./Autocomplete";
+import DifficultyPicker from "./DifficultyPicker";
+import PathView from "./PathView";
+import PersonChip from "./PersonChip";
+import PersonPicker from "./PersonPicker";
+
+const GAME = "guess_who";
+const MAX_TRIES = 4; // après 4 erreurs, la réponse est révélée
 
 export default function GuessWhoPath() {
   const { t } = useI18n();
-  const [path, setPath] = useState([]); // array of labels
-  const [maskedIndex, setMaskedIndex] = useState(null);
-  const [answer, setAnswer] = useState(null); // correct DB label
-  const [guess, setGuess] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [difficulty, setDifficulty] = useState("facile");
+  const [domain, setDomain] = useState("");
+  const [domains, setDomains] = useState([]);
+  const [challenge, setChallenge] = useState(null);
+  const [guess, setGuess] = useState(null);
+  const [tries, setTries] = useState(0);
+  const [found, setFound] = useState(false);
+  const [lastWrong, setLastWrong] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [result, setResult] = useState(null); // { correct: boolean }
-  const [hints, setHints] = useState({ tries: 0, showLen: false, showFirstLen: false, showCategory: false, categories: [] });
   const [topList, setTopList] = useState([]);
-  const inputRef = useRef(null);
 
-  const formatNode = (label) =>
-    (label || "")
-      .toString()
-      .replaceAll("_", " ");
-
-  // maskedPath removed: we render path inline and apply mask on the fly
+  useEffect(() => {
+    api.domains().then(setDomains).catch(() => {});
+    api.top("degree", { limit: 10 }).then(setTopList).catch(() => {});
+  }, []);
 
   const fetchChallenge = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setResult(null);
-    setGuess("");
+    setGuess(null);
+    setTries(0);
+    setFound(false);
+    setLastWrong(null);
     try {
-      let url = `/random_path?min_edges=2`;
-      if (selectedCategory) url += `&category=${encodeURIComponent(selectedCategory)}`;
-      const res = await fetch(apiUrl(url));
-      const data = await res.json();
-      if (!data || !Array.isArray(data.chemin) || data.chemin.length < 3 || data.masked_index == null) {
-        throw new Error("bad-challenge");
-      }
-  setPath(data.chemin);
-  setMaskedIndex(data.masked_index);
-  setAnswer(data.answer);
-  setHints({ tries: 0, showLen: false, showFirstLen: false, showCategory: false, categories: Array.isArray(data.categories) ? data.categories : [] });
-      // Focus the input for quick typing
-      requestAnimationFrame(() => inputRef.current?.focus());
+      setChallenge(await api.randomPath({ difficulty, domain }));
     } catch (e) {
-      setError(t("guess.errorLoadPeople"));
+      setError(e.message || t("guess.errorLoadPeople"));
     } finally {
       setLoading(false);
     }
-  }, [t, selectedCategory]);
+  }, [difficulty, domain, t]);
 
   useEffect(() => { fetchChallenge(); }, [fetchChallenge]);
 
-  useEffect(() => {
-    // fetch top-degree leaderboard
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await fetch(apiUrl('/top_degree?limit=10'));
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!mounted) return;
-        if (data && Array.isArray(data.results)) setTopList(data.results);
-      } catch (e) {
-        // ignore
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
-
-  // Server-backed search for suggestions
-  const queryPeople = async (q) => {
-    const qs = (q || "").trim();
-    if (!qs) return [];
-    try {
-      let res = await fetch(apiUrl(`/search_people?q=${encodeURIComponent(qs)}&limit=8`));
-      if (!res.ok) return [];
-      let data = await res.json();
-      let results = Array.isArray(data.results) ? data.results : [];
-      if (!results.length) {
-        const r2 = await fetch(apiUrl(`/search_people?q=${encodeURIComponent(qs)}&limit=8&fuzzy=1`));
-        if (r2 && r2.ok) {
-          const d2 = await r2.json();
-          results = Array.isArray(d2.results) ? d2.results : [];
-        }
-      }
-      return results;
-    } catch {
-      return [];
-    }
-  };
-
-  const handleValidate = () => {
-    if (!answer) return;
-    const ok = (guess || "").trim().toLowerCase() === answer.toLowerCase();
-    setResult({ correct: ok });
-    if (!ok) {
-      setHints((h) => {
-        const next = { ...h, tries: h.tries + 1 };
-        if (next.tries >= 1) next.showLen = true;         // 1ère erreur: longueur du nom complet
-        if (next.tries >= 2) next.showFirstLen = true;    // 2ème erreur: longueur du prénom
-        if (next.tries >= 3) next.showCategory = true;    // 3ème erreur: catégorie générale
-        return next;
+  const validate = () => {
+    if (!guess || !challenge || found) return;
+    const ok = guess.qid === challenge.answer.qid;
+    const newTries = tries + (ok ? 0 : 1);
+    setTries(newTries);
+    if (ok) setFound(true);
+    else setLastWrong(guess);
+    setGuess(null);
+    if (ok || newTries >= MAX_TRIES) {
+      api.logEvent(GAME, {
+        answer: challenge.answer.qid, path: challenge.path, tries: newTries, found: ok, difficulty, domain: domain || null,
       });
     }
   };
 
+  const revealed = found || tries >= MAX_TRIES;
+  const hints = challenge?.hints;
+  const persons = challenge && (revealed ? { ...challenge.persons, [challenge.answer.qid]: challenge.answer } : challenge.persons);
+
   return (
     <>
-    <section className="panel fade-in">
-      <div className="panel-header">
-        <span className="panel-title">Devine la personne cachée</span>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-            <option value="">Toutes catégories</option>
-            <option value="divertissement">divertissement</option>
-            <option value="politique_societe">politique_societe</option>
-            <option value="sciences_savoir">sciences_savoir</option>
-            <option value="entrepreneuriat">entrepreneuriat</option>
-            <option value="sport">sport</option>
-          </select>
-          <div>
+      <section className="panel fade-in">
+        <div className="panel-header">
+          <span className="panel-title">{t("who.title")}</span>
+          <div className="toolbar">
+            <DifficultyPicker value={difficulty} onChange={setDifficulty} />
+            <select value={domain} onChange={(e) => setDomain(e.target.value)} aria-label={t("who.domain")}>
+              <option value="">{t("who.allDomains")}</option>
+              {domains.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
             <button className="btn" onClick={fetchChallenge} disabled={loading}>{t("guess.newChallenge")}</button>
           </div>
         </div>
-      </div>
-      <div className="panel-body">
-        {error && (
-          <div className="error-box"><p style={{ margin: 0 }}>{error}</p></div>
-        )}
-        {(!path || path.length === 0) ? (
-          <p className="muted" style={{ margin: 0 }}>{t("guess.loadingPeople")}</p>
-        ) : (
-          <>
-            <p className="muted" style={{ marginTop: 0 }}>{t("game.path")}</p>
-            <p>
-              {path.map((node, idx) => (
-                <span key={`${node}-${idx}`} style={{ fontWeight: idx === maskedIndex ? 700 : 400 }}>
-                  {idx === maskedIndex ? (
-                    <span>?</span>
-                  ) : (
-                    <a
-                      href={`https://fr.wikipedia.org/wiki/${encodeURIComponent(node)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="chemin-link"
-                    >
-                      {formatNode(node)}
-                    </a>
-                  )}
-                  {idx < path.length - 1 ? " → " : ""}
-                </span>
-              ))}
-            </p>
-
-            <div className="row" style={{ alignItems: "end" }}>
-              <div>
-                <label htmlFor="guess-hidden" className="muted">Qui est la personne cachée ?</label>
-                <Autocomplete
-                  id="guess-hidden"
-                  value={guess}
-                  onChange={setGuess}
-                  placeholder={t("game.typeName")}
-                  options={[]}
-                  onQuery={queryPeople}
-                  useRawOnSelect
-                />
-              </div>
-              <div>
-                <button className="btn" onClick={handleValidate}>{t("guess.verify")}</button>
-              </div>
-            </div>
-
-            {result && (
-              <div className="panel" style={{ marginTop: 12, borderRadius: 12 }}>
-                <div className="panel-body">
-                  {result.correct ? (
-                    <p style={{ margin: 0, fontWeight: 600, color: "var(--success)" }}>{t("guess.good")}</p>
-                  ) : (
-                    <p style={{ margin: 0, fontWeight: 600, color: "var(--danger)" }}>{t("guess.bad")}</p>
-                  )}
-                  {!result.correct && (
-                    <div className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
-                      {hints.showLen && answer && (
-                        <p style={{ margin: 0 }}>Indice: longueur du nom complet = <strong>{formatNode(answer).length}</strong> caractères</p>
-                      )}
-                      {hints.showFirstLen && answer && (
-                        <p style={{ margin: 0 }}>Indice: longueur du prénom = <strong>{formatNode(answer).split(" ")[0]?.length || 0}</strong> caractères</p>
-                      )}
-                      {hints.showCategory && hints.categories && hints.categories.length > 0 && (
-                        <p style={{ margin: 0 }}>Indice: catégorie = <strong>{hints.categories.join(", ")}</strong></p>
-                      )}
-                    </div>
-                  )}
-                  {/* Show the answer as a clickable Wikipedia link when the user is correct
-                      or after 4 failed attempts. */}
-                  {result && (result.correct || (!result.correct && answer && hints.tries >= 4)) && answer && (
-                    <p className="muted" style={{ marginTop: 6 }}>
-                      Réponse: <strong>
-                        <a href={`https://fr.wikipedia.org/wiki/${encodeURIComponent(answer)}`} target="_blank" rel="noopener noreferrer" className="chemin-link">
-                          {formatNode(answer)}
-                        </a>
-                      </strong>
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-            {/* topList panel moved below the main panel to keep UI consistent */}
-          </>
-        )}
-      </div>
-    </section>
-    {topList && topList.length > 0 && (
-      <section className="panel fade-in" style={{ marginTop: 12 }}>
-        <div className="panel-header">
-          <span className="panel-title">Top personnes qui ont le + de relations</span>
-        </div>
         <div className="panel-body">
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ textAlign: "left", color: "var(--muted)" }}>
-                  <th style={{ padding: "8px" }}>#</th>
-                  <th style={{ padding: "8px" }}>Personne</th>
-                  <th style={{ padding: "8px" }}>Relations</th>
-                </tr>
-              </thead>
+          {error && <div className="error-box"><p style={{ margin: 0 }}>{error}</p></div>}
+          {!challenge ? (
+            <p className="muted" style={{ margin: 0 }}>{t("guess.loadingPeople")}</p>
+          ) : (
+            <>
+              <PathView path={challenge.path} persons={persons} hops={challenge.hops}
+                hiddenIndex={revealed ? null : challenge.masked_index} />
+
+              {!revealed && (
+                <form className="row" style={{ alignItems: "end" }} onSubmit={(e) => { e.preventDefault(); validate(); }}>
+                  <PersonPicker id="who-guess" label={t("who.question")} value={guess} onChange={setGuess} />
+                  <div><button type="submit" className="btn btn-primary" disabled={!guess}>{t("guess.verify")}</button></div>
+                </form>
+              )}
+
+              {lastWrong && !revealed && (
+                <p style={{ color: "var(--danger)", fontWeight: 600 }}>{t("who.notThisOne", { name: lastWrong.name })}</p>
+              )}
+
+              {!revealed && tries > 0 && (
+                <ul className="hints">
+                  {tries >= 1 && hints.domain && <li>{t("who.hintDomain")} <strong>{hints.domain}</strong></li>}
+                  {tries >= 2 && hints.birth_year && <li>{t("who.hintLife")} <strong>{lifespan(hints)}</strong></li>}
+                  {tries >= 3 && <li>{t("who.hintInitials")} <strong>{hints.initials}</strong> ({hints.name_length} {t("who.chars")})</li>}
+                </ul>
+              )}
+
+              {revealed && (
+                <div className={found ? "success-box" : "panel result-box"} style={{ marginTop: 12 }}>
+                  <p style={{ margin: 0, fontWeight: 600 }}>{found ? t("guess.good") : t("who.answerWas")}</p>
+                  <div style={{ marginTop: 8 }}><PersonChip person={challenge.answer} showDescription size={56} /></div>
+                  <button className="btn" style={{ marginTop: 8 }} onClick={fetchChallenge}>{t("guess.next")}</button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+
+      {topList.length > 0 && (
+        <section className="panel fade-in" style={{ marginTop: 12 }}>
+          <div className="panel-header"><span className="panel-title">{t("who.topTitle")}</span></div>
+          <div className="panel-body">
+            <table className="table">
               <tbody>
-                {topList.map((r, i) => (
-                  <tr key={`${r.name}-${i}`} style={{ borderTop: "1px solid var(--border)" }}>
-                    <td style={{ padding: "8px", width: 36 }}>{i + 1}</td>
-                    <td style={{ padding: "8px" }}>
-                      <a className="chemin-link" href={`https://fr.wikipedia.org/wiki/${encodeURIComponent(r.name)}`} target="_blank" rel="noopener noreferrer">
-                        { (r.name || '').toString().replaceAll('_', ' ') }
-                      </a>
-                    </td>
-                    <td style={{ padding: "8px", width: 80, textAlign: 'right' }}><strong>{r.degree}</strong></td>
+                {topList.map((p, i) => (
+                  <tr key={p.qid}>
+                    <td style={{ width: 32 }}>{i + 1}</td>
+                    <td><PersonChip person={p} size={28} /></td>
+                    <td style={{ textAlign: "right" }}><strong>{p.degree?.toLocaleString()}</strong> {t("who.links")}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
-      </section>
-    )}
+        </section>
+      )}
     </>
   );
 }
