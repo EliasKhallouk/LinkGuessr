@@ -8,6 +8,10 @@
       "destination": "/api/proxy?path=:path*"
     },
     {
+      "source": "/umami",
+      "destination": "https://linkguessr.duckdns.org/umami"
+    },
+    {
       "source": "/umami/:path*",
       "destination": "https://linkguessr.duckdns.org/umami/:path*"
     },

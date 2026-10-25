@@ -89,7 +89,7 @@ systemctl restart umami
 
 echo "== 6. Nginx : /umami/ -> Umami"
 cat > /etc/nginx/snippets/linkguessr-umami.conf <<EOF
-location /umami/ {
+location /umami {  # sans barre finale : Umami retire lui-même la barre (sinon boucle de redirections)
     proxy_pass http://127.0.0.1:$PORT;
     proxy_set_header Host \$host;
     proxy_set_header X-Real-IP \$remote_addr;
