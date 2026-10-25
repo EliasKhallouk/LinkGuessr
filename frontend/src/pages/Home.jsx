@@ -10,10 +10,11 @@ import StatsBanner from "../components/StatsBanner";
 import Tabs from "../components/Tabs";
 import { useI18n } from "../i18n/I18nProvider";
 
-// Ordre des onglets : les jeux du plus accessible au plus exigeant, l'explorateur en 2e position.
+// Ordre des onglets : l'explorateur d'abord (le défi du jour, juste au-dessus, est déjà un « Qui est caché ? »),
+// puis les jeux du plus accessible au plus exigeant.
 const TABS = [
-  { key: "guesswho", content: <GuessWhoPath /> },
   { key: "explore", content: <Game /> },
+  { key: "guesswho", content: <GuessWhoPath /> },
   { key: "relay", content: <ConnectRelay /> },
   { key: "count", content: <><GuessRelations /><Leaderboard /></> },
 ];
