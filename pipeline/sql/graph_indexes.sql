@@ -3,6 +3,7 @@
 
 CREATE UNIQUE INDEX person_title_idx ON person (title);
 CREATE INDEX person_search_trgm_idx ON person USING gin (search_text gin_trgm_ops);
+CREATE INDEX person_search_prefix_idx ON person (search_text text_pattern_ops);  -- saisies de 1-2 lettres
 CREATE INDEX person_popularity_idx ON person (popularity DESC);
 CREATE INDEX person_domain_idx ON person (primary_domain);
 CREATE INDEX person_birth_year_idx ON person (birth_year);

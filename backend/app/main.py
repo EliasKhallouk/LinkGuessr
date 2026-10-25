@@ -50,15 +50,25 @@ def search(q: str = Query(..., min_length=1, max_length=80), limit: int = Query(
     tokens = [t for t in re.split(r"\s+", norm) if t]
     if not tokens:
         return {"results": []}
-    where = " AND ".join(["search_text LIKE %s"] * len(tokens))
-    word_start = " AND ".join(["search_text ~ %s"] * len(tokens))
     with pool.connection() as conn:
+        if len(norm) < 3:
+            # Trop court pour l'index trigramme : on cherche les noms qui commencent par la saisie.
+            rows = conn.execute(
+                f"""SELECT {person_columns()} FROM person WHERE search_text LIKE %s
+                    ORDER BY popularity DESC LIMIT %s""",
+                (f"{norm}%", limit),
+            ).fetchall()
+            return {"results": rows}
+        where = " AND ".join(["search_text LIKE %s"] * len(tokens))
+        word_start = " AND ".join(["search_text ~ %s"] * len(tokens))
         rows = conn.execute(
             f"""SELECT {person_columns()} FROM person WHERE {where}
                 ORDER BY ({word_start}) DESC, popularity DESC LIMIT %s""",
             (*[f"%{t}%" for t in tokens], *[r"\m" + re.escape(t) for t in tokens], limit),
         ).fetchall()
         if not rows:
+            # Fautes de frappe (« einstien ») : similarité de trigrammes, seuil plus tolérant que 0,6.
+            conn.execute("SELECT set_config('pg_trgm.word_similarity_threshold', '0.45', true)")
             rows = conn.execute(
                 f"""SELECT {person_columns()} FROM person WHERE %s <%% search_text
                     ORDER BY word_similarity(%s, search_text) DESC, popularity DESC LIMIT %s""",
