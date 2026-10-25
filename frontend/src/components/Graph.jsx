@@ -99,7 +99,7 @@ export default function Graph({ nodesData = null, edgesData = null, height = "48
     <section className="panel fade-in">
       <div className="panel-header">
         <span className="panel-title">{title}</span>
-        <span className="kpi">Nœuds: {nodes.length} · Liens: {edges.length}</span>
+        <span className="kpi">{`Nœuds\u00A0: ${nodes.length} · Liens\u00A0: ${edges.length}`}</span>
       </div>
       <div className="panel-body" style={{ padding: 0 }}>
         {loading ? (

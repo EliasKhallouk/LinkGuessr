@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, lifespan } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
+import { capitalize } from "../lib/format";
 import { formatCountdown, msUntilParisMidnight } from "../lib/paris";
 import { recordDaily } from "../lib/dailyStats";
 import { deviceId } from "../lib/storage";
@@ -25,12 +26,12 @@ function Countdown() {
 
 function Hint({ hint }) {
   const { t } = useI18n();
-  if (hint.kind === "domain") return <li>{t("who.hintDomain")} <strong>{hint.value}</strong></li>;
+  if (hint.kind === "domain") return <li>{t("who.hintDomain")} <strong>{capitalize(hint.value)}</strong></li>;
   if (hint.kind === "life") return <li>{t("who.hintLife")} <strong>{lifespan(hint)}</strong></li>;
   return <li>{t("who.hintInitials")} <strong>{hint.value}</strong> ({hint.length} {t("who.chars")})</li>;
 }
 
-// Défi du jour : même chemin pour tous, une seule tentative par appareil, vérification côté serveur.
+// Défi du jour : même chemin pour tous, une partie par appareil (max_tries erreurs), vérification côté serveur.
 export default function DailyChallenge() {
   const { t } = useI18n();
   const [game, setGame] = useState(null);
@@ -76,7 +77,7 @@ export default function DailyChallenge() {
         {!game.finished && <span className="kpi">{t("daily.triesLeft", { n: left })}</span>}
       </div>
       <div className="panel-body">
-        {!game.finished && <p style={{ marginTop: 0 }}>{t("daily.rules")}</p>}
+        {!game.finished && <p style={{ marginTop: 0 }}>{t("daily.rules", { n: game.max_tries })}</p>}
         <PathView path={game.path} persons={game.persons} hops={game.hops}
           hiddenIndex={game.finished ? null : game.masked_index} />
 
@@ -100,7 +101,7 @@ export default function DailyChallenge() {
             <div style={{ marginTop: 8 }}><PersonChip person={game.answer} showDescription size={56} /></div>
             {game.stats?.players > 0 && (
               <p className="muted" style={{ marginTop: 8 }}>
-                {t("daily.stats", { players: game.stats.players, pct: Math.round((100 * game.stats.solved) / game.stats.players) })}
+                {t("daily.stats", { count: game.stats.players, players: game.stats.players, pct: Math.round((100 * game.stats.solved) / game.stats.players) })}
               </p>
             )}
             <div className="toolbar" style={{ marginTop: 8 }}>

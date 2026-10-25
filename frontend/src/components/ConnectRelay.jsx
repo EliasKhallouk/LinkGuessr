@@ -129,7 +129,7 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
               <PersonChip person={target} showDescription size={48} />
             </div>
             <p className="muted" style={{ marginTop: 8 }}>
-              {t("relay.stepsSoFar", { steps })}{best?.length ? ` · ${t("relay.bestIs", { n: best.length })}` : ""}
+              {t("relay.stepsSoFar", { n: steps })}{best?.length ? ` · ${t("relay.bestIs", { n: best.length })}` : ""}
             </p>
 
             <div className="relay-history">
@@ -141,7 +141,7 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
             {success ? (
               <div className="success-box" style={{ marginTop: 12 }}>
                 <p style={{ margin: 0, fontWeight: 600 }}>
-                  {t("relay.success", { steps })}
+                  {t("relay.success", { n: steps })}
                   {best?.length === steps ? ` ${t("relay.perfect")}` : ""}
                 </p>
                 {best && best.length < steps && (

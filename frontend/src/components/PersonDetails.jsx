@@ -46,6 +46,8 @@ export default function PersonDetails({ qid }) {
 
   const { person: p, labels, facts, relations, cites, cited_by: citedBy } = data;
   const label = (q) => labels[q] || q;
+  // Accord de « né à » / « née à » d'après Wikidata ; « né(e) » si le genre est inconnu.
+  const genderSuffix = p.gender === "femme" ? "Female" : p.gender === "homme" ? "Male" : "";
   const place = (placeQid, countryQid) => [placeQid && label(placeQid), countryQid && countryQid !== placeQid && label(countryQid)]
     .filter(Boolean).join(", ");
 
@@ -64,8 +66,8 @@ export default function PersonDetails({ qid }) {
             {p.description && <p className="muted" style={{ marginTop: 4 }}>{p.description}</p>}
             <p style={{ marginTop: 8 }}>
               {lifespan(p)}
-              {p.birth_place && <> · {t("person.bornIn")} {place(p.birth_place, p.birth_country)}</>}
-              {p.death_place && <> · {t("person.diedIn")} {place(p.death_place, p.death_country)}</>}
+              {p.birth_place && <> · {t(`person.bornIn${genderSuffix}`)} {place(p.birth_place, p.birth_country)}</>}
+              {p.death_place && <> · {t(`person.diedIn${genderSuffix}`)} {place(p.death_place, p.death_country)}</>}
             </p>
             {p.occupations?.length > 0 && <p className="muted">{p.occupations.slice(0, 6).map(label).join(" · ")}</p>}
             <div className="toolbar" style={{ marginTop: 8 }}>
@@ -88,7 +90,7 @@ export default function PersonDetails({ qid }) {
           <div className="panel-header"><span className="panel-title">{t("person.network")}</span></div>
           <div className="panel-body">
             <p style={{ marginTop: 0 }}>
-              {t("person.rank", { rank: card.person.degree_rank.toLocaleString(), total: card.person.total.toLocaleString(),
+              {t("person.rank", { count: card.person.degree_rank, rank: card.person.degree_rank.toLocaleString(), total: card.person.total.toLocaleString(),
                 links: card.person.degree.toLocaleString() })}
             </p>
             {card.closest.length > 0 && (

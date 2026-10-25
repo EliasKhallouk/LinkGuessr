@@ -96,7 +96,7 @@ function App() {
       <PersonDrawer />
 
       <footer className="footer">
-        <span>© {new Date().getFullYear()} LinkGuessr - Elias Khallouk</span>
+        <span>© {new Date().getFullYear()} LinkGuessr – Elias Khallouk</span>
         <span className="footer-credits">
           {t("footer.data")}{" "}
           <a href="https://fr.wikipedia.org" target="_blank" rel="noreferrer">Wikipédia</a>

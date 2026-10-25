@@ -50,15 +50,17 @@ function HopExplanation({ hop, from, to }) {
   );
 }
 
-// Sens du lien entre la personne du haut et celle du bas, d'après qui cite qui dans son article.
-function linkDirection(hop, upper, lower) {
-  if (!hop || !upper || !lower) return { arrow: "—", title: "" };
+// Nature du lien entre la personne du haut et celle du bas, d'après qui cite qui dans son article.
+// Le symbole est toujours le même (le chemin se lit de haut en bas) ; le détail est dans le libellé.
+const LINK_ARROW = "↓";
+function linkLabel(hop, upper, lower) {
+  if (!hop || !upper || !lower) return "lien inconnu";
   const upperCites = hop.text.some((r) => r.source_id === upper.id);
   const lowerCites = hop.text.some((r) => r.source_id === lower.id);
-  if (upperCites && lowerCites) return { arrow: "↕", title: `${upper.name} et ${lower.name} se citent mutuellement` };
-  if (upperCites) return { arrow: "↓", title: `${upper.name} cite ${lower.name}` };
-  if (lowerCites) return { arrow: "↑", title: `${lower.name} cite ${upper.name}` };
-  return { arrow: "—", title: "Relation Wikidata" };
+  if (upperCites && lowerCites) return `${upper.name} et ${lower.name} se citent mutuellement`;
+  if (upperCites) return `${upper.name} cite ${lower.name}`;
+  if (lowerCites) return `${lower.name} cite ${upper.name}`;
+  return "Relation Wikidata";
 }
 
 // Un chemin (liste de QID) avec, entre chaque personne, l'explication du lien.
@@ -71,13 +73,13 @@ export default function PathView({ path, persons, hops, hiddenIndex = null }) {
         const next = path[i + 1];
         const hopKey = next && (hops[`${qid}-${next}`] ? `${qid}-${next}` : `${next}-${qid}`);
         const showHop = next && i !== hiddenIndex && i + 1 !== hiddenIndex;
-        const direction = showHop ? linkDirection(hops[hopKey], person, persons[next]) : { arrow: "—", title: "" };
+        const label = showHop ? linkLabel(hops[hopKey], person, persons[next]) : "lien inconnu";
         return (
           <li key={`${qid}-${i}`}>
             <PersonChip person={person} hidden={i === hiddenIndex} showDescription />
             {next && (
               <div className="path-link">
-                <span className="path-arrow" title={direction.title} aria-label={direction.title}>{direction.arrow}</span>
+                <span className="path-arrow" role="img" title={label} aria-label={label}>{LINK_ARROW}</span>
                 {showHop && <HopExplanation hop={hops[hopKey]} from={person} to={persons[next]} />}
               </div>
             )}
