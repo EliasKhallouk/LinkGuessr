@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import AdSlot from "../components/AdSlot";
 import ConnectRelay from "../components/ConnectRelay";
 import Game from "../components/Game";
 import GuessRelations from "../components/GuessRelations";
@@ -19,7 +18,7 @@ export default function Home() {
   const from = params.get("from");
   useEffect(() => { if (from) setTab(0); }, [from]);
   return (
-    <main className="grid">
+    <main className="grid grid-single">
       <div className="col-main">
         <StatsBanner />
         <Tabs
@@ -39,9 +38,6 @@ export default function Home() {
         />
       </div>
       <PersonDrawer />
-      <div className="col-side">
-        <AdSlot />
-      </div>
     </main>
   );
 }

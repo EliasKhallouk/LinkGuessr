@@ -119,3 +119,6 @@ body.drawer-open { overflow: hidden; }
 
 /* Onglets inactifs : cachés mais toujours montés (la partie en cours est conservée). */
 .tabs-panel[hidden] { display: none !important; }
+
+/* Accueil sur une seule colonne (plus d'emplacement publicitaire). */
+.grid-single { grid-template-columns: minmax(0, 980px); }
