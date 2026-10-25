@@ -1,7 +1,8 @@
 // Middleware Vercel : les robots d'aperçu (WhatsApp, Discord, X…) et les moteurs de recherche
 // n'exécutent pas le JavaScript. Pour les pages partageables, on insère dans le HTML un titre,
 // une description et une image d'aperçu propres à la page.
-export const config = { matcher: ["/jour/:number", "/defi", "/personne/:qid"] };
+// Runtime Node.js : le runtime « edge » n'est plus accepté pour les middlewares par Vercel.
+export const config = { runtime: "nodejs", matcher: ["/jour/:number", "/defi", "/personne/:qid"] };
 
 const API = "https://linkguessr.duckdns.org";
 const UA = "LinkGuessr/1.0 (https://link-guessr.vercel.app)";
