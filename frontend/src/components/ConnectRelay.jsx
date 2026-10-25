@@ -7,6 +7,7 @@ import { duelUrl, relayGrid } from "../lib/share";
 import { load, save } from "../lib/storage";
 import PersonChip from "./PersonChip";
 import ShareButton from "./ShareButton";
+import { ShowMoreButton, useShowMore } from "./ShowMore";
 import { newRound, track } from "../lib/tracking";
 import Feedback from "./Feedback";
 
@@ -106,7 +107,10 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
   };
 
   const query = search.trim().toLowerCase();
-  const visible = neighbors.filter((n) => !query || n.name.toLowerCase().includes(query));
+  const matching = neighbors.filter((n) => !query || n.name.toLowerCase().includes(query));
+  // La personne suggérée par l'indice passe en tête : elle reste visible malgré « Voir plus ».
+  const visible = hint ? [...matching.filter((n) => n.qid === hint.qid), ...matching.filter((n) => n.qid !== hint.qid)] : matching;
+  const shown = useShowMore(visible, `${current?.qid}|${query}`);
 
   return (
     <section className="panel fade-in">
@@ -184,7 +188,7 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
                 </div>
                 <ul className="neighbor-list">
                   {visible.length === 0 && <li className="muted">{loading ? t("relay.loading") : t("relay.noNeighbors")}</li>}
-                  {visible.map((n) => (
+                  {shown.visible.map((n) => (
                     <li key={n.qid} className={hint?.qid === n.qid ? "is-hint" : ""}>
                       <PersonChip person={n} showDescription size={32} />
                       <span className="muted">{n.degree?.toLocaleString()} {t("who.links")}</span>
@@ -192,6 +196,7 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
                     </li>
                   ))}
                 </ul>
+                <ShowMoreButton list={shown} />
               </>
             )}
           </>

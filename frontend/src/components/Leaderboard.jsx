@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
+import { ShowMoreButton, useShowMore } from "./ShowMore";
 
 export default function Leaderboard({ game = "guess_count" }) {
   const { t } = useI18n();
@@ -8,6 +9,7 @@ export default function Leaderboard({ game = "guess_count" }) {
   const [period, setPeriod] = useState("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const shown = useShowMore(entries, `${game}|${period}`);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,7 +54,7 @@ export default function Leaderboard({ game = "guess_count" }) {
               </tr>
             </thead>
             <tbody>
-              {entries.map((e) => (
+              {shown.visible.map((e) => (
                 <tr key={`${e.rank}-${e.created_at}-${e.name}`}>
                   <td>{e.rank}</td>
                   <td>{e.name}</td>
@@ -66,6 +68,7 @@ export default function Leaderboard({ game = "guess_count" }) {
             </tbody>
           </table>
         )}
+        {!loading && !error && <ShowMoreButton list={shown} />}
       </div>
     </section>
   );

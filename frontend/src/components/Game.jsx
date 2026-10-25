@@ -5,6 +5,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import PathView from "./PathView";
 import PersonChip from "./PersonChip";
 import PersonPicker from "./PersonPicker";
+import { ShowMoreButton, useShowMore } from "./ShowMore";
 
 // vis-network est lourd : chargé seulement quand un graphe est affiché.
 const Graph = lazy(() => import("./Graph"));
@@ -40,6 +41,7 @@ export default function Game() {
   const [error, setError] = useState(null);
   const [popularPairs, setPopularPairs] = useState([]);
   const [ppPeriod, setPpPeriod] = useState("7");
+  const shownPairs = useShowMore(popularPairs, ppPeriod);
 
   // Depuis une fiche personne : /?from=Q42 pré-remplit la première personne.
   const [params] = useSearchParams();
@@ -166,7 +168,7 @@ export default function Game() {
           <div className="panel-body">
             <table className="table">
               <tbody>
-                {popularPairs.map((r, i) => (
+                {shownPairs.visible.map((r, i) => (
                   <tr key={`${r.a_qid}-${r.b_qid}`}>
                     <td style={{ width: 32 }}>{i + 1}</td>
                     <td><PersonChip person={{ qid: r.a_qid, name: r.a_name, image: r.a_image }} size={28} /></td>
@@ -179,6 +181,7 @@ export default function Game() {
                 ))}
               </tbody>
             </table>
+            <ShowMoreButton list={shownPairs} />
           </div>
         </section>
       )}

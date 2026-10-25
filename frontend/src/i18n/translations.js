@@ -1,5 +1,10 @@
 export const translations = {
   fr: {
+    common: {
+      showMore: "Voir plus",
+      readMore: "Lire la suite",
+      readLess: "Réduire",
+    },
     app: {
       tagline: "Devinez le chemin le plus court entre deux personnes",
       language: "Langue",
@@ -293,6 +298,11 @@ export const translations = {
     },
   },
   en: {
+    common: {
+      showMore: "Show more",
+      readMore: "Read more",
+      readLess: "Show less",
+    },
     app: {
       tagline: "Guess the shortest path between two people",
       language: "Language",

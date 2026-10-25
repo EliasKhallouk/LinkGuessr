@@ -3,6 +3,7 @@ import { api } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
 import { dailyStats } from "../lib/dailyStats";
 import { deviceId, load, save } from "../lib/storage";
+import { ShowMoreButton, useShowMore } from "./ShowMore";
 
 // Statistiques personnelles (locales) après la partie du jour.
 export function DailyStats({ history, highlight }) {
@@ -36,6 +37,7 @@ export function DailyLeaderboard({ solved }) {
   const [pseudo, setPseudo] = useState(() => load("lg-pseudo", ""));
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
+  const shown = useShowMore(entries);
 
   const refresh = () => api.dailyLeaderboard().then(setEntries).catch(() => {});
   useEffect(() => { refresh(); }, []);
@@ -68,12 +70,13 @@ export function DailyLeaderboard({ solved }) {
         <table className="table" style={{ marginTop: 8 }}>
           <thead><tr><th>#</th><th>{t("leaderboard.playerHeader")}</th><th>{t("daily.triesHeader")}</th><th>{t("daily.timeHeader")}</th></tr></thead>
           <tbody>
-            {entries.map((e, i) => (
+            {shown.visible.map((e, i) => (
               <tr key={e.pseudo}><td>{i + 1}</td><td>{e.pseudo}</td><td>{e.tries}</td><td>{e.seconds} s</td></tr>
             ))}
           </tbody>
         </table>
       )}
+      <ShowMoreButton list={shown} />
     </div>
   );
 }

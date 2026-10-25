@@ -4,6 +4,7 @@ import { api, commonsThumb, lifespan, wikiUrl } from "../api";
 import ImageCredit from "./ImageCredit";
 import { Snippet } from "./PathView";
 import PersonChip from "./PersonChip";
+import { ShowMoreButton, useShowMore } from "./ShowMore";
 import { useI18n } from "../i18n/I18nProvider";
 
 // Propriétés Wikidata affichées dans la fiche, dans cet ordre.
@@ -24,6 +25,11 @@ export default function PersonDetails({ qid }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [card, setCard] = useState(null);
+  const relationList = data ? [...new Map(data.relations.map((r) => [`${r.qid}-${r.relation}`, r])).values()] : [];
+  const closest = useShowMore(card?.closest ?? [], qid);
+  const relationsShown = useShowMore(relationList, qid);
+  const citesShown = useShowMore(data?.cites ?? [], qid);
+  const citedByShown = useShowMore(data?.cited_by ?? [], qid);
 
   useEffect(() => {
     setData(null);
@@ -97,8 +103,9 @@ export default function PersonDetails({ qid }) {
               <>
                 <p className="muted">{t("person.closest")}</p>
                 <ul className="fact-list">
-                  {card.closest.map((c) => <li key={c.qid}><PersonChip person={c} size={28} showDescription /></li>)}
+                  {closest.visible.map((c) => <li key={c.qid}><PersonChip person={c} size={28} showDescription /></li>)}
                 </ul>
+                <ShowMoreButton list={closest} />
               </>
             )}
           </div>
@@ -110,13 +117,14 @@ export default function PersonDetails({ qid }) {
           <div className="panel-header"><span className="panel-title">{t("person.relations")}</span></div>
           <div className="panel-body">
             <ul className="fact-list">
-              {[...new Map(relations.map((r) => [`${r.qid}-${r.relation}`, r])).values()].map((r) => (
+              {relationsShown.visible.map((r) => (
                 <li key={`${r.qid}-${r.relation}`}>
                   <span className="muted">{r.relation}{r.context ? ` (${r.context})` : ""}</span>
                   <PersonChip person={r} size={28} />
                 </li>
               ))}
             </ul>
+            <ShowMoreButton list={relationsShown} />
           </div>
         </section>
       )}
@@ -141,13 +149,14 @@ export default function PersonDetails({ qid }) {
           <div className="panel-header"><span className="panel-title">{t("person.cites", { name: p.name })}</span></div>
           <div className="panel-body">
             <ul className="link-list">
-              {cites.map((c) => (
+              {citesShown.visible.map((c) => (
                 <li key={c.qid}>
                   <PersonChip person={c} size={28} />
                   {c.snippet && <Snippet text={c.snippet} article={p} />}
                 </li>
               ))}
             </ul>
+            <ShowMoreButton list={citesShown} />
           </div>
         </section>
       )}
@@ -157,13 +166,14 @@ export default function PersonDetails({ qid }) {
           <div className="panel-header"><span className="panel-title">{t("person.citedBy", { name: p.name })}</span></div>
           <div className="panel-body">
             <ul className="link-list">
-              {citedBy.map((c) => (
+              {citedByShown.visible.map((c) => (
                 <li key={c.qid}>
                   <PersonChip person={c} size={28} />
                   {c.snippet && <Snippet text={c.snippet} article={c} />}
                 </li>
               ))}
             </ul>
+            <ShowMoreButton list={citedByShown} />
           </div>
         </section>
       )}

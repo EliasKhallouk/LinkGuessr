@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from "react";
 import { wikiUrl } from "../api";
+import { useI18n } from "../i18n/I18nProvider";
 import PersonChip from "./PersonChip";
 
 // Phrase extraite d'un article Wikipédia (CC BY-SA 4.0) : on renvoie toujours vers l'article d'origine.
@@ -11,9 +13,30 @@ function tidy(text) {
 }
 
 export function Snippet({ text, article }) {
+  const { t } = useI18n();
+  const quote = useRef(null);
+  const [expanded, setExpanded] = useState(false);
+  const [clamped, setClamped] = useState(false);
+
+  // Le bouton n'apparaît que si la citation dépasse deux lignes ; on remesure quand la largeur change
+  // (et quand un onglet caché devient visible).
+  useEffect(() => {
+    const el = quote.current;
+    if (!el || expanded || typeof ResizeObserver === "undefined") return undefined;
+    const measure = () => setClamped(el.scrollHeight > el.clientHeight + 1);
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text, expanded]);
+
   return (
     <span className="snippet">
-      <q className="hop-snippet">{tidy(text)}</q>{" "}
+      <q ref={quote} className={`hop-snippet ${expanded ? "" : "is-clamped"}`}>{tidy(text)}</q>
+      {(clamped || expanded) && (
+        <button type="button" className="snippet-more" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
+          {expanded ? t("common.readLess") : t("common.readMore")}
+        </button>
+      )}{" "}
       {article?.title && (
         <a className="snippet-source" href={wikiUrl(article.title)} target="_blank" rel="noreferrer">
           Wikipédia · {article.name}
