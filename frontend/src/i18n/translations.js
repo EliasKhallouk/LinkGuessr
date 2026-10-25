@@ -206,6 +206,9 @@ export const translations = {
       relations: "Relations",
       cites: "Personnes citées dans l'article de {name}",
       citedBy: "Articles qui citent {name}",
+      title: "Fiche personne",
+      back: "← Retour",
+      backToGame: "← Retour au jeu",
     },
     lab: {
       soon: "Le Lab arrive bientôt : des analyses du réseau des personnalités de Wikipédia, ouvertes à tous.",
@@ -428,6 +431,9 @@ export const translations = {
       relations: "Relations",
       cites: "People cited in {name}'s article",
       citedBy: "Articles citing {name}",
+      title: "Person profile",
+      back: "← Back",
+      backToGame: "← Back to the game",
     },
     lab: {
       soon: "The Lab is coming soon: open analyses of the network of Wikipedia personalities.",

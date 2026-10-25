@@ -1,7 +1,9 @@
 import { useState } from "react";
 
-export default function Tabs({ tabs = [], initial = 0, onChange }) {
-  const [active, setActive] = useState(initial);
+// Onglets. Non contrôlés par défaut ; contrôlés si `active` est fourni (avec `onChange`).
+export default function Tabs({ tabs = [], initial = 0, active: controlled, onChange }) {
+  const [internal, setInternal] = useState(initial);
+  const active = controlled ?? internal;
   return (
     <div className="tabs">
       <div className="tabs-list">
@@ -10,7 +12,7 @@ export default function Tabs({ tabs = [], initial = 0, onChange }) {
             key={t.key}
             className={`tab ripple ${i === active ? "active" : ""}`}
             onClick={() => {
-              setActive(i);
+              setInternal(i);
               onChange?.(i);
             }}
           >
@@ -18,9 +20,10 @@ export default function Tabs({ tabs = [], initial = 0, onChange }) {
           </button>
         ))}
       </div>
-      <div className="tabs-panel">
-        {tabs[active]?.content}
-      </div>
+      {/* Tous les jeux restent montés (cachés) : changer d'onglet ne perd pas la partie en cours. */}
+      {tabs.map((t, i) => (
+        <div key={t.key} className="tabs-panel" hidden={i !== active}>{t.content}</div>
+      ))}
     </div>
   );
 }

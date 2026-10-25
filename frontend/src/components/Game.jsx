@@ -43,10 +43,10 @@ export default function Game() {
 
   // Depuis une fiche personne : /?from=Q42 pré-remplit la première personne.
   const [params] = useSearchParams();
+  const from = params.get("from");
   useEffect(() => {
-    const from = params.get("from");
     if (from) api.person(from).then((d) => setP1(d.person)).catch(() => {});
-  }, [params]);
+  }, [from]);
 
   useEffect(() => {
     api.popularPairs(ppPeriod).then(setPopularPairs).catch(() => setPopularPairs([]));
