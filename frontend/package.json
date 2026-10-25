@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@vercel/og": "^1.0.3",
+    "@vercel/og": "^0.8.6",
     "chart.js": "^4.5.1",
     "react": "^19.2.0",
     "react-chartjs-2": "^5.3.1",

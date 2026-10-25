@@ -10,7 +10,11 @@ const W = 1200;
 const H = 630;
 
 // Satori accepte des objets { type, props } : pas besoin de JSX ici.
-const h = (type, style, ...children) => ({ type, props: { style, children: children.flat().filter((c) => c !== null && c !== false) } });
+// Il exige display: flex sur les blocs à plusieurs enfants : c'est la valeur par défaut ici.
+const h = (type, style, ...children) => ({
+  type,
+  props: { style: { display: "flex", ...style }, children: children.flat().filter((c) => c !== null && c !== false) },
+});
 
 async function json(path) {
   const r = await fetch(`${API}${path}`, { headers: { "User-Agent": UA } });
@@ -93,7 +97,7 @@ async function render(params) {
     return frame(p.name, p.description || "",
       h("div", { display: "flex", alignItems: "center", gap: 48, width: "100%" },
         avatar(src, null, 240),
-        h("div", { display: "flex", flexDirection: "column", fontSize: 32, gap: 12 },
+        h("div", { flexDirection: "column", fontSize: 32, gap: 12, flex: 1, maxWidth: 760 },
           h("div", {}, `${p.degree.toLocaleString("fr-FR")} liens · ${p.degree_rank.toLocaleString("fr-FR")}e personne la plus connectée`),
           h("div", { color: "#9ca8c5" }, `Proches : ${closest.slice(0, 3).map((c) => c.name).join(", ")}`))));
   }
