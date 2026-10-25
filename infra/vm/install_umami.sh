@@ -108,12 +108,13 @@ if [ ! -f /root/umami-admin-password ]; then
   TOKEN=$(curl -sf -X POST "http://127.0.0.1:$PORT/umami/api/auth/login" -H "Content-Type: application/json" \
     -d '{"username":"admin","password":"umami"}' | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
   if [ -n "$TOKEN" ]; then
+    # Le site d'abord : changer le mot de passe invalide le jeton de connexion.
+    WEBSITE=$(curl -s -X POST "http://127.0.0.1:$PORT/umami/api/websites" -H "Authorization: Bearer $TOKEN" \
+      -H "Content-Type: application/json" -d "{\"name\":\"LinkGuessr\",\"domain\":\"$WEBSITE_DOMAIN\"}" || true)
+    echo "   Site créé (id à mettre dans frontend/index.html) : $WEBSITE"
     curl -sf -X POST "http://127.0.0.1:$PORT/umami/api/me/password" -H "Authorization: Bearer $TOKEN" \
       -H "Content-Type: application/json" -d "{\"currentPassword\":\"umami\",\"newPassword\":\"$ADMIN_PASS\"}" >/dev/null
     install -m 600 /dev/null /root/umami-admin-password && echo "$ADMIN_PASS" > /root/umami-admin-password
-    WEBSITE=$(curl -sf -X POST "http://127.0.0.1:$PORT/umami/api/websites" -H "Authorization: Bearer $TOKEN" \
-      -H "Content-Type: application/json" -d "{\"name\":\"LinkGuessr\",\"domain\":\"$WEBSITE_DOMAIN\"}")
-    echo "   Site créé : $WEBSITE"
   else
     echo "   ⚠️ Connexion admin impossible : changer le mot de passe à la main (admin/umami)."
   fi
