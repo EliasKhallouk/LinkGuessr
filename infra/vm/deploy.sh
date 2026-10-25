@@ -10,6 +10,11 @@ archive=$(mktemp -t linkguessr-app.XXXXXX.tar.gz)
 git archive --format=tar.gz -o "$archive" HEAD backend pipeline infra
 echo "archive : $(git rev-parse --short HEAD), $(du -h "$archive" | cut -f1)"
 
-scp -q "$archive" infra/vm/install_app.sh "$HOST":/tmp/
+# Le script d'installation vient aussi du commit (fins de ligne Linux garanties par .gitattributes).
+installer=$(mktemp -t install_app.XXXXXX.sh)
+git show HEAD:infra/vm/install_app.sh > "$installer"
+scp -q "$archive" "$HOST":/tmp/
+scp -q "$installer" "$HOST":/tmp/install_app.sh
+rm -f "$installer"
 ssh "$HOST" "sudo bash /tmp/install_app.sh /tmp/$(basename "$archive") && rm -f /tmp/$(basename "$archive")"
 rm -f "$archive"
