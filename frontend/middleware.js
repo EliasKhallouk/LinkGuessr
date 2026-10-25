@@ -22,7 +22,7 @@ async function metaFor(url) {
     const a = d.persons[d.path[0]].name;
     const b = d.persons[d.path[d.path.length - 1]].name;
     return { title: `Défi du jour #${d.number} : qui relie ${a} et ${b} ? · LinkGuessr`,
-      description: "Le même défi pour tout le monde, une tentative par jour. Devine la personne cachée sur le chemin.",
+      description: "Le même défi pour tout le monde, une partie par jour. Devine la personne cachée sur le chemin.",
       image: `/api/og?type=jour&n=${d.number}` };
   }
   if (parts[0] === "defi") {
@@ -32,7 +32,7 @@ async function metaFor(url) {
       const [qa, qb] = (url.searchParams.get("paire") || "").split("-");
       const [ca, cb] = await Promise.all([api(`/person/${qa}/card`), api(`/person/${qb}/card`)]);
       return { title: `Défi : relier ${ca.person.name} à ${cb.person.name} en moins de ${score} coups · LinkGuessr`,
-        description: `Quelqu'un l'a fait en ${score} coup(s). Saute de personne en personne : tu fais mieux ?`,
+        description: `Quelqu'un l'a fait en ${score} ${score === 1 ? "coup" : "coups"}. Saute de personne en personne : tu fais mieux ?`,
         image: `/api/og?type=duel&paire=${qa}-${qb}&score=${score}` };
     }
     return { title: `Défi : bats ${score} points en 60 secondes · LinkGuessr`,
@@ -75,7 +75,10 @@ export default async function middleware(request) {
         '<meta name="twitter:card" content="summary_large_image" />',
         `<link rel="canonical" href="${escape(url.origin + url.pathname)}" />`,
       ].join("\n    ");
+      // index.html porte des balises d'aperçu par défaut (accueil) : on les retire, sinon les robots
+      // gardent la première occurrence (titre de l'accueil) et affichent plusieurs images.
       html = html
+        .replace(/\s*<meta (?:property="og:[^"]*"|name="twitter:[^"]*")[^>]*>/g, "")
         .replace(/<title>[^<]*<\/title>/, `<title>${escape(meta.title)}</title>`)
         .replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${escape(meta.description)}" />`)
         .replace("</head>", `    ${tags}\n  </head>`);
