@@ -2,7 +2,7 @@ export default function AdSlot() {
   const handleClick = () => {
     try { window.dispatchEvent(new CustomEvent("ad:click", { detail: { slot: "sidebar" } })); } catch {}
     // Optional: integrate with your analytics here
-    if (process.env.NODE_ENV !== "production") {
+    if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
       console.log("Ad clicked: sidebar");
     }

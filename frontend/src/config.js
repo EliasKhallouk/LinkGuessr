@@ -1,10 +1,10 @@
 // Single source of truth for backend API base URL
-// Override via environment variable REACT_APP_API_BASE_URL
+// Override via environment variable VITE_API_BASE_URL
 // Example: create .env in frontend folder with:
-// REACT_APP_API_BASE_URL=https://your-backend.example.com
+// VITE_API_BASE_URL=https://your-backend.example.com
 
 // Heuristic: if no explicit base URL is provided and we're on localhost, default to local FastAPI
-let defaultBase = "https://linkguessr-dpj1.onrender.com";
+let defaultBase = "https://linkguessr.duckdns.org";
 try {
   const host = window?.location?.hostname;
   if (host === "localhost" || host === "127.0.0.1") {
@@ -13,6 +13,6 @@ try {
 } catch {}
 
 export const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL?.replace(/\/$/, "") || defaultBase;
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || defaultBase;
 
 export const apiUrl = (path) => `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
