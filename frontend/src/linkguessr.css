@@ -65,8 +65,7 @@
 /* ----- Compteur de la page d'accueil ----- */
 .stats-banner { display: flex; flex-wrap: wrap; gap: 24px; align-items: baseline; margin-bottom: 16px; }
 .stat { display: flex; flex-direction: column; }
-.stat strong { font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums;
-  background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.stat strong { font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text-primary); }
 .stat span { color: var(--text-secondary); font-size: 14px; }
 .stat-date { margin-left: auto; }
 
@@ -130,7 +129,7 @@ body.drawer-open { overflow: hidden; }
 
 /* ----- Partage et duels ----- */
 .btn-share { background: var(--share-bg); color: var(--on-share); }
-.duel-banner { margin-bottom: 16px; border: 2px solid var(--accent-tertiary); }
+.duel-banner { margin-bottom: 16px; border: 2px solid var(--accent-secondary); }
 
 /* ----- Statistiques du défi ----- */
 .daily-stats { margin-top: 16px; }

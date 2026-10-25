@@ -15,7 +15,6 @@
   /* Accent Colors - Playful & Vibrant */
   --accent-primary: #00d9ff;
   --accent-secondary: #7c3aed;
-  --accent-tertiary: #f472b6;
   --accent-success: #10b981;
   --accent-warning: #f59e0b;
   --accent-danger: #ef4444;
@@ -31,7 +30,6 @@
 
   /* Gradients */
   --gradient-primary: linear-gradient(161deg, #00d9ff 0%, #7c3aed 100%);
-  --gradient-secondary: linear-gradient(135deg, #f472b6 0%, #ff6b9d 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --gradient-panel: linear-gradient(145deg, rgba(26, 31, 53, 0.6), rgba(15, 22, 41, 0.4));
   
@@ -74,7 +72,6 @@
   /* Accent Colors - Playful & Vibrant */
   --accent-primary: #0ea5e9;
   --accent-secondary: #8b5cf6;
-  --accent-tertiary: #ec4899;
   --accent-success: #10b981;
   --accent-warning: #f59e0b;
   --accent-danger: #ef4444;
@@ -90,7 +87,6 @@
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%);
-  --gradient-secondary: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --gradient-panel: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(248, 250, 252, 0.6));
   
@@ -174,8 +170,7 @@ body::before {
   z-index: -1;
   background: 
     radial-gradient(circle at 20% 30%, var(--accent-primary) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, var(--accent-secondary) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, var(--accent-tertiary) 0%, transparent 70%);
+    radial-gradient(circle at 80% 70%, var(--accent-secondary) 0%, transparent 50%);
   opacity: 0.08;
   animation: floatGradient 20s ease-in-out infinite;
 }
@@ -184,24 +179,6 @@ body::before {
   0%, 100% { transform: translate(0, 0) scale(1); }
   33% { transform: translate(30px, -30px) scale(1.1); }
   66% { transform: translate(-30px, 30px) scale(0.9); }
-}
-
-/* Animated particles */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(0, 217, 255, 0.05) 0%, transparent 20%),
-    radial-gradient(circle at 90% 80%, rgba(124, 58, 237, 0.05) 0%, transparent 20%),
-    radial-gradient(circle at 50% 50%, rgba(244, 114, 182, 0.03) 0%, transparent 30%);
-  animation: shimmer 15s ease-in-out infinite alternate;
-}
-
-@keyframes shimmer {
-  0% { opacity: 0.3; }
-  100% { opacity: 0.6; }
 }
 
 /* ===== APP SHELL WITH GLASSMORPHISM ===== */
@@ -590,10 +567,6 @@ body::after {
   font-size: 10px; 
   font-weight: 700;
   color: var(--text-muted);
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   border: 2px solid var(--border-color); 
   padding: 4px 10px; 
   border-radius: 999px; 
@@ -632,25 +605,11 @@ body::after {
   overflow: hidden;
 }
 
-.panel-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--gradient-primary);
-  opacity: 0.6;
-}
-
 .panel-title { 
   font-weight: 700; 
   font-size: 18px;
   letter-spacing: 0.3px;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
 }
 
 .panel-body { 
@@ -837,10 +796,7 @@ select option {
 .kpi strong { 
   font-size: 26px; 
   font-weight: 800;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent-text);
 }
 
 
@@ -967,13 +923,13 @@ select option {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--gradient-primary);
+  background: var(--text-muted);
   border-radius: 10px;
   border: 2px solid var(--bg-base);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--gradient-secondary);
+  background: var(--text-secondary);
 }
 
 /* ===== LOADING SPINNER ===== */
