@@ -10,57 +10,26 @@ from contextlib import asynccontextmanager
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
 
-from .config import CORS_ORIGINS, DATABASE_URL, GRAPH_FILE
-from .graph import MODES, PersonGraph
+from . import game
+from .config import CORS_ORIGINS
+from .core import id_of, person_columns, pool, startup, state, summaries
+from .graph import MODES
 from .text import normalize
 
-pool = ConnectionPool(DATABASE_URL, min_size=1, max_size=5, open=False,
-                      kwargs={"options": "-c search_path=graph,public", "row_factory": dict_row})
-state: dict = {}
-
-QID = re.compile(r"^Q\d+$")
-PERSON_SUMMARY = """id, qid, title, name, description, image, primary_domain, birth_year, death_year,
-                    gender, popularity, degree"""
 DIFFICULTY_TOP = {"facile": 0.02, "moyen": 0.10, "difficile": 0.40}
-
-
-def load_graph() -> None:
-    z = np.load(GRAPH_FILE)
-    state["qid_num"] = z["qid_num"]
-    state["domain"] = z["domain"]
-    state["domain_names"] = [str(d) for d in z["domain_names"]]
-    state["graph"] = PersonGraph(len(z["qid_num"]), z["a"], z["b"], z["kinds"], z["popularity"])
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    pool.open()
-    load_graph()
+    startup()
     yield
     pool.close()
 
 
 app = FastAPI(title="LinkGuessr API", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["GET", "POST"], allow_headers=["*"])
-
-
-def id_of(qid: str) -> int:
-    if not QID.match(qid):
-        raise HTTPException(400, f"QID invalide : {qid}")
-    qid_num = state["qid_num"]
-    i = int(np.searchsorted(qid_num, int(qid[1:])))
-    if i >= len(qid_num) or qid_num[i] != int(qid[1:]):
-        raise HTTPException(404, f"Personne inconnue : {qid}")
-    return i
-
-
-def summaries(ids: list[int]) -> dict[int, dict]:
-    with pool.connection() as conn:
-        rows = conn.execute(f"SELECT {PERSON_SUMMARY} FROM person WHERE id = ANY(%s)", (ids,)).fetchall()
-    return {r["id"]: r for r in rows}
+app.include_router(game.router)
 
 
 @app.get("/health")
@@ -80,13 +49,13 @@ def search(q: str = Query(..., min_length=1, max_length=80), limit: int = Query(
     params = [f"%{t}%" for t in tokens]
     with pool.connection() as conn:
         rows = conn.execute(
-            f"""SELECT {PERSON_SUMMARY} FROM person WHERE {where}
+            f"""SELECT {person_columns()} FROM person WHERE {where}
                 ORDER BY (search_text LIKE %s) DESC, popularity DESC LIMIT %s""",
             (*params, f"{norm}%", limit),
         ).fetchall()
         if not rows:
             rows = conn.execute(
-                f"""SELECT {PERSON_SUMMARY} FROM person WHERE %s <%% search_text
+                f"""SELECT {person_columns()} FROM person WHERE %s <%% search_text
                     ORDER BY word_similarity(%s, search_text) DESC, popularity DESC LIMIT %s""",
                 (norm, norm, limit),
             ).fetchall()
@@ -138,12 +107,20 @@ def path(
     target: str = Query(..., alias="to"),
     mode: str = Query("all", pattern=f"^({'|'.join(MODES)})$"),
     limit: int = Query(5, ge=1, le=20),
+    track: bool = False,
 ):
-    """Plus courts chemins entre deux personnes, avec l'explication de chaque lien."""
+    """Plus courts chemins entre deux personnes, avec l'explication de chaque lien.
+    track=true : compte la paire dans les « paires les plus demandées » (explorateur uniquement)."""
     s, t = id_of(source), id_of(target)
+    if track and s != t:
+        game.record_path_request(source, target)
     res = state["graph"].shortest_paths(s, t, mode=mode, limit=limit)
     if res.length is None:
-        return {"length": None, "n_paths": 0, "paths": [], "persons": {}, "hops": []}
+        return {"length": None, "n_paths": 0, "paths": [], "persons": {}, "hops": {}}
+    return path_details(res)
+
+
+def path_details(res) -> dict:
 
     ids = sorted({v for p in res.paths for v in p})
     pairs = sorted({(min(u, v), max(u, v)) for p in res.paths for u, v in zip(p, p[1:])})
@@ -186,13 +163,36 @@ def neighbors(qid: str, limit: int = Query(50, ge=1, le=500)):
     pid = id_of(qid)
     with pool.connection() as conn:
         rows = conn.execute(
-            f"""SELECT {', '.join('o.' + c.strip() for c in PERSON_SUMMARY.split(','))}, e.kinds, e.mentions, e.weight
+            f"""SELECT {person_columns('o')}, e.kinds, e.mentions, e.weight
                 FROM edge e JOIN person o ON o.id = CASE WHEN e.a = %s THEN e.b ELSE e.a END
                 WHERE e.a = %s OR e.b = %s
                 ORDER BY e.weight DESC, o.popularity DESC LIMIT %s""",
             (pid, pid, pid, limit),
         ).fetchall()
     return {"results": rows}
+
+
+def _candidates(difficulty: str, domain: str | None) -> np.ndarray:
+    pop = state["graph"].popularity
+    candidates = np.flatnonzero(pop >= np.quantile(pop, 1 - DIFFICULTY_TOP[difficulty]))
+    if domain:
+        if domain not in state["domain_names"]:
+            raise HTTPException(400, f"Domaine inconnu. Domaines : {state['domain_names']}")
+        candidates = candidates[state["domain"][candidates] == state["domain_names"].index(domain)]
+    if len(candidates) < 2:
+        raise HTTPException(404, "Pas assez de personnes pour ces critères")
+    return candidates
+
+
+def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int, limit: int = 1):
+    """Deux personnes tirées parmi les plus connues, reliées par un chemin de longueur voulue."""
+    graph, candidates, rng = state["graph"], _candidates(difficulty, domain), np.random.default_rng()
+    for _ in range(50):
+        s, t = (int(x) for x in rng.choice(candidates, 2, replace=False))
+        res = graph.shortest_paths(s, t, mode=mode, limit=limit)
+        if res.length is not None and min_length <= res.length <= max_length:
+            return s, t, res
+    raise HTTPException(404, "Aucune paire trouvée, élargir les critères")
 
 
 @app.get("/random_pair")
@@ -203,22 +203,63 @@ def random_pair(
     min_length: int = Query(2, ge=1, le=8),
     max_length: int = Query(6, ge=1, le=12),
 ):
-    """Deux personnes tirées parmi les plus connues (selon la difficulté), reliées par un chemin
-    de longueur comprise entre min_length et max_length."""
-    graph = state["graph"]
-    pop = graph.popularity
-    candidates = np.flatnonzero(pop >= np.quantile(pop, 1 - DIFFICULTY_TOP[difficulty]))
-    if domain:
-        if domain not in state["domain_names"]:
-            raise HTTPException(400, f"Domaine inconnu. Domaines : {state['domain_names']}")
-        candidates = candidates[state["domain"][candidates] == state["domain_names"].index(domain)]
-    if len(candidates) < 2:
-        raise HTTPException(404, "Pas assez de personnes pour ces critères")
-    rng = random.Random()
-    for _ in range(50):
-        s, t = (int(x) for x in rng.sample(candidates.tolist(), 2))
-        res = graph.shortest_paths(s, t, mode=mode, limit=1)
-        if res.length is not None and min_length <= res.length <= max_length:
-            people = summaries([s, t])
-            return {"from": people[s], "to": people[t], "length": res.length, "n_paths": res.n_paths}
-    raise HTTPException(404, "Aucune paire trouvée, élargir les critères")
+    """Deux personnes connues (selon la difficulté) et la longueur du plus court chemin.
+    Le chemin lui-même n'est pas renvoyé : le joueur le demande à /path après avoir répondu."""
+    s, t, res = _pick_pair(difficulty, domain, mode, min_length, max_length)
+    people = summaries([s, t])
+    return {"from": people[s], "to": people[t], "length": res.length, "n_paths": res.n_paths}
+
+
+@app.get("/random_path")
+def random_path(
+    difficulty: str = Query("moyen", pattern="^(facile|moyen|difficile)$"),
+    domain: str | None = None,
+    min_length: int = Query(2, ge=2, le=8),
+    max_length: int = Query(5, ge=2, le=12),
+):
+    """« Qui est caché ? » : un plus court chemin dont une personne intermédiaire est à deviner.
+    Les indices (domaine, dates, initiales) sont donnés ; le nom reste dans `answer`."""
+    _, _, res = _pick_pair(difficulty, domain, "all", min_length, max_length)
+    details = path_details(res)
+    chain = details["paths"][0]
+    masked = random.randint(1, len(chain) - 2)
+    answer = details["persons"][chain[masked]]
+    hops = {k: v for k, v in details["hops"].items() if chain[masked] not in k.split("-")}
+    return {
+        "path": chain,
+        "masked_index": masked,
+        "persons": {q: p for q, p in details["persons"].items() if q in chain and q != answer["qid"]},
+        "hops": hops,
+        "answer": answer,
+        "hints": {
+            "domain": answer["primary_domain"],
+            "birth_year": answer["birth_year"],
+            "death_year": answer["death_year"],
+            "initials": "".join(w[0] for w in re.split(r"[\s-]+", answer["name"]) if w),
+            "name_length": len(answer["name"]),
+        },
+    }
+
+
+TOP_ORDER = {"popularity": "popularity", "degree": "degree", "pageviews": "pageviews_12m", "pagerank": "pagerank"}
+
+
+@app.get("/top")
+def top(
+    by: str = Query("popularity", pattern=f"^({'|'.join(TOP_ORDER)})$"),
+    domain: str | None = None,
+    limit: int = Query(10, ge=1, le=100),
+):
+    where, params = ("WHERE primary_domain = %s", [domain]) if domain else ("", [])
+    with pool.connection() as conn:
+        rows = conn.execute(
+            f"""SELECT {person_columns()}, pageviews_12m, pagerank FROM person {where}
+                ORDER BY {TOP_ORDER[by]} DESC NULLS LAST LIMIT %s""",
+            (*params, limit),
+        ).fetchall()
+    return {"by": by, "results": rows}
+
+
+@app.get("/domains")
+def domains():
+    return {"results": state["domain_names"]}

@@ -9,7 +9,7 @@ import igraph as ig
 import numpy as np
 import polars as pl
 
-from .config import work_path
+from .config import DUMP_DATE, work_path
 
 
 def normalize(s: str) -> str:
@@ -132,5 +132,6 @@ def build_graph() -> None:
         domain=np.array([domain_code.get(d, -1) for d in persons["primary_domain"].to_list()], dtype=np.int8),
         domain_names=np.array(domains),
         birth_year=persons["birth_year"].fill_null(-99999).to_numpy().astype(np.int32),
+        dump_date=np.array(DUMP_DATE),
     )
     print(f"tables finales dans {final}")
