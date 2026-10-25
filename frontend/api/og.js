@@ -2,7 +2,7 @@
 // Elles intriguent sans jamais révéler de réponse, et portent les crédits des sources.
 import { ImageResponse } from "@vercel/og";
 
-export const config = { runtime: "edge" };
+// Runtime Node.js (par défaut) : @vercel/og 1.x référence des modules refusés par le runtime « edge ».
 
 const API = "https://linkguessr.duckdns.org";
 const UA = "LinkGuessr/1.0 (https://link-guessr.vercel.app)";
@@ -101,7 +101,7 @@ async function render(params) {
     h("div", { display: "flex", alignItems: "center", gap: 24 }, mystery(160), arrow, mystery(160), arrow, mystery(160)));
 }
 
-export default async function handler(request) {
+export async function GET(request) {
   const params = new URL(request.url).searchParams;
   let element;
   try {
