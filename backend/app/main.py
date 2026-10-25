@@ -18,6 +18,7 @@ from .graph import MODES
 from .text import normalize
 
 DIFFICULTY_TOP = {"facile": 0.02, "moyen": 0.10, "difficile": 0.40}
+MIN_POOL = 200  # réservoir minimal, pour les petits domaines
 
 
 @asynccontextmanager
@@ -174,15 +175,17 @@ def neighbors(qid: str, limit: int = Query(50, ge=1, le=500)):
 
 
 def _candidates(difficulty: str, domain: str | None) -> np.ndarray:
+    """Les personnes les plus connues (part DIFFICULTY_TOP du domaine), au moins MIN_POOL si possible."""
     pop = state["graph"].popularity
-    candidates = np.flatnonzero(pop >= np.quantile(pop, 1 - DIFFICULTY_TOP[difficulty]))
+    pool_ids = np.arange(len(pop))
     if domain:
         if domain not in state["domain_names"]:
             raise HTTPException(400, f"Domaine inconnu. Domaines : {state['domain_names']}")
-        candidates = candidates[state["domain"][candidates] == state["domain_names"].index(domain)]
-    if len(candidates) < 2:
+        pool_ids = pool_ids[state["domain"] == state["domain_names"].index(domain)]
+    k = min(len(pool_ids), max(MIN_POOL, int(len(pool_ids) * DIFFICULTY_TOP[difficulty])))
+    if k < 2:
         raise HTTPException(404, "Pas assez de personnes pour ces critères")
-    return candidates
+    return pool_ids[np.argpartition(-pop[pool_ids], k - 1)[:k]]
 
 
 def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int, limit: int = 1):
