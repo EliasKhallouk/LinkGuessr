@@ -10,6 +10,8 @@ import psycopg
 import pyarrow.parquet as pq
 from tqdm import tqdm
 
+from .check import check_final
+
 TABLES = ["person", "ref", "fact", "text_link", "relation", "edge"]
 BATCH = 50_000
 SQL_DIR = Path(__file__).resolve().parents[1] / "sql"
@@ -29,6 +31,8 @@ def _copy(cur, table: str, path: Path, columns: list[str]) -> None:
 
 
 def load(final_dir: Path, dsn: str | None = None) -> None:
+    if not check_final(final_dir):
+        raise SystemExit("tables non conformes : chargement annulé")
     dsn = dsn or os.environ["DATABASE_URL"]
     with psycopg.connect(dsn) as conn, conn.cursor() as cur:
         cur.execute("DROP SCHEMA IF EXISTS staging CASCADE; CREATE SCHEMA staging;")

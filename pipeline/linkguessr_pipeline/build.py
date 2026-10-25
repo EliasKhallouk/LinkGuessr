@@ -38,6 +38,7 @@ RELATION_SCHEMA = {
     "start_year": I64, "end_year": I64,
 }
 
+MIN_YEAR, MAX_YEAR = -300_000, 2100
 _TIME = re.compile(r"([+-])(\d+)-(\d\d)-(\d\d)")
 
 
@@ -50,6 +51,8 @@ def parse_time(v) -> dict | None:
         return None
     sign, year, month, day = m.groups()
     year = int(year) * (-1 if sign == "-" else 1)
+    if not MIN_YEAR <= year <= MAX_YEAR:  # erreurs de saisie Wikidata (ex. an 20 567 565 706)
+        return None
     precision = v["p"]
     date = None
     if precision >= 11 and year > 0:

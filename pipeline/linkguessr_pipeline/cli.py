@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from . import build, download, entities, graph, humans, links, pageviews, pages, refs, status
+from . import build, check, download, entities, graph, humans, links, pageviews, pages, refs, status
 from .config import work_path
 
 
@@ -34,6 +34,8 @@ def main() -> None:
     sub.add_parser("build", help="assemble fiches, faits et relations")
     sub.add_parser("graph", help="identifiants, arêtes pondérées et métriques (tables finales)")
 
+    sub.add_parser("check", help="vérifie les tables finales contre le schéma Postgres")
+
     p = sub.add_parser("load", help="charge les tables finales dans Postgres (DATABASE_URL)")
     p.add_argument("--dir", type=Path, help="dossier des tables finales (défaut : work/final)")
 
@@ -62,6 +64,8 @@ def main() -> None:
         build.build()
     elif args.cmd == "graph":
         graph.build_graph()
+    elif args.cmd == "check":
+        raise SystemExit(0 if check.check_final(work_path("final")) else 1)
     elif args.cmd == "load":
         from . import load  # psycopg n'est utile que sur la machine qui charge la base
         load.load(args.dir or work_path("final"))

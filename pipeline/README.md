@@ -25,6 +25,7 @@ uv sync
 | `uv run lg links` | ~20 min (8 cœurs) | Liens entre personnes dans le texte des articles, avec contexte |
 | `uv run lg build` | ~10 min | Fiches structurées, faits datés, relations typées |
 | `uv run lg graph` | ~5 min | Identifiants, arêtes pondérées, degré, PageRank, communautés, popularité |
+| `uv run lg check` | ~1 min | Vérifie les tables finales contre le schéma Postgres (aussi fait au début de `load`) |
 | `DATABASE_URL=... uv run lg load` | ~10 min | Charge les tables finales dans Postgres (échange de schéma sans coupure) |
 
 Les données vont dans `pipeline/data/` (ignoré par git). Date du dump : variable `LG_DUMP_DATE` (défaut dans `config.py`).
