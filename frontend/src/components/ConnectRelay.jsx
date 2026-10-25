@@ -7,6 +7,8 @@ import { duelUrl, relayGrid } from "../lib/share";
 import { load, save } from "../lib/storage";
 import PersonChip from "./PersonChip";
 import ShareButton from "./ShareButton";
+import { newRound, track } from "../lib/tracking";
+import Feedback from "./Feedback";
 
 const GAME = "relay";
 const HINT_AFTER = 2; // aide quand le joueur a fait 2 pas de plus que le plus court chemin
@@ -39,6 +41,7 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
   };
 
   const loadChallenge = async () => {
+    newRound(GAME);
     setLoading(true);
     setError(null);
     setHint(null);
@@ -62,6 +65,7 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
   useEffect(() => { loadChallenge(); }, [difficulty]);
 
   const choose = async (person) => {
+    track(GAME, "start", { difficulty, duel: Boolean(fixedPair) });
     const newHistory = [...history, person];
     setHistory(newHistory);
     setSearch("");
@@ -71,9 +75,9 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
       const record = load("lg-relay-stats", { played: 0, optimal: 0 });
       save("lg-relay-stats", { played: record.played + 1,
         optimal: record.optimal + (best?.length === newHistory.length - 1 ? 1 : 0) });
-      api.logEvent(GAME, {
+      track(GAME, "finish", {
         from: newHistory[0].qid, to: target.qid, best: best?.length ?? null, steps: newHistory.length - 1,
-        path: newHistory.map((p) => p.qid), hints: hintsUsed, difficulty,
+        path: newHistory.map((p) => p.qid), hints: hintsUsed, difficulty, duel: Boolean(fixedPair),
       });
       return;
     }
@@ -160,10 +164,11 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
                     ].join("\n")}
                     url={duelUrl({ jeu: "relais", paire: `${history[0].qid}-${target.qid}`, score: steps })}
                     label={t("share.challenge")}
-                    onShared={() => api.logEvent(GAME, { event: "share", steps, best: best?.length ?? null })}
+                    onShared={() => track(GAME, "share", { steps, best: best?.length ?? null })}
                   />
                   {!fixedPair && <button className="btn" onClick={loadChallenge}>{t("relay.new")}</button>}
                 </div>
+                <Feedback game={GAME} />
               </div>
             ) : (
               <>

@@ -36,6 +36,7 @@ export function relayGrid(steps, best) {
   return Array.from({ length: steps }, (_, i) => (best && i < best ? "🟩" : "🟨")).join("");
 }
 
+// Les liens partagés portent leur source (?src=), pour mesurer ce que rapporte le partage.
 export function duelUrl(params) {
-  return `${SITE_URL}/defi?${new URLSearchParams(params)}`;
+  return `${SITE_URL}/defi?${new URLSearchParams({ ...params, src: "duel" })}`;
 }

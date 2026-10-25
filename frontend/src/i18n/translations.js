@@ -267,6 +267,13 @@ export const translations = {
       lost: "Ton adversaire a fait mieux ({n} coups). Revanche ?",
       lostScore: "Ton adversaire a fait mieux ({n} points). Revanche ?",
     },
+    feedback: {
+      question: "Ça t'a plu ?",
+      likePlaceholder: "Qu'est-ce qui t'a plu ? (facultatif)",
+      dislikePlaceholder: "Qu'est-ce qu'on pourrait améliorer ? (facultatif)",
+      send: "Envoyer",
+      thanks: "Merci pour ton retour !",
+    },
   },
   en: {
     app: {
@@ -538,6 +545,13 @@ export const translations = {
       tie: "🤝 It's a tie!",
       lost: "Your opponent did better ({n} steps). Rematch?",
       lostScore: "Your opponent did better ({n} points). Rematch?",
+    },
+    feedback: {
+      question: "Did you enjoy it?",
+      likePlaceholder: "What did you like? (optional)",
+      dislikePlaceholder: "What could we improve? (optional)",
+      send: "Send",
+      thanks: "Thanks for your feedback!",
     },
   },
 };

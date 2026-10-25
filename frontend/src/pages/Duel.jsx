@@ -4,6 +4,7 @@ import { api } from "../api";
 import ConnectRelay from "../components/ConnectRelay";
 import GuessRelations from "../components/GuessRelations";
 import { useI18n } from "../i18n/I18nProvider";
+import { track } from "../lib/tracking";
 
 // Page d'arrivée d'un lien de duel : /defi?jeu=relais&paire=Q1-Q2&score=3 ou /defi?jeu=nombre&score=340
 export default function Duel() {
@@ -14,6 +15,11 @@ export default function Duel() {
   const pairParam = params.get("paire") || "";
   const [pair, setPair] = useState(null);
   const [error, setError] = useState(false);
+
+  // Ouverture d'un lien de duel : mesure de la viralité.
+  useEffect(() => {
+    if (["relais", "nombre"].includes(game)) track(game === "relais" ? "relay" : "guess_count", "duel_open", { score });
+  }, [game, score]);
 
   useEffect(() => {
     if (game !== "relais") return;

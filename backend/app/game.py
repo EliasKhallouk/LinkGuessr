@@ -13,7 +13,7 @@ from .moderation import is_offensive
 
 router = APIRouter()
 
-GAMES = {"guess_count", "guess_who", "relay", "explore"}
+GAMES = {"guess_count", "guess_who", "relay", "explore", "daily"}
 NAME_MAX_LEN = 16
 
 

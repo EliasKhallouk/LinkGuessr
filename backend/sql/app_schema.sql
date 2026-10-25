@@ -61,3 +61,16 @@ CREATE TABLE IF NOT EXISTS app.daily_attempt (
 -- Pseudo facultatif pour le classement du défi du jour (unique par jour, insensible à la casse).
 ALTER TABLE app.daily_attempt ADD COLUMN IF NOT EXISTS pseudo text;
 CREATE UNIQUE INDEX IF NOT EXISTS daily_attempt_pseudo_idx ON app.daily_attempt (day, lower(pseudo)) WHERE pseudo IS NOT NULL;
+
+-- Retours des joueurs (une question en fin de partie). Anonymes.
+CREATE TABLE IF NOT EXISTS app.feedback (
+    id          bigserial PRIMARY KEY,
+    game        text NOT NULL,
+    rating      smallint NOT NULL CHECK (rating IN (-1, 1)),   -- 👎 / 👍
+    comment     text,
+    src         text,
+    session     text,
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS feedback_time_idx ON app.feedback (created_at);
+CREATE INDEX IF NOT EXISTS game_event_kind_idx ON app.game_event ((payload->>'event'), created_at);

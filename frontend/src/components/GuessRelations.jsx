@@ -7,6 +7,8 @@ import { duelUrl } from "../lib/share";
 import { load, save } from "../lib/storage";
 import PersonChip from "./PersonChip";
 import ShareButton from "./ShareButton";
+import { newRound, track } from "../lib/tracking";
+import Feedback from "./Feedback";
 
 const GAME = "guess_count";
 const GAME_DURATION = 60; // secondes
@@ -112,6 +114,8 @@ export default function GuessRelations({ rivalScore = null }) {
   };
 
   const startGame = () => {
+    newRound(GAME);
+    track(GAME, "start", { duel: rivalScore != null });
     setScore(0);
     setStreak(0);
     setTotalAnswered(0);
@@ -133,6 +137,14 @@ export default function GuessRelations({ rivalScore = null }) {
       setSubmitError(e.message || t("guess.errorSave"));
     }
   };
+
+  // Fin de partie chronométrée : un seul événement « finish » par partie.
+  useEffect(() => {
+    if (!gameActive && timeLeft === 0) {
+      track(GAME, "finish", { score, answered: totalAnswered, correct: totalCorrect, duel: rivalScore != null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameActive, timeLeft]);
 
   // Record personnel, gardé dans le navigateur.
   const [best, setBest] = useState(() => load("lg-best-count", 0));
@@ -269,10 +281,11 @@ export default function GuessRelations({ rivalScore = null }) {
                       ].join("\n")}
                       url={duelUrl({ jeu: "nombre", score })}
                       label={t("share.challenge")}
-                      onShared={() => api.logEvent(GAME, { event: "share", score })}
+                      onShared={() => track(GAME, "share", { score })}
                     />
                     <button className="btn" onClick={startGame}>{t("guess.retry")}</button>
                   </div>
+                  <Feedback game={GAME} />
                 </div>
               )}
             </>

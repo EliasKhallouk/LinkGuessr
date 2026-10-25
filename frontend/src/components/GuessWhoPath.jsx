@@ -5,6 +5,8 @@ import DifficultyPicker from "./DifficultyPicker";
 import PathView from "./PathView";
 import PersonChip from "./PersonChip";
 import PersonPicker from "./PersonPicker";
+import { newRound, track } from "../lib/tracking";
+import Feedback from "./Feedback";
 
 const GAME = "guess_who";
 const MAX_TRIES = 4; // après 4 erreurs, la réponse est révélée
@@ -29,6 +31,7 @@ export default function GuessWhoPath() {
   }, []);
 
   const fetchChallenge = useCallback(async () => {
+    newRound(GAME);
     setLoading(true);
     setError(null);
     setGuess(null);
@@ -48,6 +51,7 @@ export default function GuessWhoPath() {
 
   const validate = () => {
     if (!guess || !challenge || found) return;
+    track(GAME, "start", { difficulty });
     const ok = guess.qid === challenge.answer.qid;
     const newTries = tries + (ok ? 0 : 1);
     setTries(newTries);
@@ -55,7 +59,7 @@ export default function GuessWhoPath() {
     else setLastWrong(guess);
     setGuess(null);
     if (ok || newTries >= MAX_TRIES) {
-      api.logEvent(GAME, {
+      track(GAME, "finish", {
         answer: challenge.answer.qid, path: challenge.path, tries: newTries, found: ok, difficulty, domain: domain || null,
       });
     }
@@ -112,6 +116,7 @@ export default function GuessWhoPath() {
                   <p style={{ margin: 0, fontWeight: 600 }}>{found ? t("guess.good") : t("who.answerWas")}</p>
                   <div style={{ marginTop: 8 }}><PersonChip person={challenge.answer} showDescription size={56} /></div>
                   <button className="btn" style={{ marginTop: 8 }} onClick={fetchChallenge}>{t("guess.next")}</button>
+                  <Feedback game={GAME} />
                 </div>
               )}
             </>

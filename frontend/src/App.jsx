@@ -9,6 +9,7 @@ import Privacy from "./pages/Privacy";
 import PersonDrawer from "./components/PersonDrawer";
 import DailyPage from "./pages/DailyPage";
 import Duel from "./pages/Duel";
+import Admin from "./pages/Admin";
 import Lab from "./pages/Lab";
 import Person from "./pages/Person";
 import "./playful-effects.css";
@@ -86,6 +87,7 @@ function App() {
         <Route path="/personne/:qid" element={<Person />} />
         <Route path="/jour/:number" element={<DailyPage />} />
         <Route path="/defi" element={<Duel />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/politique-de-confidentialite" element={<Privacy />} />
       </Routes>
