@@ -918,6 +918,22 @@ select option {
   opacity: 1;
 }
 
+/* ===== FOCUS CLAVIER ===== */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+.tab:focus-visible,
+.chemin-link:focus-visible,
+.btn-ellipsis:focus-visible,
+.menu-link:focus-visible,
+.nav-link:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 /* ===== RÉDUIRE LES ANIMATIONS ===== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

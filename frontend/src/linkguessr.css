@@ -10,6 +10,8 @@
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .toolbar .btn, .result-box .btn, .neighbor-list .btn, .table .btn { padding: 8px 14px; font-size: 14px; }
 .btn-primary { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+/* Le bouton principal porte déjà un contour cyan : au clavier, il change de couleur pour rester repérable. */
+.btn-primary:focus-visible { outline-color: var(--text-primary); outline-offset: 4px; }
 .toolbar input[type="text"] { flex: 1 1 220px; }
 .title-link { color: inherit; text-decoration: none; }
 
