@@ -127,10 +127,7 @@ def person_card(qid: str, response: Response):
     pid = id_of(qid)
     with pool.connection() as conn:
         p = conn.execute(
-            f"""SELECT {person_columns()}, pageviews_12m, sitelinks, community,
-                       (SELECT count(*) + 1 FROM person o WHERE o.degree > person.degree) AS degree_rank,
-                       (SELECT count(*) FROM person) AS total
-                FROM person WHERE id = %s""",
+            f"""SELECT {person_columns()}, pageviews_12m, sitelinks, community FROM person WHERE id = %s""",
             (pid,),
         ).fetchone()
         closest = conn.execute(
@@ -139,6 +136,8 @@ def person_card(qid: str, response: Response):
                 WHERE e.a = %s OR e.b = %s ORDER BY e.weight DESC, o.popularity DESC LIMIT 5""",
             (pid, pid, pid),
         ).fetchall()
+    p["degree_rank"] = int(state["degree_rank"][pid])
+    p["total"] = int(state["graph"].n)
     response.headers["Cache-Control"] = "public, max-age=3600, s-maxage=86400"
     return {"person": p, "closest": closest}
 

@@ -36,6 +36,10 @@ def startup() -> None:
     state["dump_date"] = str(z["dump_date"]) if "dump_date" in z.files else None
     state["graph"] = PersonGraph(len(z["qid_num"]), z["a"], z["b"], z["kinds"], z["popularity"])
     state["n_edges"] = int(len(z["a"]))
+    # Rang de chaque personne par nombre de liens (1 = la plus connectée), calculé une fois :
+    # le compter en SQL à chaque fiche parcourait des centaines de milliers de lignes.
+    degree = np.diff(state["graph"].csr["all"].indptr)
+    state["degree_rank"] = np.searchsorted(np.sort(-degree), -degree, side="left") + 1
 
 
 def id_of(qid: str) -> int:

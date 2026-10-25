@@ -18,6 +18,7 @@ import subprocess
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -32,7 +33,7 @@ SEARCHES = ["zidane", "macron", "napoleon", "curie", "mozart", "hugo", "einstein
 SCENARIO = [
     (30, "daily", lambda: "/daily"),
     (10, "stats", lambda: "/stats"),
-    (20, "search", lambda: f"/search?q={random.choice(SEARCHES)}&limit=8"),
+    (20, "search", lambda: f"/search?q={urllib.parse.quote(random.choice(SEARCHES))}&limit=8"),
     (15, "card", lambda: f"/person/{random.choice(QIDS)}/card"),
     (15, "path", lambda: "/path?from={}&to={}&limit=3".format(*random.sample(QIDS, 2))),
     (10, "random_pair", lambda: f"/random_pair?difficulty={random.choice(['facile', 'moyen'])}"),
