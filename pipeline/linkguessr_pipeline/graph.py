@@ -99,8 +99,17 @@ def build_graph() -> None:
         pl.Series("pagerank", g_dir.pagerank(directed=True), pl.Float32),
         pl.Series("community", communities.membership, pl.Int32),
     )
+    # Popularité : moyenne pondérée de rangs percentiles (les signaux ont des échelles et des
+    # queues de distribution très différentes, les rangs les rendent comparables).
+    #  - pages vues 12 mois : notoriété actuelle auprès des lecteurs français (le plus proche des joueurs)
+    #  - sitelinks : notoriété internationale et durable
+    #  - PageRank : importance dans le réseau frwiki
+    #  - longueur de l'article : intérêt de la communauté (bruité, poids faible)
+    if "pageviews_12m" not in persons.columns:
+        persons = persons.with_columns(pl.lit(None, pl.Int64).alias("pageviews_12m"))
     persons = persons.with_columns(
-        (0.5 * _pct_rank("sitelinks") + 0.3 * _pct_rank("pagerank") + 0.2 * _pct_rank("article_len"))
+        (0.4 * _pct_rank("pageviews_12m") + 0.3 * _pct_rank("sitelinks")
+         + 0.2 * _pct_rank("pagerank") + 0.1 * _pct_rank("article_len"))
         .alias("popularity"),
         pl.Series("search_text", [_search_text(r) for r in persons.iter_rows(named=True)], pl.Utf8),
     )

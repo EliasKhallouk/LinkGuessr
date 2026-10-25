@@ -20,6 +20,7 @@ uv sync
 | `uv run lg humans` | ~30 min | Garde les articles dont le QID est un humain (P31 = Q5), via SPARQL par lots |
 | `uv run lg entities` | quelques heures | Fiches Wikidata complètes (sans références), reprise automatique |
 | `uv run lg refs` | ~30 min | Lieux, professions, clubs, prix… cités, + hiérarchie des professions |
+| `uv run lg pageviews` | ~3 h | Pages vues frwiki des 12 derniers mois (API Pageviews, 16 requêtes en parallèle) |
 | `uv run lg links` | ~20 min (8 cœurs) | Liens entre personnes dans le texte des articles, avec contexte |
 | `uv run lg build` | ~10 min | Fiches structurées, faits datés, relations typées |
 | `uv run lg graph` | ~5 min | Identifiants, arêtes pondérées, degré, PageRank, communautés, popularité |
@@ -31,6 +32,8 @@ Les données vont dans `pipeline/data/` (ignoré par git). Date du dump : variab
 
 - **Fiche personne** : identité, dates avec leur précision, lieux et pays, nationalités, professions, domaines
   (taxonomie maison via la hiérarchie P279), image, identifiants externes, notoriété, introduction de l'article.
+- **Popularité** (0-1) : moyenne pondérée de rangs percentiles — pages vues 12 mois (40 %), nombre de
+  Wikipédias (30 %), PageRank (20 %), longueur de l'article (10 %). Sert à la difficulté et à l'autocomplétion.
 - **Faits datés** (`fact`) : fonctions, partis, clubs, formation, employeurs, distinctions… avec début et fin.
 - **Liens textuels** (`text_link`) : A cite B dans le corps de son article. Nombre de mentions, section,
   présence dans l'introduction ou l'infobox, phrase de contexte. Les notes `<ref>` et les palettes sont exclues.

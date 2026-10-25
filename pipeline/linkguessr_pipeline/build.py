@@ -192,9 +192,9 @@ def build() -> None:
                     })
 
     persons_df = pl.DataFrame(persons, infer_schema_length=None)
-    pages_text = work_path("pages_text.parquet")
-    if pages_text.exists():
-        persons_df = persons_df.join(pl.read_parquet(pages_text), on="qid", how="left")
+    for extra in ("pages_text.parquet", "pageviews.parquet"):
+        if work_path(extra).exists():
+            persons_df = persons_df.join(pl.read_parquet(work_path(extra)), on="qid", how="left")
     persons_df.write_parquet(work_path("persons.parquet"), compression="zstd")
     pl.DataFrame(facts, infer_schema_length=None).write_parquet(work_path("facts.parquet"), compression="zstd")
     pl.DataFrame(relations, infer_schema_length=None).unique().write_parquet(

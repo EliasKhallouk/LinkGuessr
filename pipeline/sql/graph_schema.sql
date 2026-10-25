@@ -32,6 +32,8 @@ CREATE TABLE person (
     external_ids    jsonb,
     sitelinks       smallint,                 -- nombre d'éditions de Wikipédia qui ont un article
     article_len     integer,
+    pageviews_12m   bigint,                   -- vues de l'article frwiki sur 12 mois (lecteurs humains)
+    pageviews_monthly integer[],              -- les 12 mois, du plus ancien au plus récent
     infobox         text,
     categories      text[],
     lead            text,

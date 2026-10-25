@@ -15,7 +15,7 @@ from urllib3.util.retry import Retry  # noqa: E402
 from .config import USER_AGENT  # noqa: E402
 
 
-def make_session() -> requests.Session:
+def make_session(pool_size: int = 8) -> requests.Session:
     session = requests.Session()
     session.headers["User-Agent"] = USER_AGENT
     retry = Retry(
@@ -25,6 +25,6 @@ def make_session() -> requests.Session:
         allowed_methods=None,  # POST compris (requêtes SPARQL)
         respect_retry_after_header=True,
     )
-    adapter = HTTPAdapter(max_retries=retry, pool_maxsize=8)
+    adapter = HTTPAdapter(max_retries=retry, pool_maxsize=pool_size)
     session.mount("https://", adapter)
     return session

@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from . import build, download, entities, graph, humans, links, pages, refs
+from . import build, download, entities, graph, humans, links, pageviews, pages, refs
 from .config import work_path
 
 
@@ -25,6 +25,7 @@ def main() -> None:
     p = sub.add_parser("refs", help="lieux, professions, clubs, prix... cités par les fiches")
     p.add_argument("--workers", type=int, default=2)
 
+    sub.add_parser("pageviews", help="pages vues frwiki sur 12 mois (API Pageviews)")
     sub.add_parser("build", help="assemble fiches, faits et relations")
     sub.add_parser("graph", help="identifiants, arêtes pondérées et métriques (tables finales)")
 
@@ -46,6 +47,8 @@ def main() -> None:
         links.extract_links(args.workers)
     elif args.cmd == "refs":
         refs.fetch_refs(args.workers)
+    elif args.cmd == "pageviews":
+        pageviews.fetch_pageviews()
     elif args.cmd == "build":
         build.build()
     elif args.cmd == "graph":
