@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/v1/:path*",
-      "destination": "https://linkguessr.duckdns.org/:path*"
+      "destination": "/api/proxy?path=:path*"
     },
     {
       "source": "/umami/:path*",
