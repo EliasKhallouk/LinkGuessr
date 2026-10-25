@@ -70,8 +70,36 @@ PrivateTmp=true
 [Install]
 WantedBy=multi-user.target
 EOF
+# Défis du jour : chaque nuit, on complète la réserve à 60 jours (les jours existants ne bougent pas).
+cat > /etc/systemd/system/linkguessr-daily.service <<EOF
+[Unit]
+Description=LinkGuessr : complète les défis du jour
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=$APP_USER
+Group=$APP_USER
+WorkingDirectory=$APP_DIR/app/backend
+EnvironmentFile=$APP_DIR/.env
+ExecStart=$APP_DIR/app/backend/.venv/bin/python -m app.daily generate --days 60
+Nice=10
+EOF
+cat > /etc/systemd/system/linkguessr-daily.timer <<EOF
+[Unit]
+Description=LinkGuessr : défis du jour, chaque nuit
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
 systemctl daemon-reload
 systemctl enable linkguessr-api >/dev/null
+systemctl enable --now linkguessr-daily.timer >/dev/null
 
 if [ -f "$APP_DIR/data/graph.npz" ]; then
   systemctl restart linkguessr-api

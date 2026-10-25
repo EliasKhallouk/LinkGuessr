@@ -11,9 +11,9 @@ import numpy as np
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import game
+from . import daily, game
 from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS
-from .core import id_of, person_columns, pool, startup, state, summaries
+from .core import id_of, path_details, person_columns, pool, startup, state, summaries
 from .graph import MODES
 from .text import normalize
 
@@ -33,6 +33,7 @@ app = FastAPI(title="LinkGuessr API", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_origin_regex=CORS_ORIGIN_REGEX,
                    allow_methods=["GET", "POST"], allow_headers=["*"])
 app.include_router(game.router)
+app.include_router(daily.router)
 
 
 @app.get("/health")
@@ -133,44 +134,6 @@ def path(
     if res.length is None:
         return {"length": None, "n_paths": 0, "paths": [], "persons": {}, "hops": {}}
     return path_details(res)
-
-
-def path_details(res) -> dict:
-
-    ids = sorted({v for p in res.paths for v in p})
-    pairs = sorted({(min(u, v), max(u, v)) for p in res.paths for u, v in zip(p, p[1:])})
-    a, b = [x for x, _ in pairs], [y for _, y in pairs]
-    with pool.connection() as conn:
-        text = conn.execute(
-            """SELECT t.source_id, t.target_id, t.mentions, t.in_lead, t.in_infobox, t.snippet
-               FROM text_link t
-               JOIN unnest(%s::int[], %s::int[]) AS p(a, b)
-                 ON (t.source_id = p.a AND t.target_id = p.b) OR (t.source_id = p.b AND t.target_id = p.a)""",
-            (a, b),
-        ).fetchall()
-        rels = conn.execute(
-            """SELECT r.source_id, r.target_id, r.label, r.family, r.start_year, ref.label AS context
-               FROM relation r LEFT JOIN ref ON ref.qid = r.context_qid
-               JOIN unnest(%s::int[], %s::int[]) AS p(a, b)
-                 ON (r.source_id = p.a AND r.target_id = p.b) OR (r.source_id = p.b AND r.target_id = p.a)""",
-            (a, b),
-        ).fetchall()
-    people = summaries(ids)
-    # Pour chaque lien du chemin : les phrases qui citent l'autre personne et les relations Wikidata.
-    hops = {
-        f"{people[x]['qid']}-{people[y]['qid']}": {
-            "text": [r for r in text if {r["source_id"], r["target_id"]} == {x, y}],
-            "relations": [r for r in rels if {r["source_id"], r["target_id"]} == {x, y}],
-        }
-        for x, y in pairs
-    }
-    return {
-        "length": res.length,
-        "n_paths": res.n_paths,
-        "paths": [[people[v]["qid"] for v in p] for p in res.paths],
-        "persons": {people[v]["qid"]: people[v] for v in ids},
-        "hops": hops,
-    }
 
 
 @app.get("/neighbors/{qid}")

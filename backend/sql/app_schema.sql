@@ -31,3 +31,29 @@ CREATE TABLE IF NOT EXISTS app.game_event (
     created_at   timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS game_event_game_idx ON app.game_event (game, created_at);
+
+-- Défi du jour : pré-calculé (instantané des fiches, indépendant des rechargements de données).
+CREATE TABLE IF NOT EXISTS app.daily_challenge (
+    day          date PRIMARY KEY,             -- jour à Paris
+    number       integer NOT NULL UNIQUE,      -- #1, #2… (jours depuis le lancement)
+    path         text[] NOT NULL,              -- QID du chemin, la réponse comprise
+    masked_index smallint NOT NULL,
+    answer       jsonb NOT NULL,               -- fiche résumée de la personne cachée
+    persons      jsonb NOT NULL,               -- fiches résumées de tout le chemin
+    hops         jsonb NOT NULL,               -- explication de chaque lien
+    hints        jsonb NOT NULL,
+    forced       boolean NOT NULL DEFAULT false,
+    created_at   timestamptz NOT NULL DEFAULT now()
+);
+
+-- Une tentative par appareil (identifiant anonyme du navigateur) et par jour.
+CREATE TABLE IF NOT EXISTS app.daily_attempt (
+    day          date NOT NULL,
+    device       text NOT NULL,
+    guesses      text[] NOT NULL DEFAULT '{}',
+    solved       boolean NOT NULL DEFAULT false,
+    finished     boolean NOT NULL DEFAULT false,
+    started_at   timestamptz NOT NULL DEFAULT now(),
+    finished_at  timestamptz,
+    PRIMARY KEY (day, device)
+);

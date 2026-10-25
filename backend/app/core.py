@@ -52,3 +52,41 @@ def summaries(ids: list[int]) -> dict[int, dict]:
     with pool.connection() as conn:
         rows = conn.execute(f"SELECT {person_columns()} FROM person WHERE id = ANY(%s)", (ids,)).fetchall()
     return {r["id"]: r for r in rows}
+
+
+def path_details(res) -> dict:
+    """Chemins (PathResult) -> personnes, chemins en QID et explication de chaque lien."""
+    ids = sorted({v for p in res.paths for v in p})
+    pairs = sorted({(min(u, v), max(u, v)) for p in res.paths for u, v in zip(p, p[1:])})
+    a, b = [x for x, _ in pairs], [y for _, y in pairs]
+    with pool.connection() as conn:
+        text = conn.execute(
+            """SELECT t.source_id, t.target_id, t.mentions, t.in_lead, t.in_infobox, t.snippet
+               FROM text_link t
+               JOIN unnest(%s::int[], %s::int[]) AS p(a, b)
+                 ON (t.source_id = p.a AND t.target_id = p.b) OR (t.source_id = p.b AND t.target_id = p.a)""",
+            (a, b),
+        ).fetchall()
+        rels = conn.execute(
+            """SELECT r.source_id, r.target_id, r.label, r.family, r.start_year, ref.label AS context
+               FROM relation r LEFT JOIN ref ON ref.qid = r.context_qid
+               JOIN unnest(%s::int[], %s::int[]) AS p(a, b)
+                 ON (r.source_id = p.a AND r.target_id = p.b) OR (r.source_id = p.b AND r.target_id = p.a)""",
+            (a, b),
+        ).fetchall()
+    people = summaries(ids)
+    # Pour chaque lien du chemin : les phrases qui citent l'autre personne et les relations Wikidata.
+    hops = {
+        f"{people[x]['qid']}-{people[y]['qid']}": {
+            "text": [r for r in text if {r["source_id"], r["target_id"]} == {x, y}],
+            "relations": [r for r in rels if {r["source_id"], r["target_id"]} == {x, y}],
+        }
+        for x, y in pairs
+    }
+    return {
+        "length": res.length,
+        "n_paths": res.n_paths,
+        "paths": [[people[v]["qid"] for v in p] for p in res.paths],
+        "persons": {people[v]["qid"]: people[v] for v in ids},
+        "hops": hops,
+    }
