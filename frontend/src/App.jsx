@@ -13,7 +13,6 @@ import Duel from "./pages/Duel";
 import Admin from "./pages/Admin";
 import Lab from "./pages/Lab";
 import Person from "./pages/Person";
-import "./playful-effects.css";
 
 function App() {
   const { t, lang, setLang } = useI18n();

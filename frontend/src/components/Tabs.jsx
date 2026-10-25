@@ -10,7 +10,7 @@ export default function Tabs({ tabs = [], initial = 0, active: controlled, onCha
         {tabs.map((t, i) => (
           <button
             key={t.key}
-            className={`tab ripple ${i === active ? "active" : ""}`}
+            className={`tab ${i === active ? "active" : ""}`}
             onClick={() => {
               setInternal(i);
               onChange?.(i);
