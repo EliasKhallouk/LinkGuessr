@@ -6,6 +6,7 @@ CREATE INDEX person_search_trgm_idx ON person USING gin (search_text gin_trgm_op
 CREATE INDEX person_search_prefix_idx ON person (search_text text_pattern_ops);  -- saisies de 1-2 lettres
 CREATE INDEX person_popularity_idx ON person (popularity DESC);
 CREATE INDEX person_domain_idx ON person (primary_domain);
+CREATE INDEX person_degree_idx ON person (degree DESC);  -- rang dans le réseau (carte personne)
 CREATE INDEX person_birth_year_idx ON person (birth_year);
 
 CREATE INDEX fact_person_idx ON fact (person_id, prop);
