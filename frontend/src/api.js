@@ -50,6 +50,8 @@ export const api = {
   leaderboard: (game, period = "all", limit = 10) => get("/leaderboard", { game, period, limit }).then((d) => d.entries),
   submitScore: (game, name, score, duration) => post("/scores", { game, name, score, duration }),
   daily: () => get("/daily"),
+  dailyArchive: (number) => get(`/daily/archive/${number}`),
+  personCard: (qid) => get(`/person/${qid}/card`),
   dailyGuess: (device, qid = null) => post("/daily/guess", { device, qid }),
   // Les logs ne doivent jamais gêner le jeu : erreurs ignorées.
   logEvent: (game, payload) => post("/events", { game, session: sessionId(), payload }).catch(() => {}),

@@ -3,12 +3,15 @@ import { api } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
 import DifficultyPicker from "./DifficultyPicker";
 import PathView from "./PathView";
+import { duelUrl, relayGrid } from "../lib/share";
 import PersonChip from "./PersonChip";
+import ShareButton from "./ShareButton";
 
 const GAME = "relay";
 const HINT_AFTER = 2; // aide quand le joueur a fait 2 pas de plus que le plus court chemin
 
-export default function ConnectRelay() {
+// `fixedPair` ({ from, to }) : paire imposée par un duel ; `rivalSteps` : score à battre.
+export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
   const { t } = useI18n();
   const [difficulty, setDifficulty] = useState("facile");
   const [target, setTarget] = useState(null);
@@ -41,7 +44,7 @@ export default function ConnectRelay() {
     setHintsUsed(0);
     setSearch("");
     try {
-      const pair = await api.randomPair({ difficulty, min_length: 2, max_length: 4 });
+      const pair = fixedPair || await api.randomPair({ difficulty, min_length: 2, max_length: 4 });
       setTarget(pair.to);
       setHistory([pair.from]);
       setBest(null);
@@ -139,7 +142,24 @@ export default function ConnectRelay() {
                     <PathView path={best.paths[0]} persons={best.persons} hops={best.hops} />
                   </>
                 )}
-                <button className="btn" style={{ marginTop: 8 }} onClick={loadChallenge}>{t("relay.new")}</button>
+                {rivalSteps && (
+                  <p style={{ marginTop: 8, fontWeight: 600 }}>
+                    {steps < rivalSteps ? t("duel.beaten") : steps === rivalSteps ? t("duel.tie") : t("duel.lost", { n: rivalSteps })}
+                  </p>
+                )}
+                <div className="toolbar" style={{ marginTop: 8 }}>
+                  <ShareButton
+                    text={[
+                      `LinkGuessr · ${t("tabs.relay")} 🔗`,
+                      `${history[0].name} → ${target.name}`,
+                      `${relayGrid(steps, best?.length)} · ${t("share.steps", { n: steps })}${best?.length ? ` (${t("share.optimal", { n: best.length })})` : ""}`,
+                    ].join("\n")}
+                    url={duelUrl({ jeu: "relais", paire: `${history[0].qid}-${target.qid}`, score: steps })}
+                    label={t("share.challenge")}
+                    onShared={() => api.logEvent(GAME, { event: "share", steps, best: best?.length ?? null })}
+                  />
+                  {!fixedPair && <button className="btn" onClick={loadChallenge}>{t("relay.new")}</button>}
+                </div>
               </div>
             ) : (
               <>

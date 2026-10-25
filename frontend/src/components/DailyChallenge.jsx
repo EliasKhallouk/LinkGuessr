@@ -5,7 +5,9 @@ import { formatCountdown, msUntilParisMidnight } from "../lib/paris";
 import { deviceId } from "../lib/storage";
 import PathView from "./PathView";
 import PersonChip from "./PersonChip";
+import { dailyGrid, SITE_URL } from "../lib/share";
 import PersonPicker from "./PersonPicker";
+import ShareButton from "./ShareButton";
 
 function Countdown() {
   const { t } = useI18n();
@@ -88,6 +90,17 @@ export default function DailyChallenge() {
                 {t("daily.stats", { players: game.stats.players, pct: Math.round((100 * game.stats.solved) / game.stats.players) })}
               </p>
             )}
+            <div className="toolbar" style={{ marginTop: 8 }}>
+              <ShareButton
+                text={[
+                  `LinkGuessr #${game.number} 🔗`,
+                  `${game.persons[game.path[0]].name} → ? → ${game.persons[game.path[2]].name}`,
+                  `${dailyGrid(game.wrong.length, game.solved, game.max_tries)} · ${t("share.hints", { n: Math.min(game.wrong.length, 3) })}`,
+                ].join("\n")}
+                url={`${SITE_URL}/jour/${game.number}`}
+                onShared={() => api.logEvent("daily", { event: "share", number: game.number })}
+              />
+            </div>
             <Countdown />
           </div>
         )}

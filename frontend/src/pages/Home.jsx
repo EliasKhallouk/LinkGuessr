@@ -6,7 +6,6 @@ import Game from "../components/Game";
 import GuessRelations from "../components/GuessRelations";
 import GuessWhoPath from "../components/GuessWhoPath";
 import Leaderboard from "../components/Leaderboard";
-import PersonDrawer from "../components/PersonDrawer";
 import StatsBanner from "../components/StatsBanner";
 import Tabs from "../components/Tabs";
 import { useI18n } from "../i18n/I18nProvider";
@@ -37,7 +36,6 @@ export default function Home() {
           tabs={TABS.map(({ key, content }) => ({ key, title: t(`tabs.${key}`), content }))}
         />
       </div>
-      <PersonDrawer />
     </main>
   );
 }

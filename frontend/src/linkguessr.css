@@ -126,3 +126,7 @@ body.drawer-open { overflow: hidden; }
 /* ----- Défi du jour (mis en avant sur l'accueil) ----- */
 .daily { margin-bottom: 20px; border: 2px solid var(--accent-primary); }
 .daily .panel-title::before { content: "📅 "; }
+
+/* ----- Partage et duels ----- */
+.btn-share { background: var(--gradient-secondary); }
+.duel-banner { margin-bottom: 16px; border: 2px solid var(--accent-tertiary); }

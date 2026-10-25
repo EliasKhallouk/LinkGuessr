@@ -1,12 +1,12 @@
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { commonsThumb } from "../api";
 
-// Lien vers une fiche : sur l'accueil (jeux), ouvre le panneau latéral sans quitter le jeu ;
-// ailleurs, mène à la page /personne/:qid.
+// Lien vers une fiche : ouvre le panneau latéral sans quitter la page (jeux, duels, défis) ;
+// sur une page /personne, mène à la page de l'autre personne.
 function usePersonLink(qid) {
   const location = useLocation();
   const [params] = useSearchParams();
-  if (location.pathname !== "/") return { to: `/personne/${qid}` };
+  if (location.pathname.startsWith("/personne/")) return { to: `/personne/${qid}` };
   const next = new URLSearchParams(params);
   next.set("personne", qid);
   return { to: { search: next.toString() }, state: { drawerDepth: (location.state?.drawerDepth || 0) + 1 } };

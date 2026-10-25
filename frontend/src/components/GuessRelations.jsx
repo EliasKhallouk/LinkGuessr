@@ -3,7 +3,9 @@ import { api } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
 import DifficultyPicker from "./DifficultyPicker";
 import PathView from "./PathView";
+import { duelUrl } from "../lib/share";
 import PersonChip from "./PersonChip";
+import ShareButton from "./ShareButton";
 
 const GAME = "guess_count";
 const GAME_DURATION = 60; // secondes
@@ -16,7 +18,8 @@ function pointsFor(diff, streak) {
   return 0;
 }
 
-export default function GuessRelations() {
+// `rivalScore` : score à battre quand on arrive par un lien de duel.
+export default function GuessRelations({ rivalScore = null }) {
   const { t } = useI18n();
   const [difficulty, setDifficulty] = useState("moyen");
   const [pair, setPair] = useState(null);          // { from, to, length, n_paths }
@@ -242,7 +245,23 @@ export default function GuessRelations() {
                       {t("guess.rank")} <strong>#{lastSubmit.rank}</strong> {t("guess.outOf")} {lastSubmit.total}
                     </p>
                   )}
-                  <button className="btn" style={{ marginTop: 8 }} onClick={startGame}>{t("guess.retry")}</button>
+                  {rivalScore != null && (
+                    <p style={{ marginTop: 8, fontWeight: 600 }}>
+                      {score > rivalScore ? t("duel.beaten") : score === rivalScore ? t("duel.tie") : t("duel.lostScore", { n: rivalScore })}
+                    </p>
+                  )}
+                  <div className="toolbar" style={{ marginTop: 8 }}>
+                    <ShareButton
+                      text={[
+                        `LinkGuessr · ${t("tabs.count")} 🔗`,
+                        `⭐ ${score} pts · ${totalCorrect}/${totalAnswered} ${t("share.exact")} · ${GAME_DURATION} s`,
+                      ].join("\n")}
+                      url={duelUrl({ jeu: "nombre", score })}
+                      label={t("share.challenge")}
+                      onShared={() => api.logEvent(GAME, { event: "share", score })}
+                    />
+                    <button className="btn" onClick={startGame}>{t("guess.retry")}</button>
+                  </div>
                 </div>
               )}
             </>

@@ -6,6 +6,9 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Home from "./pages/Home";
 import Privacy from "./pages/Privacy";
+import PersonDrawer from "./components/PersonDrawer";
+import DailyPage from "./pages/DailyPage";
+import Duel from "./pages/Duel";
 import Lab from "./pages/Lab";
 import Person from "./pages/Person";
 import "./playful-effects.css";
@@ -81,9 +84,12 @@ function App() {
         <Route path="/lab" element={<Lab />} />
         <Route path="/stats" element={<Navigate to="/lab" replace />} />
         <Route path="/personne/:qid" element={<Person />} />
+        <Route path="/jour/:number" element={<DailyPage />} />
+        <Route path="/defi" element={<Duel />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/politique-de-confidentialite" element={<Privacy />} />
       </Routes>
+      <PersonDrawer />
 
       <footer className="footer">
         <span>© {new Date().getFullYear()} LinkGuessr - Elias Khallouk</span>
