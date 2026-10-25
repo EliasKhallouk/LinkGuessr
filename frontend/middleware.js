@@ -43,6 +43,13 @@ async function metaFor(url) {
     const { person: p, closest } = await api(`/person/${encodeURIComponent(parts[1])}/card`);
     const near = closest.slice(0, 3).map((c) => c.name).join(", ");
     return { title: `${p.name} : ses liens avec ${near}… · LinkGuessr`,
+      // Résumé lisible pour les robots qui n'exécutent pas le JavaScript (remplacé par l'application au chargement).
+      body: `<main><h1>${escape(p.name)}</h1><p>${escape(p.description || "")}</p>`
+        + `<p>${p.degree} liens dans le réseau des personnalités de Wikipédia en français : `
+        + `${p.degree_rank}e personne la plus connectée sur ${p.total}.</p>`
+        + `<h2>Personnes les plus proches</h2><ul>${closest.map((c) => `<li><a href="/personne/${c.qid}">${escape(c.name)}</a>`
+          + `${c.description ? ` — ${escape(c.description)}` : ""}</li>`).join("")}</ul>`
+        + "<p>Données : Wikipédia (CC BY-SA 4.0), Wikidata (CC0).</p></main>",
       description: `${p.description ? `${p.description}. ` : ""}${p.degree} liens dans le réseau des personnalités de Wikipédia en français `
         + `(${p.degree_rank}e plus connectée). Données Wikipédia et Wikidata.`,
       image: `/api/og?type=personne&qid=${p.qid}` };
@@ -72,6 +79,7 @@ export default async function middleware(request) {
         .replace(/<title>[^<]*<\/title>/, `<title>${escape(meta.title)}</title>`)
         .replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${escape(meta.description)}" />`)
         .replace("</head>", `    ${tags}\n  </head>`);
+      if (meta.body) html = html.replace('<div id="root"></div>', `<div id="root">${meta.body}</div>`);
     }
   } catch {
     // Donnée introuvable : on sert la page telle quelle, l'application gère l'erreur.

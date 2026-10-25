@@ -23,12 +23,23 @@ export default function PersonDetails({ qid }) {
   const { t } = useI18n();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const [card, setCard] = useState(null);
 
   useEffect(() => {
     setData(null);
+    setCard(null);
     setError(null);
     api.person(qid).then(setData).catch((e) => setError(e.message));
+    api.personCard(qid).then(setCard).catch(() => {});
   }, [qid]);
+
+  // Titre d'onglet propre à la fiche (les robots reçoivent le même via le middleware Vercel).
+  useEffect(() => {
+    if (!data) return undefined;
+    const previous = document.title;
+    document.title = `${data.person.name} · LinkGuessr`;
+    return () => { document.title = previous; };
+  }, [data]);
 
   if (error) return <div className="error-box"><p style={{ margin: 0 }}>{error}</p></div>;
   if (!data) return <p className="muted">{t("guess.loadingPeople")}</p>;
@@ -71,6 +82,26 @@ export default function PersonDetails({ qid }) {
         </div>
         {p.lead && <div className="panel-body"><Snippet text={p.lead} article={p} /></div>}
       </section>
+
+      {card && (
+        <section className="panel" style={{ marginTop: 12 }}>
+          <div className="panel-header"><span className="panel-title">{t("person.network")}</span></div>
+          <div className="panel-body">
+            <p style={{ marginTop: 0 }}>
+              {t("person.rank", { rank: card.person.degree_rank.toLocaleString(), total: card.person.total.toLocaleString(),
+                links: card.person.degree.toLocaleString() })}
+            </p>
+            {card.closest.length > 0 && (
+              <>
+                <p className="muted">{t("person.closest")}</p>
+                <ul className="fact-list">
+                  {card.closest.map((c) => <li key={c.qid}><PersonChip person={c} size={28} showDescription /></li>)}
+                </ul>
+              </>
+            )}
+          </div>
+        </section>
+      )}
 
       {relations.length > 0 && (
         <section className="panel" style={{ marginTop: 12 }}>

@@ -12,6 +12,8 @@ export default function Privacy() {
           <p>{t("pages.privacy.p1")}</p>
           <h3>{t("pages.privacy.storedTitle")}</h3>
           <ul>{ITEMS.map((k) => <li key={k}>{t(`pages.privacy.${k}`)}</li>)}</ul>
+          <h3>{t("pages.privacy.localTitle")}</h3>
+          <p>{t("pages.privacy.local")}</p>
           <p>{t("pages.privacy.p3")}</p>
           <p>
             {t("pages.privacy.p4prefix")} <a className="chemin-link" href="mailto:linkguessr@gmail.com">linkguessr@gmail.com</a>.

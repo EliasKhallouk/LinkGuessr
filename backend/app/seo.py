@@ -1,7 +1,6 @@
 """Sitemap pour les moteurs de recherche : les pages fixes et une page par personne reliée au réseau.
 
-Servi sous link-guessr.vercel.app/sitemap.xml (relais Vercel), découpé en fichiers de 50 000 adresses
-(limite du protocole sitemap).
+Servi sous link-guessr.vercel.app/sitemap.xml (relais Vercel), découpé en fichiers de 25 000 adresses.
 """
 import math
 

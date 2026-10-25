@@ -12,7 +12,15 @@
       "destination": "https://linkguessr.duckdns.org/umami/:path*"
     },
     {
-      "source": "/((?!api/|v1/|umami/).*)",
+      "source": "/sitemap.xml",
+      "destination": "/api/proxy?path=sitemap.xml"
+    },
+    {
+      "source": "/sitemap-:part.xml",
+      "destination": "/api/proxy?path=sitemap-:part.xml"
+    },
+    {
+      "source": "/((?!api/|v1/|umami/|sitemap).*)",
       "destination": "/index.html"
     }
   ]

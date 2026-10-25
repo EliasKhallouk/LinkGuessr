@@ -1,3 +1,9 @@
-# https://www.robotstxt.org/robotstxt.html
+# LinkGuessr
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /v1/
+Disallow: /api/
+Disallow: /umami/
+
+Sitemap: https://link-guessr.vercel.app/sitemap.xml
