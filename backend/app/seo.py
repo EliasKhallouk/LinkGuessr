@@ -11,7 +11,7 @@ from .core import pool, state
 
 router = APIRouter()
 SITE = "https://link-guessr.vercel.app"
-PER_FILE = 50_000
+PER_FILE = 25_000  # ~2,5 Mo : sous la limite de taille des réponses des fonctions Vercel
 STATIC_PAGES = ["/", "/lab", "/a-propos"]
 CACHE = "public, max-age=3600, s-maxage=86400"
 
