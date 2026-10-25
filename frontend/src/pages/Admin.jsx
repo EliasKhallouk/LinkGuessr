@@ -35,7 +35,7 @@ export default function Admin() {
               {[1, 7, 30, 90].map((d) => <option key={d} value={d}>{d} jour(s)</option>)}
             </select>
             <button className="btn" type="submit">Afficher</button>
-            <a className="btn" href="/umami/" target="_blank" rel="noreferrer">Fréquentation (Umami)</a>
+            <a className="btn" href="/umami" target="_blank" rel="noreferrer">Fréquentation (Umami)</a>
           </form>
           {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
         </div>
