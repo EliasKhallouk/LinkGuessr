@@ -3,6 +3,7 @@
 Le site appelle l'API via Vercel (link-guessr.vercel.app/v1/…) : Vercel garde en cache les
 réponses qui portent un `s-maxage`, ce qui protège la VM (1 cœur) en cas d'affluence.
 """
+import hmac
 import re
 import time
 from collections import defaultdict, deque
@@ -78,9 +79,16 @@ CACHE = [
 ]
 
 
+def is_admin(request: Request) -> bool:
+    """Requête munie du jeton admin (tests de charge) : exemptée des quotas."""
+    from .config import ADMIN_TOKEN
+    token = request.headers.get("x-admin-token", "")
+    return bool(ADMIN_TOKEN) and hmac.compare_digest(token, ADMIN_TOKEN)
+
+
 async def http_policy(request: Request, call_next):
     path = request.url.path
-    for prefix, limiter in LIMITS:
+    for prefix, limiter in ([] if is_admin(request) else LIMITS):
         if path.startswith(prefix) and not limiter.allow(client_ip(request)):
             return JSONResponse({"detail": "Trop de requêtes, réessayez dans un instant."}, status_code=429,
                                 headers={"Retry-After": "30", "Cache-Control": "no-store"})
