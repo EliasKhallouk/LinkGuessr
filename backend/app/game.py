@@ -1,8 +1,6 @@
 """Endpoints de l'application : chiffres clés, scores, paires populaires, logs de parties."""
 import re
-import time
 import unicodedata
-from collections import defaultdict, deque
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from psycopg.types.json import Jsonb
@@ -10,29 +8,12 @@ from pydantic import BaseModel, Field
 
 from .core import pool, state
 from .moderation import is_offensive
+from .policy import RateLimiter
 
 router = APIRouter()
 
 GAMES = {"guess_count", "guess_who", "relay", "explore", "daily"}
 NAME_MAX_LEN = 16
-
-
-class RateLimiter:
-    """Fenêtre glissante en mémoire, par IP (rien n'est stocké sur disque)."""
-
-    def __init__(self, max_calls: int, per_seconds: int):
-        self.max_calls, self.per_seconds = max_calls, per_seconds
-        self.calls: dict[str, deque] = defaultdict(deque)
-
-    def check(self, request: Request) -> None:
-        key = request.client.host if request.client else "?"
-        now = time.monotonic()
-        calls = self.calls[key]
-        while calls and now - calls[0] > self.per_seconds:
-            calls.popleft()
-        if len(calls) >= self.max_calls:
-            raise HTTPException(429, "Trop de requêtes, réessayez dans un instant.")
-        calls.append(now)
 
 
 score_limiter = RateLimiter(5, 60)

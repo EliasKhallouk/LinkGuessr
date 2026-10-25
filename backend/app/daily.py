@@ -22,7 +22,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
 from .core import QID, id_of, path_details, pool, startup, state
-from .game import RateLimiter
+from .policy import RateLimiter
 from .graph import PathResult
 from .moderation import is_offensive
 

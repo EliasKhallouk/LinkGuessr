@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 
 from .config import ADMIN_TOKEN
 from .core import pool
-from .game import GAMES, RateLimiter
+from .game import GAMES
+from .policy import RateLimiter
 
 router = APIRouter()
 feedback_limiter = RateLimiter(10, 3600)

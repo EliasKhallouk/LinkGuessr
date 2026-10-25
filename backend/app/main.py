@@ -15,6 +15,7 @@ from . import admin, daily, game
 from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS
 from .core import id_of, path_details, person_columns, pool, startup, state, summaries
 from .graph import MODES
+from .policy import http_policy
 from .text import normalize
 
 # Part des plus populaires où l'on tire les personnes. Sur 765 000 personnes : ~1 150 / ~7 600 / ~38 000.
@@ -32,6 +33,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="LinkGuessr API", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_origin_regex=CORS_ORIGIN_REGEX,
                    allow_methods=["GET", "POST"], allow_headers=["*"])
+app.middleware("http")(http_policy)
 app.include_router(game.router)
 app.include_router(daily.router)
 app.include_router(admin.router)
