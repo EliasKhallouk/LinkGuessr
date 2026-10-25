@@ -42,19 +42,21 @@ def health():
 
 @app.get("/search")
 def search(q: str = Query(..., min_length=1, max_length=80), limit: int = Query(8, ge=1, le=30)):
-    """Autocomplétion : tous les mots doivent apparaître ; les noms qui commencent par la saisie
-    et les personnes les plus connues d'abord. Recherche approchée si rien ne correspond."""
+    """Autocomplétion : tous les mots tapés doivent apparaître (index trigramme).
+    Classement : d'abord quand chaque mot tapé est un début de mot du nom (« zidane » → Zinédine
+    Zidane plutôt qu'un nom qui contient « zidane » au milieu), puis les plus connus.
+    Recherche approchée si rien ne correspond."""
     norm = normalize(q).strip()
     tokens = [t for t in re.split(r"\s+", norm) if t]
     if not tokens:
         return {"results": []}
     where = " AND ".join(["search_text LIKE %s"] * len(tokens))
-    params = [f"%{t}%" for t in tokens]
+    word_start = " AND ".join(["search_text ~ %s"] * len(tokens))
     with pool.connection() as conn:
         rows = conn.execute(
             f"""SELECT {person_columns()} FROM person WHERE {where}
-                ORDER BY (search_text LIKE %s) DESC, popularity DESC LIMIT %s""",
-            (*params, f"{norm}%", limit),
+                ORDER BY ({word_start}) DESC, popularity DESC LIMIT %s""",
+            (*[f"%{t}%" for t in tokens], *[r"\m" + re.escape(t) for t in tokens], limit),
         ).fetchall()
         if not rows:
             rows = conn.execute(
