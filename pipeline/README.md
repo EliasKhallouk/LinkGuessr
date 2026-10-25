@@ -20,7 +20,8 @@ uv sync
 | `uv run lg humans` | ~30 min | Garde les articles dont le QID est un humain (P31 = Q5), via SPARQL par lots |
 | `uv run lg entities` | quelques heures | Fiches Wikidata complètes (sans références), reprise automatique |
 | `uv run lg refs` | ~30 min | Lieux, professions, clubs, prix… cités, + hiérarchie des professions |
-| `uv run lg pageviews` | ~3 h | Pages vues frwiki des 12 derniers mois (API Pageviews, 16 requêtes en parallèle) |
+| `uv run lg pageviews-dump` | ~4 h, **sur la VM** | Lit en flux les 12 fichiers mensuels de pages vues (~6 Go chacun), garde frwiki |
+| `uv run lg pageviews` | ~1 min | Joint les vues mensuelles aux biographies (redirections comprises) |
 | `uv run lg links` | ~20 min (8 cœurs) | Liens entre personnes dans le texte des articles, avec contexte |
 | `uv run lg build` | ~10 min | Fiches structurées, faits datés, relations typées |
 | `uv run lg graph` | ~5 min | Identifiants, arêtes pondérées, degré, PageRank, communautés, popularité |

@@ -25,7 +25,10 @@ def main() -> None:
     p = sub.add_parser("refs", help="lieux, professions, clubs, prix... cités par les fiches")
     p.add_argument("--workers", type=int, default=2)
 
-    sub.add_parser("pageviews", help="pages vues frwiki sur 12 mois (API Pageviews)")
+    p = sub.add_parser("pageviews-dump", help="extrait les vues frwiki des fichiers mensuels (à lancer sur la VM)")
+    p.add_argument("--out", type=Path, help="dossier de sortie (défaut : work/pageviews_dumps)")
+    p = sub.add_parser("pageviews", help="joint les vues mensuelles aux biographies")
+    p.add_argument("--dir", type=Path, help="dossier des fichiers mensuels (défaut : work/pageviews_dumps)")
     sub.add_parser("build", help="assemble fiches, faits et relations")
     sub.add_parser("graph", help="identifiants, arêtes pondérées et métriques (tables finales)")
 
@@ -47,8 +50,10 @@ def main() -> None:
         links.extract_links(args.workers)
     elif args.cmd == "refs":
         refs.fetch_refs(args.workers)
+    elif args.cmd == "pageviews-dump":
+        pageviews.dump_monthly(args.out)
     elif args.cmd == "pageviews":
-        pageviews.fetch_pageviews()
+        pageviews.build_pageviews(args.dir)
     elif args.cmd == "build":
         build.build()
     elif args.cmd == "graph":
