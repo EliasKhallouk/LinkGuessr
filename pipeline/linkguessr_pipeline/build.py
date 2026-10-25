@@ -6,6 +6,7 @@ Sorties (dossier work) :
   relations.parquet  relations Wikidata entre personnes (famille, élève, succession...)
   refs.parquet       libellés et coordonnées des entités citées
 """
+import datetime
 import json
 import re
 from collections import deque
@@ -50,7 +51,12 @@ def parse_time(v) -> dict | None:
     sign, year, month, day = m.groups()
     year = int(year) * (-1 if sign == "-" else 1)
     precision = v["p"]
-    date = f"{year:04d}-{month}-{day}" if precision >= 11 and year > 0 and month != "00" and day != "00" else None
+    date = None
+    if precision >= 11 and year > 0:
+        try:  # Wikidata contient des dates impossibles (ex. 31 juin) : on garde alors seulement l'année.
+            date = datetime.date(year, int(month), int(day)).isoformat()
+        except ValueError:
+            precision = 9
     return {"year": year, "date": date, "precision": precision}
 
 
