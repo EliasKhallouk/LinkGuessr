@@ -55,7 +55,7 @@
 .relay-history { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 8px; }
 .neighbor-list { list-style: none; padding: 8px; margin: 8px 0 0; max-height: 420px; overflow-y: auto;
   border: 1px solid var(--border-color); border-radius: var(--radius-sm); }
-.neighbor-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
+.neighbor-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center;
   padding: 6px 0; border-bottom: 1px dashed var(--border-color); }
 .neighbor-list li.is-hint { background: var(--success-soft); border-radius: var(--radius-sm); }
 
@@ -85,7 +85,7 @@
   .stat strong { font-size: 24px; }
   .stat-date { margin-left: 0; }
   .person-portrait { width: 100%; height: auto; max-height: 320px; }
-  .neighbor-list li { grid-template-columns: 1fr auto; }
+  .neighbor-list li { grid-template-columns: minmax(0, 1fr) auto; }
   .neighbor-list li .muted { display: none; }
 }
 

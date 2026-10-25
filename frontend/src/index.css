@@ -149,7 +149,6 @@ html {
 body { 
   height: 100%;
   margin: 0;
-  overflow-x: hidden;
 }
 
 #root { 
@@ -419,9 +418,9 @@ body::before {
 .grid {
   display: grid;
   gap: clamp(20px, 3vw, 32px);
-  /* Fixed-but-responsive widths for main and side columns */
-  grid-template-columns: clamp(640px, 65vw, 980px) clamp(260px, 28vw, 360px);
-  justify-content: center; /* center the two fixed-width columns */
+  /* Colonne principale jusqu'à 980 px, colonne latérale de 260 à 360 px : rien ne déborde */
+  grid-template-columns: minmax(0, 980px) minmax(260px, 360px);
+  justify-content: center;
   padding: clamp(20px, 4vw, 48px);
   max-width: 100%;
   margin: 0 auto;
@@ -429,14 +428,30 @@ body::before {
 }
 
 .col-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 16px;
+  min-width: 0;
   min-height: 0; /* Important: prevents content from pushing parent */
 }
 
-@media (max-width: 980px) {
+.col-side { 
+  display: grid; 
+  align-content: start; 
+  gap: 16px; 
+}
+
+@media (max-width: 1024px) {
   .grid { 
-    grid-template-columns: 1fr; 
+    grid-template-columns: minmax(0, 1fr); 
     gap: 20px;
   }
+  .col-side { order: -1; }
+}
+
+@media (max-width: 640px) {
+  .col-side { display: none; }
 }
 
 /* ===== GLASSMORPHIC PANELS ===== */
@@ -468,6 +483,7 @@ body::before {
 /* ===== PLAYFUL TABS ===== */
 .tabs { 
   display: grid; 
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px; 
 }
 
@@ -497,7 +513,21 @@ body::before {
   position: relative;
   overflow: hidden;
   text-align: center; /* Center text in equal-width tabs */
-  margin: 14px;
+}
+
+/* Petits écrans : onglets en 2 × 2 pour que les libellés restent lisibles */
+@media (max-width: 767px) {
+  .tabs-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 6px;
+  }
+  .tab {
+    padding: 10px 12px;
+    font-size: 14px;
+    letter-spacing: 0;
+  }
 }
 
 .tab span {
@@ -517,9 +547,8 @@ body::before {
 
 .tabs-panel { 
   display: grid; 
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px; 
-  /* Stabilize height to avoid layout jumps when content changes */
-  min-height: clamp(520px, 70vh, 800px);
 }
 
 /* Enhanced tab transitions */
@@ -539,18 +568,6 @@ body::before {
 }
 
 /* ===== AD SLOT WITH MODERN STYLING ===== */
-.col-main { 
-  display: grid; 
-  align-content: start; 
-  gap: 16px; 
-}
-
-.col-side { 
-  display: grid; 
-  align-content: start; 
-  gap: 16px; 
-}
-
 .ad-slot .ad-inner {
   background: var(--panel-bg);
   border: 2px dashed var(--border-color);
@@ -584,21 +601,13 @@ body::before {
   background: var(--gradient-panel);
 }
 
-/* Responsive: move/hide ad slot on small screens */
-@media (max-width: 980px) {
-  .grid { grid-template-columns: 1fr; }
-  .col-side { order: -1; }
-}
-
-@media (max-width: 640px) {
-  .col-side { display: none; }
-}
-
 /* ===== PANEL HEADERS ===== */
 .panel-header {
   display: flex; 
   align-items: center; 
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   padding: 18px 24px; 
   background: var(--gradient-panel);
   border-bottom: 2px solid var(--border-color);
@@ -677,12 +686,12 @@ body::before {
 
 .row { 
   display: grid; 
-  grid-template-columns: 1fr 1fr; 
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); 
   gap: 16px; 
 }
 
 @media (max-width: 540px) { 
-  .row { grid-template-columns: 1fr; } 
+  .row { grid-template-columns: minmax(0, 1fr); } 
 }
 
 label { 
