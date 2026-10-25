@@ -17,7 +17,8 @@ from .core import id_of, person_columns, pool, startup, state, summaries
 from .graph import MODES
 from .text import normalize
 
-DIFFICULTY_TOP = {"facile": 0.02, "moyen": 0.10, "difficile": 0.40}
+# Part des plus populaires où l'on tire les personnes. Sur 765 000 personnes : ~1 150 / ~7 600 / ~38 000.
+DIFFICULTY_TOP = {"facile": 0.0015, "moyen": 0.01, "difficile": 0.05}
 MIN_POOL = 200  # réservoir minimal, pour les petits domaines
 
 

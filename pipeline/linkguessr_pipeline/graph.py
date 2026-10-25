@@ -19,8 +19,9 @@ def normalize(s: str) -> str:
 
 
 def _search_text(row: dict) -> str:
-    parts = [row["name"], (row["title"] or "").replace("_", " "), row["birth_name"] or "",
+    parts = [row["name"], (row["title"] or "").replace("_", " "), row["birth_name"],
              *(row["aliases"] or []), *(row["pseudonyms"] or [])]
+    parts = [p for p in parts if p]
     seen, out = set(), []
     for p in parts:
         n = normalize(p).strip()
@@ -38,8 +39,15 @@ def build_graph() -> None:
     final = work_path("final")
     final.mkdir(exist_ok=True)
 
+    # Le titre du dump fait foi (la fiche Wikidata a pu perdre son lien frwiki depuis) ;
+    # sans libellé Wikidata, le nom vient du titre (sans la précision entre parenthèses).
+    dump_titles = pl.read_parquet(work_path("humans.parquet"), columns=["qid", "title"]).rename({"title": "dump_title"})
     persons = (
         pl.read_parquet(work_path("persons.parquet"))
+        .join(dump_titles, on="qid", how="left")
+        .with_columns(pl.coalesce("dump_title", "title").alias("title")).drop("dump_title")
+        .with_columns(pl.coalesce("name", pl.col("title").str.replace_all("_", " ").str.replace(r"\s*\(.*\)$", ""))
+                      .alias("name"))
         .with_columns(pl.col("qid").str.slice(1).cast(pl.Int64).alias("_n"))
         .sort("_n").drop("_n")
         .with_row_index("id")
