@@ -19,6 +19,7 @@ import bz2
 import html
 import os
 import re
+import shutil
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
@@ -209,6 +210,16 @@ def analyze_page(text: str, title_to_qid: dict[str, str], self_qid: str) -> tupl
 
 _W: dict = {}
 
+FLUSH_ROWS = 500_000
+LINK_SCHEMA = {
+    "source_qid": pl.Utf8, "target_qid": pl.Utf8, "mentions": pl.Int32, "first_pos": pl.Float32,
+    "in_lead": pl.Boolean, "in_infobox": pl.Boolean, "sections": pl.List(pl.Utf8), "snippet": pl.Utf8,
+}
+PAGE_SCHEMA = {
+    "qid": pl.Utf8, "infobox": pl.Utf8, "categories": pl.List(pl.Utf8), "lead": pl.Utf8,
+    "n_chars": pl.Int32, "n_sections": pl.Int16,
+}
+
 
 def _init_worker(dump: str, title_to_qid: dict[str, str], page_to_qid: dict[int, str]) -> None:
     _W["dump"] = dump
@@ -265,22 +276,32 @@ def extract_links(workers: int | None = None) -> None:
     print(f"{len(spans):,} blocs à lire sur {len(ordered):,}, {len(title_to_qid):,} titres reconnus")
 
     dump = str(dump_path("pages-articles-multistream.xml.bz2"))
-    all_links, all_pages = [], []
+    parts = work_path("text_links_parts")
+    if parts.exists():
+        shutil.rmtree(parts)
+    parts.mkdir()
+    link_buf, page_buf, n_links, n_pages = [], [], 0, 0
+
+    # Écriture par paquets : la RAM reste bornée quelle que soit la taille du dump.
+    def flush() -> None:
+        nonlocal link_buf, page_buf, n_links, n_pages
+        i = len(list(parts.glob("links-*.parquet")))
+        pl.DataFrame(link_buf, schema=LINK_SCHEMA).write_parquet(parts / f"links-{i:05d}.parquet")
+        pl.DataFrame(page_buf, schema=PAGE_SCHEMA).write_parquet(parts / f"pages-{i:05d}.parquet")
+        n_links, n_pages = n_links + len(link_buf), n_pages + len(page_buf)
+        link_buf, page_buf = [], []
+
     with ProcessPoolExecutor(workers or os.cpu_count(), initializer=_init_worker,
                              initargs=(dump, title_to_qid, page_to_qid)) as pool:
         for link_rows, page_rows in tqdm(pool.map(_process_block, spans, chunksize=64),
                                          total=len(spans), desc="blocs", unit="bloc"):
-            all_links.extend(link_rows)
-            all_pages.extend(page_rows)
+            link_buf.extend(link_rows)
+            page_buf.extend(page_rows)
+            if len(link_buf) >= FLUSH_ROWS:
+                flush()
+    flush()
 
-    links_df = pl.DataFrame(all_links, schema={
-        "source_qid": pl.Utf8, "target_qid": pl.Utf8, "mentions": pl.Int32, "first_pos": pl.Float32,
-        "in_lead": pl.Boolean, "in_infobox": pl.Boolean, "sections": pl.List(pl.Utf8), "snippet": pl.Utf8,
-    })
-    links_df.write_parquet(work_path("text_links.parquet"), compression="zstd")
-    pages_df = pl.DataFrame(all_pages, schema={
-        "qid": pl.Utf8, "infobox": pl.Utf8, "categories": pl.List(pl.Utf8), "lead": pl.Utf8,
-        "n_chars": pl.Int32, "n_sections": pl.Int16,
-    })
-    pages_df.write_parquet(work_path("pages_text.parquet"), compression="zstd")
-    print(f"{links_df.height:,} liens entre {pages_df.height:,} biographies")
+    pl.scan_parquet(parts / "links-*.parquet").sink_parquet(work_path("text_links.parquet"), compression="zstd")
+    pl.scan_parquet(parts / "pages-*.parquet").sink_parquet(work_path("pages_text.parquet"), compression="zstd")
+    shutil.rmtree(parts)
+    print(f"{n_links:,} liens entre {n_pages:,} biographies")
