@@ -56,7 +56,7 @@ export default function GuessRelations() {
       shownAt.current = performance.now();
       requestAnimationFrame(() => guessInputRef.current?.focus());
     } catch (e) {
-      setError(t("guess.errorLoadPeople"));
+      setError(e.message || t("guess.errorLoadPeople"));
     } finally {
       setLoading(false);
     }

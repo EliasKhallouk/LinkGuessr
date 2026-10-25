@@ -63,7 +63,7 @@ export default function Game() {
       setShown(0);
       api.logEvent("explore", { from: a.qid, to: b.qid, length: data.length, n_paths: data.n_paths, mode });
     } catch (e) {
-      setError(t("game.errorUnknown"));
+      setError(e.message || t("game.errorUnknown"));
     } finally {
       setLoading(false);
     }
@@ -76,8 +76,8 @@ export default function Game() {
       setP1(pair.from);
       setP2(pair.to);
       await explore(pair.from, pair.to);
-    } catch {
-      setError(t("game.errorUnknown"));
+    } catch (e) {
+      setError(e.message || t("game.errorUnknown"));
     } finally {
       setLoading(false);
     }
