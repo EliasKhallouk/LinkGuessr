@@ -40,6 +40,12 @@
   --radius-md: 16px;
   --radius-lg: 24px;
   --radius-xl: 32px;
+
+  /* Logo et wordmark */
+  --logo-ink: #F0F4FF;
+  --logo-a: #00D9FF;
+  --logo-b: #8B5CF6;
+  --wordmark-accent: var(--accent-primary);
 }
 
 /* ===== PLAYFUL GAME THEME - LIGHT MODE ===== */
@@ -84,6 +90,12 @@
   --radius-md: 16px;
   --radius-lg: 24px;
   --radius-xl: 32px;
+
+  /* Logo et wordmark (#0EA5E9 n'est pas assez contrasté pour du texte sur blanc) */
+  --logo-ink: #0F172A;
+  --logo-a: #0EA5E9;
+  --logo-b: #7C3AED;
+  --wordmark-accent: #0284C7;
 }
 
 /* ===== MODERN RESET & BASE ===== */
@@ -225,59 +237,28 @@ body::after {
   gap: 14px;
 }
 
-/* Animated logo with pulse effect */
-.logo-dot {
-  width: 18px; 
-  height: 18px; 
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  box-shadow: var(--glow-primary);
-  animation: logoPulse 3s ease-in-out infinite;
-  position: relative;
+/* Logo : couleurs via --logo-*, sans effet */
+.brand-logo {
+  flex: none;
 }
 
-.logo-dot::before {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  opacity: 0.3;
-  animation: logoRing 3s ease-in-out infinite;
-}
-
-@keyframes logoPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-@keyframes logoRing {
-  0%, 100% { 
-    transform: scale(1); 
-    opacity: 0.3; 
-  }
-  50% { 
-    transform: scale(1.3); 
-    opacity: 0; 
+@media (max-width: 767px) {
+  .brand-logo {
+    width: 28px;
+    height: 28px;
   }
 }
 
 .title {
-  margin: 0; 
-  font-size: clamp(24px, 3vw, 38px); 
+  margin: 0;
+  font-size: clamp(24px, 3vw, 38px);
   font-weight: 800;
   letter-spacing: -0.5px;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  position: relative;
-  animation: titleShine 4s ease-in-out infinite;
+  color: var(--text-primary);
 }
 
-@keyframes titleShine {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.3); }
+.title-accent {
+  color: var(--wordmark-accent);
 }
 
 .tagline { 
