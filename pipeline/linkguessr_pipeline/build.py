@@ -15,9 +15,27 @@ from tqdm import tqdm
 
 from .config import work_path
 from .entities import iter_entities
+from .parts import PartWriter
 from .refs import load_refs
 from .wd_schema import (ANCHOR_TO_DOMAIN, DOMAIN_SIGNALS, EXTERNAL_IDS, FACT_PROPS, GENDERS, RELATION_PROPS,
                         SUCCESSION_QUALIFIERS)
+
+S, I64, L = pl.Utf8, pl.Int64, pl.List(pl.Utf8)
+PERSON_SCHEMA = {
+    "qid": S, "title": S, "title_en": S, "name": S, "description": S, "aliases": L, "birth_name": S,
+    "pseudonyms": L, "gender": S, "birth_year": I64, "birth_date": S, "birth_precision": pl.Int8,
+    "death_year": I64, "death_date": S, "death_precision": pl.Int8, "birth_place": S, "birth_country": S,
+    "death_place": S, "death_country": S, "citizenships": L, "occupations": L, "domains": L, "primary_domain": S,
+    "image": S, "height_cm": pl.Int32, "external_ids": S, "sitelinks": pl.Int16, "article_len": pl.Int32,
+}
+FACT_SCHEMA = {
+    "person_qid": S, "prop": S, "value_qid": S, "start_year": I64, "end_year": I64,
+    "start_date": S, "end_date": S, "preferred": pl.Boolean, "qualifiers": S,
+}
+RELATION_SCHEMA = {
+    "source_qid": S, "target_qid": S, "prop": S, "family": S, "label": S, "context_qid": S,
+    "start_year": I64, "end_year": I64,
+}
 
 _TIME = re.compile(r"([+-])(\d+)-(\d\d)-(\d\d)")
 
@@ -104,7 +122,9 @@ def build() -> None:
     def country_of(place) -> str | None:
         return _first_value(refs[place]["claims"], "P17") if isinstance(place, str) and place in refs else None
 
-    persons, facts, relations = [], [], []
+    persons = PartWriter(work_path("parts_persons"), PERSON_SCHEMA)
+    facts = PartWriter(work_path("parts_facts"), FACT_SCHEMA)
+    relations = PartWriter(work_path("parts_relations"), RELATION_SCHEMA)
     for e in tqdm(iter_entities(work_path("entities_humans")), total=len(human_qids), desc="fiches", unit=" pers."):
         qid, claims = e["id"], e["claims"]
         if qid not in human_qids:
@@ -129,14 +149,14 @@ def build() -> None:
         externals = {name: v for pid, name in EXTERNAL_IDS.items() if isinstance(v := _first_value(claims, pid), str)}
         title = e["sitelinks"]["frwiki"]
 
-        persons.append({
+        persons.add({
             "qid": qid,
             "title": title.replace(" ", "_") if title else None,
             "title_en": e["sitelinks"]["enwiki"],
             "name": labels.get("fr") or labels.get("mul") or re.sub(r"\s*\(.*\)$", "", title or "") or labels.get("en"),
             "description": descs.get("fr") or descs.get("en"),
             "aliases": sorted(set(e["aliases"].get("fr", []) + e["aliases"].get("mul", []))),
-            "birth_name": (_first_value(claims, "P1477") or {}).get("text"),
+            "birth_name": birth_name.get("text") if isinstance(birth_name := _first_value(claims, "P1477"), dict) else None,
             "pseudonyms": [v if isinstance(v := st["v"], str) else v.get("text") for st in claims.get("P742", [])
                            if isinstance(st["v"], str) or "text" in st["v"]],
             "gender": GENDERS.get(_first_value(claims, "P21")),
@@ -150,7 +170,7 @@ def build() -> None:
             "occupations": occupations,
             "domains": domains,
             "primary_domain": domains[0] if domains else None,
-            "image": _first_value(claims, "P18"),
+            "image": image if isinstance(image := _first_value(claims, "P18"), str) else None,
             "height_cm": round(float(height["amount"]) * 100) if isinstance(height, dict) and height.get("unit") == "Q11573" else None,
             "external_ids": json.dumps(externals, ensure_ascii=False) if externals else None,
             "sitelinks": e["sitelinks"]["count"],
@@ -163,7 +183,7 @@ def build() -> None:
                     continue
                 start, end, when = (_qualifier_time(st, p) for p in ("P580", "P582", "P585"))
                 quals = {k: v for k, v in st.get("q", {}).items() if k not in ("P580", "P582", "P585")}
-                facts.append({
+                facts.add({
                     "person_qid": qid, "prop": pid, "value_qid": st["v"],
                     "start_year": (start or when or {}).get("year"), "end_year": (end or when or {}).get("year"),
                     "start_date": (start or when or {}).get("date"), "end_date": (end or when or {}).get("date"),
@@ -174,7 +194,7 @@ def build() -> None:
                     for qp, kind in SUCCESSION_QUALIFIERS.items():
                         for other in st.get("q", {}).get(qp, []):
                             if isinstance(other, str) and other in human_qids and other != qid:
-                                relations.append({
+                                relations.add({
                                     "source_qid": qid, "target_qid": other, "prop": qp, "family": "succession",
                                     "label": kind, "context_qid": st["v"],
                                     "start_year": (start or {}).get("year"), "end_year": (end or {}).get("year"),
@@ -185,20 +205,22 @@ def build() -> None:
                 other = st["v"]
                 if isinstance(other, str) and other in human_qids and other != qid:
                     start, end = _qualifier_time(st, "P580"), _qualifier_time(st, "P582")
-                    relations.append({
+                    relations.add({
                         "source_qid": qid, "target_qid": other, "prop": pid, "family": meta["family"],
                         "label": meta["label"], "context_qid": None,
                         "start_year": (start or {}).get("year"), "end_year": (end or {}).get("year"),
                     })
 
-    persons_df = pl.DataFrame(persons, infer_schema_length=None)
-    for extra in ("pages_text.parquet", "pageviews.parquet"):
-        if work_path(extra).exists():
-            persons_df = persons_df.join(pl.read_parquet(work_path(extra)), on="qid", how="left")
-    persons_df.write_parquet(work_path("persons.parquet"), compression="zstd")
-    pl.DataFrame(facts, infer_schema_length=None).write_parquet(work_path("facts.parquet"), compression="zstd")
-    pl.DataFrame(relations, infer_schema_length=None).unique().write_parquet(
-        work_path("relations.parquet"), compression="zstd")
+    extras = [work_path(f) for f in ("pages_text.parquet", "pageviews.parquet") if work_path(f).exists()]
+
+    def with_extras(frame: pl.LazyFrame) -> pl.LazyFrame:
+        for extra in extras:
+            frame = frame.join(pl.scan_parquet(extra), on="qid", how="left")
+        return frame
+
+    n_persons = persons.finish(work_path("persons.parquet"), with_extras)
+    n_facts = facts.finish(work_path("facts.parquet"))
+    n_relations = relations.finish(work_path("relations.parquet"), lambda f: f.unique())
 
     refs_rows = []
     for q, ent in refs.items():
@@ -211,4 +233,5 @@ def build() -> None:
             "instance_of": [st["v"] for st in ent["claims"].get("P31", []) if isinstance(st["v"], str)],
         })
     pl.DataFrame(refs_rows, infer_schema_length=None).write_parquet(work_path("refs.parquet"), compression="zstd")
-    print(f"{len(persons):,} fiches, {len(facts):,} faits, {len(relations):,} relations, {len(refs_rows):,} références")
+    print(f"{n_persons:,} fiches, {n_facts:,} faits, {n_relations:,} relations (avant dédoublonnage), "
+          f"{len(refs_rows):,} références")

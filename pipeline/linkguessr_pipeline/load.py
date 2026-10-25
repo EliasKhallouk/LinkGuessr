@@ -6,19 +6,26 @@ dans une seule transaction : l'API ne voit jamais une base à moitié chargée.
 import os
 from pathlib import Path
 
-import polars as pl
 import psycopg
+import pyarrow.parquet as pq
 from tqdm import tqdm
 
 TABLES = ["person", "ref", "fact", "text_link", "relation", "edge"]
+BATCH = 50_000
 SQL_DIR = Path(__file__).resolve().parents[1] / "sql"
 
 
-def _copy(cur, table: str, df: pl.DataFrame, columns: list[str]) -> None:
-    cols = ", ".join(columns)
-    with cur.copy(f"COPY {table} ({cols}) FROM STDIN") as copy:
-        for row in tqdm(df.select(columns).iter_rows(), total=df.height, desc=table, unit=" lignes", unit_scale=True):
-            copy.write_row(row)
+def _copy(cur, table: str, path: Path, columns: list[str]) -> None:
+    """COPY par lots de BATCH lignes : la RAM reste bornée même pour les grosses tables."""
+    parquet = pq.ParquetFile(path)
+    with cur.copy(f"COPY {table} ({', '.join(columns)}) FROM STDIN") as copy, tqdm(
+        total=parquet.metadata.num_rows, desc=table, unit=" lignes", unit_scale=True
+    ) as bar:
+        for batch in parquet.iter_batches(batch_size=BATCH, columns=columns):
+            rows = batch.to_pydict()
+            for row in zip(*(rows[c] for c in columns)):
+                copy.write_row(row)
+            bar.update(batch.num_rows)
 
 
 def load(final_dir: Path, dsn: str | None = None) -> None:
@@ -29,11 +36,12 @@ def load(final_dir: Path, dsn: str | None = None) -> None:
         cur.execute((SQL_DIR / "graph_schema.sql").read_text(encoding="utf-8"))
 
         for table in TABLES:
-            df = pl.read_parquet(final_dir / f"{table}.parquet")
+            path = final_dir / f"{table}.parquet"
+            available = set(pq.read_schema(path).names)
             cur.execute("SELECT column_name FROM information_schema.columns "
                         "WHERE table_schema = 'staging' AND table_name = %s ORDER BY ordinal_position", (table,))
-            columns = [c for (c,) in cur.fetchall() if c in df.columns]
-            _copy(cur, table, df, columns)
+            columns = [c for (c,) in cur.fetchall() if c in available]
+            _copy(cur, table, path, columns)
 
         print("index...")
         cur.execute((SQL_DIR / "graph_indexes.sql").read_text(encoding="utf-8"))

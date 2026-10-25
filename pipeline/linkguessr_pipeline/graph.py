@@ -48,14 +48,16 @@ def build_graph() -> None:
     ids = persons.select("qid", "id")
     n = persons.height
 
-    def with_ids(df: pl.DataFrame, *cols: str) -> pl.DataFrame:
+    # Tables lues en mode « paresseux » : seules les colonnes utiles au calcul sont chargées en mémoire,
+    # les grosses tables (phrases, faits) sont transformées en flux directement vers les fichiers finaux.
+    def with_ids(frame: pl.LazyFrame, *cols: str) -> pl.LazyFrame:
         for c in cols:
-            df = df.join(ids.rename({"qid": c, "id": c.replace("_qid", "_id")}), on=c, how="inner").drop(c)
-        return df
+            frame = frame.join(ids.lazy().rename({"qid": c, "id": c.replace("_qid", "_id")}), on=c, how="inner").drop(c)
+        return frame
 
-    text_links = with_ids(pl.read_parquet(work_path("text_links.parquet")), "source_qid", "target_qid")
-    relations = with_ids(pl.read_parquet(work_path("relations.parquet")), "source_qid", "target_qid")
-    facts = with_ids(pl.read_parquet(work_path("facts.parquet")), "person_qid")
+    text_links = with_ids(pl.scan_parquet(work_path("text_links.parquet")).select("source_qid", "target_qid", "mentions"),
+                          "source_qid", "target_qid").collect()
+    relations = with_ids(pl.scan_parquet(work_path("relations.parquet")), "source_qid", "target_qid").collect()
 
     # Arêtes non orientées (a < b) : fusion des liens textuels (deux sens) et des relations Wikidata.
     text_edges = text_links.select(
@@ -84,9 +86,8 @@ def build_graph() -> None:
     )
 
     # Métriques (igraph, en C).
-    g_dir = ig.Graph(n=n, edges=list(zip(text_links["source_id"].to_list(), text_links["target_id"].to_list())),
-                     directed=True)
-    g_und = ig.Graph(n=n, edges=list(zip(edges["a"].to_list(), edges["b"].to_list())), directed=False)
+    g_dir = ig.Graph(n=n, edges=text_links.select("source_id", "target_id").to_numpy(), directed=True)
+    g_und = ig.Graph(n=n, edges=edges.select("a", "b").to_numpy(), directed=False)
     g_und.es["weight"] = edges["weight"].to_list()
     communities = g_und.community_leiden(objective_function="modularity", weights="weight", n_iterations=4)
     print(f"{n:,} personnes, {edges.height:,} arêtes, {len(communities):,} communautés "
@@ -116,8 +117,9 @@ def build_graph() -> None:
 
     persons.write_parquet(final / "person.parquet")
     pl.read_parquet(work_path("refs.parquet")).write_parquet(final / "ref.parquet")
-    facts.write_parquet(final / "fact.parquet")
-    text_links.write_parquet(final / "text_link.parquet")
+    with_ids(pl.scan_parquet(work_path("facts.parquet")), "person_qid").sink_parquet(final / "fact.parquet")
+    with_ids(pl.scan_parquet(work_path("text_links.parquet")), "source_qid", "target_qid").sink_parquet(
+        final / "text_link.parquet")
     relations.write_parquet(final / "relation.parquet")
     edges.write_parquet(final / "edge.parquet")
 
