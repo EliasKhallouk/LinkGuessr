@@ -27,5 +27,12 @@
       "source": "/((?!api/|v1/|umami/|sitemap).*)",
       "destination": "/index.html"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/umami/",
+      "destination": "/umami",
+      "permanent": false
+    }
   ]
 }
