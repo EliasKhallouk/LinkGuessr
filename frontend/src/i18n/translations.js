@@ -223,6 +223,17 @@ export const translations = {
       images: "images",
       more: "Sources et licences",
     },
+    daily: {
+      title: "Défi du jour #{n}",
+      loading: "Chargement du défi du jour…",
+      triesLeft: "{n} essai(s) restant(s)",
+      rules: "Qui relie ces deux personnes ? Même défi pour tout le monde, une seule tentative par jour.",
+      notThem: "Ce n'est pas :",
+      won: "🎉 Trouvé en {n} essai(s) !",
+      lost: "Perdu ! La réponse était :",
+      stats: "{players} joueur(s) aujourd'hui · {pct} % ont trouvé",
+      next: "Prochain défi dans {time}",
+    },
   },
   en: {
     app: {
@@ -450,6 +461,17 @@ export const translations = {
       data: "Data:",
       images: "images",
       more: "Sources and licenses",
+    },
+    daily: {
+      title: "Daily challenge #{n}",
+      loading: "Loading today's challenge…",
+      triesLeft: "{n} tries left",
+      rules: "Who links these two people? Same challenge for everyone, one attempt per day.",
+      notThem: "It's not:",
+      won: "🎉 Found in {n} tries!",
+      lost: "Lost! The answer was:",
+      stats: "{players} player(s) today · {pct}% found it",
+      next: "Next challenge in {time}",
     },
   },
 };

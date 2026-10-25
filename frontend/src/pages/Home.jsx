@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import ConnectRelay from "../components/ConnectRelay";
+import DailyChallenge from "../components/DailyChallenge";
 import Game from "../components/Game";
 import GuessRelations from "../components/GuessRelations";
 import GuessWhoPath from "../components/GuessWhoPath";
@@ -29,6 +30,7 @@ export default function Home() {
     <main className="grid grid-single">
       <div className="col-main">
         <StatsBanner />
+        <DailyChallenge />
         <Tabs
           active={tab}
           onChange={setTab}

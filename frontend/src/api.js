@@ -49,6 +49,8 @@ export const api = {
   popularPairs: (period = "7", limit = 10) => get("/popular_pairs", { period, limit }).then((d) => d.results),
   leaderboard: (game, period = "all", limit = 10) => get("/leaderboard", { game, period, limit }).then((d) => d.entries),
   submitScore: (game, name, score, duration) => post("/scores", { game, name, score, duration }),
+  daily: () => get("/daily"),
+  dailyGuess: (device, qid = null) => post("/daily/guess", { device, qid }),
   // Les logs ne doivent jamais gêner le jeu : erreurs ignorées.
   logEvent: (game, payload) => post("/events", { game, session: sessionId(), payload }).catch(() => {}),
 };
