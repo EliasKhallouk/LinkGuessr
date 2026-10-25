@@ -9,6 +9,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
 from .core import pool, state
+from .moderation import is_offensive
 
 router = APIRouter()
 
@@ -78,6 +79,8 @@ def submit_score(payload: ScoreIn, request: Request):
     if payload.game not in GAMES:
         raise HTTPException(400, "Jeu inconnu")
     name = normalize_name(payload.name)
+    if is_offensive(name):
+        raise HTTPException(422, "Ce pseudo n'est pas accepté, choisissez-en un autre.")
     with pool.connection() as conn:
         row = conn.execute(
             "INSERT INTO app.score (game, name, score, duration) VALUES (%s, %s, %s, %s) RETURNING id",

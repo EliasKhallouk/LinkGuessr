@@ -53,6 +53,8 @@ export const api = {
   dailyArchive: (number) => get(`/daily/archive/${number}`),
   personCard: (qid) => get(`/person/${qid}/card`),
   dailyGuess: (device, qid = null) => post("/daily/guess", { device, qid }),
+  dailyPseudo: (device, pseudo) => post("/daily/pseudo", { device, pseudo }),
+  dailyLeaderboard: () => get("/daily/leaderboard").then((d) => d.entries),
   // Les logs ne doivent jamais gêner le jeu : erreurs ignorées.
   logEvent: (game, payload) => post("/events", { game, session: sessionId(), payload }).catch(() => {}),
 };

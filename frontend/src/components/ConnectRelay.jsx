@@ -4,6 +4,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import DifficultyPicker from "./DifficultyPicker";
 import PathView from "./PathView";
 import { duelUrl, relayGrid } from "../lib/share";
+import { load, save } from "../lib/storage";
 import PersonChip from "./PersonChip";
 import ShareButton from "./ShareButton";
 
@@ -67,6 +68,9 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
     setHint(null);
     if (person.qid === target.qid) {
       setNeighbors([]);
+      const record = load("lg-relay-stats", { played: 0, optimal: 0 });
+      save("lg-relay-stats", { played: record.played + 1,
+        optimal: record.optimal + (best?.length === newHistory.length - 1 ? 1 : 0) });
       api.logEvent(GAME, {
         from: newHistory[0].qid, to: target.qid, best: best?.length ?? null, steps: newHistory.length - 1,
         path: newHistory.map((p) => p.qid), hints: hintsUsed, difficulty,

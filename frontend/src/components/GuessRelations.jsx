@@ -4,6 +4,7 @@ import { useI18n } from "../i18n/I18nProvider";
 import DifficultyPicker from "./DifficultyPicker";
 import PathView from "./PathView";
 import { duelUrl } from "../lib/share";
+import { load, save } from "../lib/storage";
 import PersonChip from "./PersonChip";
 import ShareButton from "./ShareButton";
 
@@ -133,6 +134,15 @@ export default function GuessRelations({ rivalScore = null }) {
     }
   };
 
+  // Record personnel, gardé dans le navigateur.
+  const [best, setBest] = useState(() => load("lg-best-count", 0));
+  useEffect(() => {
+    if (!gameActive && timeLeft === 0 && score > best) {
+      save("lg-best-count", score);
+      setBest(score);
+    }
+  }, [gameActive, timeLeft, score, best]);
+
   const formatTime = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
   return (
@@ -223,7 +233,8 @@ export default function GuessRelations({ rivalScore = null }) {
               {!gameActive && timeLeft === 0 && (
                 <div className="panel result-box" style={{ marginTop: 12 }}>
                   <p style={{ margin: 0, fontWeight: 600 }}>{t("guess.timeUp")}</p>
-                  <p className="kpi" style={{ marginTop: 6 }}>{t("guess.finalScore")} <strong>{score}</strong></p>
+                  <p className="kpi" style={{ marginTop: 6 }}>{t("guess.finalScore")} <strong>{score}</strong>
+                    <span className="muted"> · {t("guess.personalBest", { n: best })}</span></p>
                   <p className="kpi" style={{ marginTop: 6 }}>
                     {t("guess.corrects")} <strong>{totalCorrect}</strong> / {t("guess.attempts")} <strong>{totalAnswered}</strong>
                   </p>

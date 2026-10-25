@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { api, lifespan } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
 import { formatCountdown, msUntilParisMidnight } from "../lib/paris";
+import { recordDaily } from "../lib/dailyStats";
 import { deviceId } from "../lib/storage";
+import { DailyLeaderboard, DailyStats } from "./DailyExtras";
 import PathView from "./PathView";
 import PersonChip from "./PersonChip";
 import { dailyGrid, SITE_URL } from "../lib/share";
@@ -33,6 +35,12 @@ export default function DailyChallenge() {
   const [guess, setGuess] = useState(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+  const [history, setHistory] = useState(null);
+
+  // Partie terminée : on l'inscrit une fois dans l'historique local (séries, répartition).
+  useEffect(() => {
+    if (game?.finished) setHistory(recordDaily(game.number, game.solved, game.tries));
+  }, [game?.finished, game?.number, game?.solved, game?.tries]);
 
   // On reprend l'état de la partie du jour pour cet appareil (déjà jouée, en cours…).
   useEffect(() => {
@@ -102,6 +110,8 @@ export default function DailyChallenge() {
               />
             </div>
             <Countdown />
+            {history && <DailyStats history={history} highlight={game.solved ? game.tries : null} />}
+            <DailyLeaderboard solved={game.solved} />
           </div>
         )}
       </div>

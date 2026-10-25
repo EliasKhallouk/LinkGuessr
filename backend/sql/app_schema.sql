@@ -57,3 +57,7 @@ CREATE TABLE IF NOT EXISTS app.daily_attempt (
     finished_at  timestamptz,
     PRIMARY KEY (day, device)
 );
+
+-- Pseudo facultatif pour le classement du défi du jour (unique par jour, insensible à la casse).
+ALTER TABLE app.daily_attempt ADD COLUMN IF NOT EXISTS pseudo text;
+CREATE UNIQUE INDEX IF NOT EXISTS daily_attempt_pseudo_idx ON app.daily_attempt (day, lower(pseudo)) WHERE pseudo IS NOT NULL;

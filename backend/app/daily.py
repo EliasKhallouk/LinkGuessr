@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field
 from .core import QID, id_of, path_details, pool, startup, state
 from .game import RateLimiter
 from .graph import PathResult
+from .moderation import is_offensive
 
 router = APIRouter()
 
@@ -33,6 +34,7 @@ MAX_TRIES = 4                  # erreurs avant de révéler la réponse
 ANSWER_TOP = 0.005             # personne cachée parmi les 0,5 % les plus populaires (~3 800)
 ENDPOINT_TOP = 0.02            # extrémités du chemin parmi les 2 % (~15 000)
 guess_limiter = RateLimiter(60, 60)
+pseudo_limiter = RateLimiter(5, 60)
 
 
 def today() -> dt.date:
@@ -275,6 +277,52 @@ def daily_guess(body: GuessIn, request: Request):
         "hints": unlocked,
         "stats": stats,
     }
+
+
+class PseudoIn(BaseModel):
+    device: str = Field(..., min_length=8, max_length=64)
+    pseudo: str = Field(..., min_length=1, max_length=40)
+
+
+@router.post("/daily/pseudo")
+def daily_pseudo(body: PseudoIn, request: Request):
+    """Pseudo facultatif pour le classement du jour, réservé à ceux qui ont trouvé."""
+    from .game import normalize_name  # même normalisation que le classement des scores
+
+    pseudo_limiter.check(request)
+    pseudo = normalize_name(body.pseudo)
+    if is_offensive(pseudo):
+        raise HTTPException(422, "Ce pseudo n'est pas accepté, choisissez-en un autre.")
+    day = today()
+    with pool.connection() as conn:
+        attempt = conn.execute("SELECT solved FROM app.daily_attempt WHERE day = %s AND device = %s",
+                               (day, body.device)).fetchone()
+        if not attempt or not attempt["solved"]:
+            raise HTTPException(403, "Le classement est réservé à ceux qui ont trouvé la réponse.")
+        taken = conn.execute(
+            "SELECT 1 FROM app.daily_attempt WHERE day = %s AND lower(pseudo) = lower(%s) AND device <> %s",
+            (day, pseudo, body.device)).fetchone()
+        if taken:
+            raise HTTPException(409, "Ce pseudo est déjà pris aujourd'hui.")
+        conn.execute("UPDATE app.daily_attempt SET pseudo = %s WHERE day = %s AND device = %s",
+                     (pseudo, day, body.device))
+    return {"ok": True, "pseudo": pseudo}
+
+
+@router.get("/daily/leaderboard")
+def daily_leaderboard(response: Response, limit: int = 20):
+    """Classement du jour : moins d'essais d'abord, puis le plus rapide."""
+    response.headers["Cache-Control"] = "public, max-age=30, s-maxage=30"
+    with pool.connection() as conn:
+        rows = conn.execute(
+            """SELECT pseudo, cardinality(guesses) AS tries,
+                      extract(epoch FROM finished_at - started_at)::int AS seconds
+               FROM app.daily_attempt
+               WHERE day = %s AND solved AND pseudo IS NOT NULL
+               ORDER BY tries, seconds LIMIT %s""",
+            (today(), min(max(limit, 1), 100)),
+        ).fetchall()
+    return {"day": today().isoformat(), "entries": rows}
 
 
 # --- Ligne de commande ---------------------------------------------------------------------
