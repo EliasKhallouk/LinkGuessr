@@ -1,7 +1,8 @@
 /* Composants de la refonte (personnes, chemins, compteur, fiche). S'appuie sur les variables de index.css. */
 :root {
-  --success: var(--accent-success);
-  --danger: var(--accent-danger);
+  /* Couleurs de texte (les fonds d'accent restent --accent-success / --accent-danger) */
+  --success: var(--text-success);
+  --danger: var(--text-danger);
   --border: var(--border-color);
 }
 
@@ -24,24 +25,24 @@
 }
 .person-text { display: flex; flex-direction: column; min-width: 0; }
 .person-desc { font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; }
-.hidden-person .person-avatar { border: 2px dashed var(--accent-primary); color: var(--accent-primary); }
+.hidden-person .person-avatar { border: 2px dashed var(--accent-primary); color: var(--accent-text); }
 
 /* ----- Sélecteur de personne ----- */
 .person-picker { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .picker-item { display: flex; align-items: center; gap: 10px; }
 .picker-item img { border-radius: 50%; object-fit: cover; flex: none; }
 .picker-item > span { display: flex; flex-direction: column; min-width: 0; }
-.picker-item.active .person-desc, .picker-item:hover .person-desc { color: rgba(255, 255, 255, 0.85); }
+.picker-item.active .person-desc, .picker-item:hover .person-desc { color: var(--on-accent); }
 
 /* ----- Paire et chemin ----- */
 .pair { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
-.pair-sep { font-size: 24px; color: var(--accent-primary); }
+.pair-sep { font-size: 24px; color: var(--accent-text); }
 .result-box { padding: 16px; border-radius: var(--radius-md); }
 
 .path-view { list-style: none; padding: 0; margin: 12px 0 0; }
 .path-link { display: flex; gap: 12px; align-items: flex-start; margin: 4px 0 4px 18px; padding-left: 12px;
   border-left: 2px solid var(--border-color); }
-.path-arrow { color: var(--accent-primary); font-weight: 700; }
+.path-arrow { color: var(--accent-text); font-weight: 700; }
 .hop-explain { display: flex; flex-direction: column; gap: 4px; padding: 4px 0 8px; font-size: 14px; }
 .hop-relation { color: var(--text-secondary); }
 .hop-snippet { color: var(--text-secondary); font-style: italic; line-height: 1.5; }
@@ -74,7 +75,7 @@
 .person-header { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
 .person-portrait { width: 160px; height: 200px; object-fit: cover; border-radius: var(--radius-md); flex: none; }
 .tag { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px;
-  border: 1px solid var(--border-hover); color: var(--accent-primary); }
+  border: 1px solid var(--border-hover); color: var(--accent-text); }
 .fact-list, .link-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .fact-list li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .link-list li { display: flex; flex-direction: column; gap: 4px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-color); }
@@ -90,7 +91,7 @@
 /* ----- Crédits et licences ----- */
 .snippet { display: inline; }
 .snippet-source { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-.snippet-source:hover { color: var(--accent-primary); }
+.snippet-source:hover { color: var(--accent-text); }
 .person-figure { margin: 0; display: flex; flex-direction: column; gap: 4px; max-width: 160px; }
 .image-credit { font-size: 11px; color: var(--text-muted); line-height: 1.4; word-break: break-word; }
 .image-credit a { color: inherit; }
@@ -128,7 +129,7 @@ body.drawer-open { overflow: hidden; }
 .daily .panel-title::before { content: "📅 "; }
 
 /* ----- Partage et duels ----- */
-.btn-share { background: var(--gradient-secondary); }
+.btn-share { background: var(--share-bg); color: var(--on-share); }
 .duel-banner { margin-bottom: 16px; border: 2px solid var(--accent-tertiary); }
 
 /* ----- Statistiques du défi ----- */
@@ -140,11 +141,11 @@ body.drawer-open { overflow: hidden; }
 .distribution { margin-top: 12px; display: grid; gap: 4px; max-width: 360px; }
 .dist-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .dist-bar { background: var(--border-color); border-radius: 4px; padding: 2px 6px; text-align: right; min-width: 24px; }
-.dist-bar.is-today { background: var(--accent-success); color: white; }
+.dist-bar.is-today { background: var(--accent-success); color: var(--on-accent); }
 
 /* ----- Retour des joueurs ----- */
 .feedback { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--text-secondary); }
-.btn-ghost { background: transparent; border: 1px solid var(--border-color); box-shadow: none; font-size: 18px; }
+.btn-ghost { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); box-shadow: none; font-size: 18px; }
 
 /* ----- Présentation sur l'accueil ----- */
 .home-intro { margin-bottom: 12px; }

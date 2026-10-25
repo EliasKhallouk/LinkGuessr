@@ -10,8 +10,8 @@
   /* Colors */
   --text-primary: #f0f4ff;
   --text-secondary: #9ca8c5;
-  --text-muted: #6b7694;
-  
+  --text-muted: #7E89A8;
+
   /* Accent Colors - Playful & Vibrant */
   --accent-primary: #00d9ff;
   --accent-secondary: #7c3aed;
@@ -19,7 +19,16 @@
   --accent-success: #10b981;
   --accent-warning: #f59e0b;
   --accent-danger: #ef4444;
-  
+
+  /* Texte posé sur un fond d'accent, et accents utilisés comme couleur de texte (≥ 4,5:1) */
+  --on-accent: #0A0E1A;
+  --accent-text: var(--accent-primary);
+  --accent-soft: rgba(0, 217, 255, 0.1);
+  --text-success: #34D399;
+  --text-danger: #F87171;
+  --share-bg: #7C3AED;
+  --on-share: #FFFFFF;
+
   /* Gradients */
   --gradient-primary: linear-gradient(161deg, #00d9ff 0%, #7c3aed 100%);
   --gradient-secondary: linear-gradient(135deg, #f472b6 0%, #ff6b9d 100%);
@@ -60,8 +69,8 @@
   /* Colors */
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  
+  --text-muted: #64748B;
+
   /* Accent Colors - Playful & Vibrant */
   --accent-primary: #0ea5e9;
   --accent-secondary: #8b5cf6;
@@ -69,7 +78,16 @@
   --accent-success: #10b981;
   --accent-warning: #f59e0b;
   --accent-danger: #ef4444;
-  
+
+  /* Texte posé sur un fond d'accent, et accents utilisés comme couleur de texte (≥ 4,5:1) */
+  --on-accent: #0F172A;
+  --accent-text: #0369A1;
+  --accent-soft: rgba(14, 165, 233, 0.1);
+  --text-success: #047857;
+  --text-danger: #B91C1C;
+  --share-bg: #7C3AED;
+  --on-share: #FFFFFF;
+
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%);
   --gradient-secondary: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
@@ -322,7 +340,7 @@ body::after {
   font-weight: 700;
 }
 .menu-link:hover { color: var(--text-primary); background: var(--panel-hover); border-color: var(--border-hover); }
-.menu-link.active { color: white; background: var(--gradient-primary); border-color: transparent; box-shadow: var(--glow-primary); }
+.menu-link.active { color: var(--on-accent); background: var(--accent-primary); border-color: transparent; }
 .menu-sep {
   border: 0; height: 2px; margin: 10px 0; background: var(--border-color);
 }
@@ -352,10 +370,9 @@ body::after {
 }
 
 .nav-link.active {
-  color: white;
-  background: var(--gradient-primary);
+  color: var(--on-accent);
+  background: var(--accent-primary);
   border-color: transparent;
-  box-shadow: var(--glow-primary);
 }
 
 .control-group {
@@ -501,40 +518,19 @@ body::after {
   margin: 14px;
 }
 
-.tab::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--gradient-primary);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
 .tab span {
   position: relative;
   z-index: 1;
 }
 
 .tab:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-hover);
+  background: var(--accent-soft);
   color: var(--text-primary);
 }
 
-.tab:hover::before {
-  opacity: 0.1;
-}
-
 .tab.active {
-  background: var(--gradient-primary);
-  color: white;
-  border-color: transparent;
-  box-shadow: var(--glow-primary);
-  transform: scale(1.05);
-}
-
-.tab.active::before {
-  opacity: 1;
+  background: var(--accent-primary);
+  color: var(--on-accent);
 }
 
 .tabs-panel { 
@@ -679,40 +675,28 @@ body::after {
   align-items: center; 
   justify-content: center;
   gap: 10px;
-  background: var(--gradient-primary);
-  color: white;
-  padding: 14px 28px; 
+  background: var(--accent-primary);
+  color: var(--on-accent);
+  padding: 14px 28px;
   border-radius: var(--radius-md);
   border: 0px solid transparent;
   font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.5px;
-  box-shadow: var(--shadow-md), var(--glow-primary);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 
-.btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
 .btn:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: var(--shadow-lg), var(--glow-hover);
-}
-
-.btn:hover::before {
-  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn:active {
-  transform: translateY(-1px) scale(0.98);
+  transform: translateY(0);
 }
 
 .btn:disabled { 
@@ -833,9 +817,8 @@ select option {
 }
 
 .ac-item:hover, .ac-item.active {
-  background: var(--gradient-primary);
-  color: white;
-  transform: translateX(4px);
+  background: var(--accent-primary);
+  color: var(--on-accent);
 }
 
 /* ===== UTILITY CLASSES ===== */
@@ -880,53 +863,20 @@ select option {
 /* ===== PLAYFUL LINK STYLING ===== */
 .chemin-link {
   position: relative;
-  color: var(--accent-primary);
+  color: var(--accent-text);
   text-decoration: none;
   font-weight: 600;
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(124, 58, 237, 0.08));
+  transition: background-color 0.2s ease, color 0.2s ease;
+  background: var(--accent-soft);
   display: inline-block;
   margin: 2px;
 }
 
-.chemin-link::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--gradient-primary);
-  border-radius: var(--radius-sm);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
-}
-
 .chemin-link:hover {
-  color: white;
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: var(--glow-hover);
-}
-
-.chemin-link:hover::before {
-  opacity: 1;
-}
-
-.chemin-link::after {
-  content: '';
-  position: absolute;
-  bottom: 2px; 
-  left: 8px; 
-  right: 8px;
-  height: 2px;
-  background: var(--gradient-primary);
-  border-radius: 1px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.chemin-link:hover::after {
-  opacity: 1;
+  color: var(--on-accent);
+  background: var(--accent-primary);
 }
 
 /* ===== ERROR BOX WITH PLAYFUL DESIGN ===== */
@@ -1045,10 +995,10 @@ select option {
 /* ===== SELECTION STYLING ===== */
 ::selection {
   background: var(--accent-primary);
-  color: white;
+  color: var(--on-accent);
 }
 
-::-moz-selection {
-  background: var(--accent-primary);
-  color: white;
+::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
 }
