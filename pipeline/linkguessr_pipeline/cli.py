@@ -1,13 +1,15 @@
 import argparse
 from pathlib import Path
 
-from . import build, download, entities, graph, humans, links, pageviews, pages, refs
+from . import build, download, entities, graph, humans, links, pageviews, pages, refs, status
 from .config import work_path
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="lg", description="Pipeline de données LinkGuessr")
     sub = parser.add_subparsers(dest="cmd", required=True)
+
+    sub.add_parser("status", help="avancement de chaque étape")
 
     p = sub.add_parser("download", help="télécharge les dumps frwiki")
     p.add_argument("what", choices=["sql", "xml", "all"], nargs="?", default="sql")
@@ -36,7 +38,9 @@ def main() -> None:
     p.add_argument("--dir", type=Path, help="dossier des tables finales (défaut : work/final)")
 
     args = parser.parse_args()
-    if args.cmd == "download":
+    if args.cmd == "status":
+        status.show_status()
+    elif args.cmd == "download":
         files = {"sql": download.SQL_DUMPS, "xml": download.XML_DUMPS,
                  "all": download.SQL_DUMPS + download.XML_DUMPS}[args.what]
         download.download(files)
