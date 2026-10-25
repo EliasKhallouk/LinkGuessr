@@ -1,4 +1,4 @@
 /* Component-local adjustments */
 .vis-network {
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
 }

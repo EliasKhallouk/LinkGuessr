@@ -2,8 +2,6 @@
 :root {
   /* Background & Surfaces */
   --bg-base: #0a0e1a;
-  --bg-gradient-1: #1a1f35;
-  --bg-gradient-2: #0f1629;
   --panel-bg: linear-gradient(145deg, rgba(26, 31, 53, 0.95), rgba(15, 22, 41, 0.92));
   --panel-hover: linear-gradient(145deg, rgba(32, 39, 65, 0.98), rgba(20, 28, 52, 0.95));
   
@@ -40,13 +38,9 @@
   --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%239ca8c5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 
   /* Gradients */
-  --gradient-primary: linear-gradient(161deg, #00d9ff 0%, #7c3aed 100%);
-  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --gradient-panel: linear-gradient(145deg, rgba(26, 31, 53, 0.6), rgba(15, 22, 41, 0.4));
   
   /* Effects */
-  --glow-primary: 0 0 30px rgba(0, 217, 255, 0.4), 0 0 60px rgba(124, 58, 237, 0.2);
-  --glow-hover: 0 0 40px rgba(0, 217, 255, 0.6), 0 0 80px rgba(124, 58, 237, 0.3);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
@@ -70,8 +64,6 @@
 :root[data-theme="light"] {
   /* Background & Surfaces */
   --bg-base: #f8fafc;
-  --bg-gradient-1: #e0e7ff;
-  --bg-gradient-2: #fce7f3;
   --panel-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
   --panel-hover: linear-gradient(145deg, rgba(255, 255, 255, 1), rgba(243, 244, 246, 0.95));
   
@@ -108,13 +100,9 @@
   --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%);
-  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --gradient-panel: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(248, 250, 252, 0.6));
   
   /* Effects */
-  --glow-primary: 0 0 20px rgba(14, 165, 233, 0.3), 0 0 40px rgba(139, 92, 246, 0.15);
-  --glow-hover: 0 0 30px rgba(14, 165, 233, 0.5), 0 0 60px rgba(139, 92, 246, 0.25);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.15);
@@ -146,11 +134,6 @@ html {
   scroll-behavior: smooth;
 }
 
-body { 
-  height: 100%;
-  margin: 0;
-}
-
 #root { 
   height: 100%; 
 }
@@ -172,8 +155,10 @@ input, select, button, textarea {
   color: inherit; 
 }
 
-/* ===== ANIMATED BACKGROUND ===== */
+/* ===== BODY & DECORATIVE BACKGROUND ===== */
 body {
+  height: 100%;
+  margin: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, sans-serif;
   color: var(--text-primary);
   background: var(--bg-base);
@@ -505,7 +490,7 @@ body::before {
   color: var(--text-secondary);
   border-radius: var(--radius-sm);
   background: transparent;
-  border: 0px solid transparent;
+  border: 0;
   font-weight: 600;
   font-size: 15px;
   letter-spacing: 0.3px;
@@ -647,7 +632,7 @@ body::before {
   color: var(--on-accent);
   padding: 14px 28px;
   border-radius: var(--radius-md);
-  border: 0px solid transparent;
+  border: 0;
   font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.5px;

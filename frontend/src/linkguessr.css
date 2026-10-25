@@ -3,7 +3,6 @@
   /* Couleurs de texte (les fonds d'accent restent --accent-success / --accent-danger) */
   --success: var(--text-success);
   --danger: var(--text-danger);
-  --border: var(--border-color);
 }
 
 /* ----- Barres d'outils et boutons ----- */
