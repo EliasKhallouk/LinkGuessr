@@ -1,7 +1,6 @@
-// Adresse de l'API. Par défaut celle de la VM, y compris en développement local.
-// Pour une API lancée sur le PC : créer frontend/.env.local avec
-// VITE_API_BASE_URL=http://127.0.0.1:8000
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "https://linkguessr.duckdns.org";
+// Adresse de l'API. Par défaut « /v1 » : Vercel la relaie vers la VM et met en cache les réponses
+// identiques pour tous (voir vercel.json). En local, Vite fait le même relais (vite.config.js).
+// Pour viser une autre API : VITE_API_BASE_URL dans frontend/.env.local.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "/v1";
 
 export const apiUrl = (path) => `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;

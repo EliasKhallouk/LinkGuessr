@@ -4,7 +4,15 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/((?!api/).*)",
+      "source": "/v1/:path*",
+      "destination": "https://linkguessr.duckdns.org/:path*"
+    },
+    {
+      "source": "/umami/:path*",
+      "destination": "https://linkguessr.duckdns.org/umami/:path*"
+    },
+    {
+      "source": "/((?!api/|v1/|umami/).*)",
       "destination": "/index.html"
     }
   ]
