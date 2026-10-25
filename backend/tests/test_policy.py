@@ -29,7 +29,9 @@ def make_client():
 
 def test_cache_selon_le_prefixe():
     c = make_client()
-    assert "s-maxage=86400" in c.get("/search").headers["cache-control"]
+    r = c.get("/search")
+    assert "s-maxage=86400" in r.headers["cache-control"]
+    assert r.headers["vercel-cdn-cache-control"] == "max-age=86400"
     assert c.get("/path?track=true").headers["cache-control"] == "no-store"
     assert c.get("/random_pair").headers["cache-control"] == "no-store"
     assert c.get("/person/Q1").headers["cache-control"] == "no-store"  # erreurs jamais en cache

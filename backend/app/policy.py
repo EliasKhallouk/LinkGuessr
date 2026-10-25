@@ -3,6 +3,7 @@
 Le site appelle l'API via Vercel (link-guessr.vercel.app/v1/…) : Vercel garde en cache les
 réponses qui portent un `s-maxage`, ce qui protège la VM (1 cœur) en cas d'affluence.
 """
+import re
 import time
 from collections import defaultdict, deque
 
@@ -92,4 +93,8 @@ async def http_policy(request: Request, call_next):
             response.headers["Cache-Control"] = rule
     elif response.status_code >= 400 and "cache-control" not in response.headers:
         response.headers["Cache-Control"] = "no-store"
+    # Pour une destination externe (réécriture /v1), Vercel ne met en cache que si son propre
+    # en-tête est présent : on le dérive du s-maxage.
+    if match := re.search(r"s-maxage=(\d+)", response.headers.get("cache-control", "")):
+        response.headers["Vercel-CDN-Cache-Control"] = f"max-age={match.group(1)}"
     return response
