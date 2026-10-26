@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import admin, daily, game, seo
 from .clues import clues
+from .eras import ERAS, load_eras
 from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS
 from .core import id_of, path_details, person_columns, pool, startup, state, summaries
 from .graph import MODES, PathResult
@@ -42,6 +43,7 @@ MIN_POOL = 200  # réservoir minimal, pour les petits domaines
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     startup()
+    load_eras()
     yield
     pool.close()
 
@@ -193,25 +195,27 @@ def neighbors(qid: str, limit: int = Query(50, ge=1, le=500)):
     return {"results": rows}
 
 
-def _candidates(difficulty: str, domain: str | None) -> np.ndarray:
-    """Les personnes les plus connues (même part que LEVELS[…]["top"] sur tout le graphe, appliquée au domaine),
-    au moins MIN_POOL si possible."""
-    pop = state["graph"].popularity
-    pool_ids = np.arange(len(pop))
+def _candidates(difficulty: str, domain: str | None, era: str = "tous") -> np.ndarray:
+    """Les personnes les plus connues de l'époque (les LEVELS[…]["top"] premières ; dans un domaine, la même part
+    du domaine), au moins MIN_POOL si possible."""
+    order = state["eras"][era]["order"]
     if domain:
         if domain not in state["domain_names"]:
             raise HTTPException(400, f"Domaine inconnu. Domaines : {state['domain_names']}")
-        pool_ids = pool_ids[state["domain"] == state["domain_names"].index(domain)]
-    share = LEVELS[difficulty]["top"] / len(pop)
-    k = min(len(pool_ids), max(MIN_POOL, int(len(pool_ids) * share)))
-    if k < 2:
+        in_domain = order[state["domain"][order] == state["domain_names"].index(domain)]
+        k = max(MIN_POOL, LEVELS[difficulty]["top"] * len(in_domain) // len(order))
+        order = in_domain
+    else:
+        k = LEVELS[difficulty]["top"]
+    if min(k, len(order)) < 2:
         raise HTTPException(404, "Pas assez de personnes pour ces critères")
-    return pool_ids[np.argpartition(-pop[pool_ids], k - 1)[:k]]
+    return order[:k]
 
 
-def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int, limit: int = 1):
+def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int, limit: int = 1,
+               era: str = "tous"):
     """Deux personnes tirées parmi les plus connues, reliées par un chemin de longueur voulue."""
-    graph, candidates, rng = state["graph"], _candidates(difficulty, domain), np.random.default_rng()
+    graph, candidates, rng = state["graph"], _candidates(difficulty, domain, era), np.random.default_rng()
     for _ in range(50):
         s, t = (int(x) for x in rng.choice(candidates, 2, replace=False))
         res = graph.shortest_paths(s, t, mode=mode, limit=limit)
@@ -220,13 +224,17 @@ def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, 
     raise HTTPException(404, "Aucune paire trouvée, élargir les critères")
 
 
-def _pick_hidden(difficulty: str, domain: str | None, min_length: int, max_length: int) -> tuple[list[int], int]:
-    """Un plus court chemin et la position de la personne à deviner, assez connue pour le niveau."""
-    (lo, hi), rank = LEVELS[difficulty]["hidden"], state["pop_rank"]
+def _pick_hidden(difficulty: str, domain: str | None, min_length: int, max_length: int,
+                 era: str = "tous") -> tuple[list[int], int]:
+    """Un plus court chemin dont toutes les personnes sont de l'époque, et la position de la personne à deviner,
+    assez connue pour le niveau (rang dans le classement de l'époque)."""
+    (lo, hi), rank = LEVELS[difficulty]["hidden"], state["eras"][era]["rank"]
+    outside = state["graph"].n + 1
     mode = LEVELS[difficulty].get("hidden_mode", "all")
     for _ in range(30):
-        _, _, res = _pick_pair(difficulty, domain, mode, min_length, max_length, limit=20)
-        choices = [(p, i) for p in res.paths for i in range(1, len(p) - 1)
+        _, _, res = _pick_pair(difficulty, domain, mode, min_length, max_length, limit=20, era=era)
+        paths = [p for p in res.paths if all(rank[v] < outside for v in p)]
+        choices = [(p, i) for p in paths for i in range(1, len(p) - 1)
                    if rank[p[i]] >= lo and (hi is None or rank[p[i]] <= hi)]
         if choices:
             return random.choice(choices)
@@ -239,10 +247,11 @@ def _valid_middles(before: int, after: int) -> set[int]:
     return set(csr.neighbors_of(before).tolist()) & set(csr.neighbors_of(after).tolist())
 
 
-def _wrong_choices(answer: int, chain: list[int], valid: set[int], n: int, rng: random.Random) -> list[int]:
-    """Mauvaises propositions plausibles : très connues, du même domaine, mais pas des bonnes réponses."""
-    pop, dom = state["graph"].popularity, state["domain"]
-    top = np.argpartition(-pop, CHOICES_TOP)[:CHOICES_TOP].tolist()
+def _wrong_choices(answer: int, chain: list[int], valid: set[int], n: int, rng: random.Random,
+                   era: str = "tous") -> list[int]:
+    """Mauvaises propositions plausibles : très connues à cette époque, du même domaine, mais pas des bonnes réponses."""
+    dom = state["domain"]
+    top = state["eras"][era]["order"][:CHOICES_TOP].tolist()
     allowed = [i for i in top if i not in valid and i not in chain]
     same = [i for i in allowed if dom[i] == dom[answer]]
     picked = rng.sample(same, min(n, len(same)))
@@ -298,6 +307,7 @@ def random_path_check(before: str, after: str, guess: str):
 def random_path(
     difficulty: str = Query("moyen", pattern=LEVEL),
     domain: str | None = None,
+    epoque: str = Query("tous", pattern=f"^({'|'.join(ERAS)})$"),
     min_length: int | None = Query(None, ge=2, le=8),
     max_length: int | None = Query(None, ge=2, le=12),
 ):
@@ -305,8 +315,8 @@ def random_path(
     Les indices (domaine, dates, initiales) sont donnés ; le nom reste dans `answer`, et les liens
     de la personne cachée (phrases qui la citent) dans `answer_hops`, à afficher une fois la réponse donnée."""
     lo, hi = LEVELS[difficulty]["hidden_length"]
-    ids, masked = _pick_hidden(difficulty, domain, min_length or lo, max_length or hi)
-    return _puzzle(ids, masked, difficulty, random.Random())
+    ids, masked = _pick_hidden(difficulty, domain, min_length or lo, max_length or hi, epoque)
+    return _puzzle(ids, masked, difficulty, random.Random(), epoque)
 
 
 @app.get("/random_path/replay")
@@ -314,6 +324,7 @@ def random_path_replay(
     chemin: str = Query(..., pattern=r"^Q\d+(-Q\d+){2,7}$"),
     cache: int = Query(..., ge=1),
     niveau: str = Query("moyen", pattern=LEVEL),
+    epoque: str = Query("tous", pattern=f"^({'|'.join(ERAS)})$"),
 ):
     """La même énigme qu'un ami a partagée (/defi?jeu=cache&chemin=Q1-Q2-Q3&cache=1&niveau=facile),
     avec les mêmes propositions : le tirage est fixé par le lien."""
@@ -323,10 +334,10 @@ def random_path_replay(
     csr = state["graph"].csr["all"]
     if any(b not in set(csr.neighbors_of(a).tolist()) for a, b in zip(ids, ids[1:])):
         raise HTTPException(400, "Ce chemin n'existe pas (ou plus) dans les données")
-    return _puzzle(ids, cache, niveau, random.Random(f"{chemin}-{cache}-{niveau}"))
+    return _puzzle(ids, cache, niveau, random.Random(f"{chemin}-{cache}-{niveau}-{epoque}"), epoque)
 
 
-def _puzzle(ids: list[int], masked: int, difficulty: str, rng: random.Random) -> dict:
+def _puzzle(ids: list[int], masked: int, difficulty: str, rng: random.Random, era: str = "tous") -> dict:
     """L'énigme : chemin, personne cachée, phrases à trou, indices et, en facile, choix multiple."""
     level = LEVELS[difficulty]
     details = path_details(PathResult(len(ids) - 1, 1, [ids]))
@@ -336,12 +347,13 @@ def _puzzle(ids: list[int], masked: int, difficulty: str, rng: random.Random) ->
     choices = None
     if level.get("choices"):
         valid = _valid_middles(ids[masked - 1], ids[masked + 1])
-        wrong = _wrong_choices(ids[masked], ids, valid, level["choices"] - 1, rng)
+        wrong = _wrong_choices(ids[masked], ids, valid, level["choices"] - 1, rng, era)
         people = summaries(wrong)
         choices = [people[i] for i in wrong] + [answer]
         rng.shuffle(choices)
     return {
         "difficulty": difficulty,
+        "era": era,
         "choices": choices,
         "clues": clues(hidden, answer, details["persons"]),
         "path": chain,

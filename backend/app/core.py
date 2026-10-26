@@ -40,8 +40,6 @@ def startup() -> None:
     # le compter en SQL à chaque fiche parcourait des centaines de milliers de lignes.
     degree = np.diff(state["graph"].csr["all"].indptr)
     state["degree_rank"] = np.searchsorted(np.sort(-degree), -degree, side="left") + 1
-    pop = state["graph"].popularity
-    state["pop_rank"] = np.searchsorted(np.sort(-pop), -pop, side="left") + 1  # 1 = la plus populaire
 
 
 def id_of(qid: str) -> int:
