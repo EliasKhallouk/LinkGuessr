@@ -1,7 +1,9 @@
 import { useI18n } from "../i18n/I18nProvider";
+import { usePageMeta } from "../lib/meta";
 
 export default function Contact() {
   const { t } = useI18n();
+  usePageMeta(t("meta.contact.title"), t("meta.contact.description"));
   return (
     <main className="grid">
       <div className="col-main">

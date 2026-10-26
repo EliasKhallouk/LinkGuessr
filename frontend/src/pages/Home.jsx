@@ -1,4 +1,5 @@
 import { Link, Navigate, useSearchParams } from "react-router-dom";
+import { usePageMeta } from "../lib/meta";
 import DailyChallenge from "../components/DailyChallenge";
 import GameIcon from "../components/GameIcon";
 import StatsBanner from "../components/StatsBanner";
@@ -8,6 +9,7 @@ import { useI18n } from "../i18n/I18nProvider";
 // Accueil en « hub », façon NYT Games : le défi du jour en grand, puis une carte par jeu.
 export default function Home() {
   const { t } = useI18n();
+  usePageMeta(t("meta.home.title"), t("meta.home.description"));
   // Anciens liens « Trouver un chemin depuis cette personne » (/?from=Q…) : direction l'explorateur.
   const [params] = useSearchParams();
   const from = params.get("from");

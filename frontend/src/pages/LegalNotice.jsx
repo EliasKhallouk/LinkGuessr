@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
+import { usePageMeta } from "../lib/meta";
 import { useI18n } from "../i18n/I18nProvider";
 
 // Mentions légales (loi pour la confiance dans l'économie numérique, art. 6). Texte en français :
 // c'est le droit français qui s'applique ; la version anglaise du site renvoie ici.
 export default function LegalNotice() {
   const { t } = useI18n();
+  usePageMeta(t("meta.legal.title"), t("meta.legal.description"));
   return (
     <main className="page fade-in">
       <section className="panel">

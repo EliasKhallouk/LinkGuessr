@@ -6,6 +6,7 @@ import GuessRelations from "../components/GuessRelations";
 import GuessWhoPath, { ERAS } from "../components/GuessWhoPath";
 import { LEVELS } from "../components/DifficultyPicker";
 import { useI18n } from "../i18n/I18nProvider";
+import { usePageMeta } from "../lib/meta";
 import { track } from "../lib/tracking";
 
 // Page d'arrivée d'un lien de duel : /defi?jeu=relais&paire=Q1-Q2&score=3, /defi?jeu=nombre&score=340
@@ -14,6 +15,7 @@ import { track } from "../lib/tracking";
 const GAMES = { relais: "relay", nombre: "guess_count", cache: "guess_who" };
 export default function Duel() {
   const { t } = useI18n();
+  usePageMeta(t("meta.duel.title"), t("meta.duel.description"));
   const [params] = useSearchParams();
   const game = params.get("jeu");
   const score = Number(params.get("score")) || null;

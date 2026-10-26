@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import GameIcon from "../components/GameIcon";
 import Modal from "../components/Modal";
 import { useI18n } from "../i18n/I18nProvider";
+import { usePageMeta } from "../lib/meta";
 import { load, save } from "../lib/storage";
 
 // Un jeu en plein écran : barre de jeu (retour au hub, titre, aide) puis le jeu.
@@ -12,11 +13,7 @@ export default function GamePage({ game }) {
   const seenKey = `lg-howto-${game.key}`;
   const [help, setHelp] = useState(() => !load(seenKey, false));
 
-  useEffect(() => {
-    const previous = document.title;
-    document.title = `${t(`games.${game.key}.title`)} · LinkGuessr`;
-    return () => { document.title = previous; };
-  }, [game.key, t]);
+  usePageMeta(t(`games.${game.key}.title`), t(`games.${game.key}.pitch`));
 
   const closeHelp = () => {
     save(seenKey, true);

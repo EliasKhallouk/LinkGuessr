@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePageMeta } from "../lib/meta";
 import { Link } from "react-router-dom";
 import { api, lifespan, wikiUrl } from "../api";
 import CommonsImg from "./CommonsImg";
@@ -59,12 +60,8 @@ export default function PersonDetails({ qid }) {
   }, [qid]);
 
   // Titre d'onglet propre à la fiche (les robots reçoivent le même via le middleware Vercel).
-  useEffect(() => {
-    if (!data) return undefined;
-    const previous = document.title;
-    document.title = `${data.person.name} · LinkGuessr`;
-    return () => { document.title = previous; };
-  }, [data]);
+  const name = data?.person.name;
+  usePageMeta(name, name && [data.person.description, t("meta.person", { name })].filter(Boolean).join(". "));
 
   if (error) return <div className="error-box"><p style={{ margin: 0 }}>{error}</p></div>;
   if (!data) return <p className="muted">{t("guess.loadingPeople")}</p>;

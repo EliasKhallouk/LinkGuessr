@@ -1,9 +1,11 @@
 import { useI18n } from "../i18n/I18nProvider";
+import { usePageMeta } from "../lib/meta";
 
 const ITEMS = ["scores", "games", "explore", "prefs", "logs"];
 
 export default function Privacy() {
   const { t } = useI18n();
+  usePageMeta(t("meta.privacy.title"), t("meta.privacy.description"));
   return (
     <main className="page fade-in">
       <section className="panel">

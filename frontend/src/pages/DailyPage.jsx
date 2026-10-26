@@ -4,6 +4,7 @@ import { api } from "../api";
 import PathView from "../components/PathView";
 import PersonChip from "../components/PersonChip";
 import { useI18n } from "../i18n/I18nProvider";
+import { usePageMeta } from "../lib/meta";
 import { formatLongDate, parseDay } from "../lib/format";
 import Home from "./Home";
 
@@ -11,6 +12,7 @@ import Home from "./Home";
 export default function DailyPage() {
   const { number } = useParams();
   const { t, lang } = useI18n();
+  usePageMeta(t("meta.daily.title", { n: number }), t("meta.daily.description"));
   const [data, setData] = useState(null);
   const [error, setError] = useState(false);
 

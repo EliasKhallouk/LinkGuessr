@@ -2,7 +2,28 @@
 // n'exécutent pas le JavaScript. Pour les pages partageables, on insère dans le HTML un titre,
 // une description et une image d'aperçu propres à la page.
 // Runtime Node.js : le runtime « edge » n'est plus accepté pour les middlewares par Vercel.
-export const config = { runtime: "nodejs", matcher: ["/jour/:number", "/defi", "/personne/:qid"] };
+import { translations } from "./src/i18n/translations.js";
+
+// Pages fixes : mêmes titres et descriptions que dans l'application (usePageMeta), en français.
+const FR = translations.fr;
+const STATIC = {
+  "/": FR.meta.home,
+  "/explorer": { title: FR.games.explore.title, description: FR.games.explore.pitch },
+  "/qui-est-cache": { title: FR.games.guesswho.title, description: FR.games.guesswho.pitch },
+  "/relier": { title: FR.games.relay.title, description: FR.games.relay.pitch },
+  "/combien": { title: FR.games.count.title, description: FR.games.count.pitch },
+  "/lab": FR.meta.lab,
+  "/a-propos": FR.meta.about,
+  "/contact": FR.meta.contact,
+  "/politique-de-confidentialite": FR.meta.privacy,
+  "/mentions-legales": FR.meta.legal,
+};
+
+export const config = {
+  runtime: "nodejs",
+  matcher: ["/jour/:number", "/defi", "/personne/:qid", "/", "/explorer", "/qui-est-cache", "/relier", "/combien",
+    "/lab", "/a-propos", "/contact", "/politique-de-confidentialite", "/mentions-legales"],
+};
 
 const API = "https://linkguessr.duckdns.org";
 const UA = "LinkGuessr/1.0 (https://link-guessr.vercel.app)";
@@ -16,6 +37,8 @@ async function api(path) {
 }
 
 async function metaFor(url) {
+  const page = STATIC[url.pathname.replace(/\/$/, "") || "/"];
+  if (page) return { title: `${page.title} · LinkGuessr`, description: page.description, image: "/api/og" };
   const parts = url.pathname.split("/").filter(Boolean);
   if (parts[0] === "jour") {
     const d = await api(`/daily/archive/${encodeURIComponent(parts[1])}`);

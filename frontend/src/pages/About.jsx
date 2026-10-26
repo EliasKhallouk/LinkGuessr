@@ -1,4 +1,5 @@
 import { useI18n } from "../i18n/I18nProvider";
+import { usePageMeta } from "../lib/meta";
 
 const SECTIONS = [
   ["pages.about.dataTitle", ["pages.about.data1", "pages.about.data2", "pages.about.data3", "pages.about.data4"]],
@@ -7,6 +8,7 @@ const SECTIONS = [
 
 export default function About() {
   const { t } = useI18n();
+  usePageMeta(t("meta.about.title"), t("meta.about.description"));
   return (
     <main className="page fade-in">
       <section className="panel">

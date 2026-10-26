@@ -1,8 +1,10 @@
 import { useI18n } from "../i18n/I18nProvider";
+import { usePageMeta } from "../lib/meta";
 
 // Page Lab : analyses du réseau, ouvertes à tous (phase 5 de la refonte).
 export default function Lab() {
   const { t } = useI18n();
+  usePageMeta(t("meta.lab.title"), t("meta.lab.description"));
   return (
     <main className="page fade-in">
       <section className="panel">

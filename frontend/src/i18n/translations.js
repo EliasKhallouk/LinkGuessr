@@ -1,5 +1,16 @@
 export const translations = {
   fr: {
+    meta: {
+      home: { title: "Jeux de liens entre personnalités de Wikipédia", description: "Jeux gratuits sur Wikipédia : devine qui relie deux personnalités, défi du jour, combien de liens les séparent. 765 000 personnalités de Wikipédia en français, reliées par leurs articles." },
+      lab: { title: "Lab : le réseau des personnalités en chiffres", description: "Analyses ouvertes du réseau des personnalités de Wikipédia en français : popularité, liens, communautés, distances." },
+      about: { title: "À propos, sources et licences", description: "Comment LinkGuessr construit le réseau des personnalités à partir de Wikipédia et Wikidata, et les licences des données." },
+      contact: { title: "Contact", description: "Écrire à LinkGuessr : une question, une idée, une erreur dans les données." },
+      privacy: { title: "Politique de confidentialité", description: "Ce que LinkGuessr enregistre, pourquoi et pour combien de temps. Mesure d'audience sans cookie." },
+      legal: { title: "Mentions légales", description: "Éditeur, directeur de la publication, hébergeurs et crédits de LinkGuessr." },
+      daily: { title: "Défi du jour #{n}", description: "Le même défi pour tout le monde : devine la personne cachée sur le chemin entre deux personnalités." },
+      duel: { title: "Le défi d'un ami", description: "Un ami te défie sur LinkGuessr. Tu fais mieux ?" },
+      person: "{name} : ses liens avec d'autres personnalités, d'après Wikipédia.",
+    },
     common: {
       showMore: "Voir plus",
       readMore: "Lire la suite",
@@ -369,6 +380,17 @@ export const translations = {
     },
   },
   en: {
+    meta: {
+      home: { title: "Link games between Wikipedia personalities", description: "Free Wikipedia games: guess who links two personalities, daily challenge, how many links separate them. 765,000 personalities from French Wikipedia, linked by their articles." },
+      lab: { title: "Lab: the personality network in numbers", description: "Open analyses of the French Wikipedia personality network: popularity, links, communities, distances." },
+      about: { title: "About, sources and licenses", description: "How LinkGuessr builds the personality network from Wikipedia and Wikidata, and the data licenses." },
+      contact: { title: "Contact", description: "Write to LinkGuessr: a question, an idea, an error in the data." },
+      privacy: { title: "Privacy policy", description: "What LinkGuessr stores, why and for how long. Cookie-free analytics." },
+      legal: { title: "Legal notice", description: "Publisher, publication director, hosting providers and credits of LinkGuessr." },
+      daily: { title: "Daily challenge #{n}", description: "The same challenge for everyone: guess the hidden person on the path between two personalities." },
+      duel: { title: "A friend's challenge", description: "A friend challenges you on LinkGuessr. Can you do better?" },
+      person: "{name}: their links with other personalities, according to Wikipedia.",
+    },
     common: {
       showMore: "Show more",
       readMore: "Read more",
