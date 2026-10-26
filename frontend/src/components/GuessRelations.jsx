@@ -184,6 +184,12 @@ export default function GuessRelations({ rivalScore = null }) {
           </div>
         </div>
         <div className="panel-body">
+          {gameActive && (
+            <div className="timer-bar" role="progressbar" aria-label={t("guess.timeLeft")}
+              aria-valuemin={0} aria-valuemax={GAME_DURATION} aria-valuenow={timeLeft}>
+              <span className={timeLeft <= 10 ? "is-urgent" : ""} style={{ width: `${(100 * timeLeft) / GAME_DURATION}%` }} />
+            </div>
+          )}
           {error && <div className="error-box"><p style={{ margin: 0 }}>{error}</p></div>}
           {!pair ? (
             <p className="muted" style={{ margin: 0 }}>{t("guess.loadingPeople")}</p>
@@ -296,7 +302,7 @@ export default function GuessRelations({ rivalScore = null }) {
       </section>
       {popup && (
         <div className="toast-bottom">
-          <div className="success-box" style={{ maxWidth: 420 }}><strong>+{popup}</strong></div>
+          <div className="success-box score-pop" style={{ maxWidth: 420 }}><strong>+{popup}</strong></div>
         </div>
       )}
     </>

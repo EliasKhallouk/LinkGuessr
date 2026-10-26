@@ -92,3 +92,27 @@
 
 /* ----- Confettis ----- */
 .confetti-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2000; }
+
+/* ----- Header : série en cours ----- */
+.header-actions { justify-self: end; display: flex; align-items: center; gap: 10px; }
+.streak-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 999px;
+  border: 2px solid var(--warning-border); background: var(--warning-soft); color: var(--text-primary);
+  font-weight: 800; text-decoration: none; font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) {
+  .header { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .tagline { grid-row: 2; }
+}
+
+/* ----- Défi du jour, mis en avant ----- */
+.daily .panel-title { font-size: 22px; font-weight: 800; }
+.results-head { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; margin-bottom: 12px; }
+.results-verdict { margin: 0; font-size: 20px; font-weight: 800; }
+.results-share { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+
+/* ----- Chrono : barre qui se vide ----- */
+.timer-bar { height: 10px; margin-bottom: 14px; border-radius: 999px; background: var(--border-color); overflow: hidden; }
+.timer-bar span { display: block; height: 100%; border-radius: inherit; background: var(--accent-primary); transition: width 1s linear; }
+.timer-bar span.is-urgent { background: var(--accent-danger); }
+.score-pop { animation: scorePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.score-pop strong { font-size: 28px; }
+@keyframes scorePop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }

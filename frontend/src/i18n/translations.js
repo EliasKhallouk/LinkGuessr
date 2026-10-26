@@ -6,6 +6,9 @@ export const translations = {
       readLess: "Réduire",
       close: "Fermer",
     },
+    streak: {
+      label: { one: "Série en cours\u00A0: {n} défi du jour réussi", other: "Série en cours\u00A0: {n} défis du jour réussis d'affilée" },
+    },
     hub: {
       games: "Les jeux",
       play: "Jouer",
@@ -159,6 +162,7 @@ export const translations = {
       errorCompute: "Erreur lors du calcul du chemin.",
       errorSave: "Echec de l'enregistrement du score.",
       pathsCount: "plus courts chemins possibles",
+      timeLeft: "Temps restant",
       personalBest: "record perso\u00A0: {n}",
     },
     game: {
@@ -305,6 +309,8 @@ export const translations = {
       joinBoard: "Entrer au classement du jour",
       triesHeader: "Essais",
       timeHeader: "Temps",
+      seeStats: "Voir mes statistiques",
+      resultsTitle: "Défi du jour #{n}",
     },
     share: {
       share: "Partager",
@@ -345,6 +351,9 @@ export const translations = {
       readMore: "Read more",
       readLess: "Show less",
       close: "Close",
+    },
+    streak: {
+      label: { one: "Current streak: {n} daily challenge solved", other: "Current streak: {n} daily challenges solved in a row" },
     },
     hub: {
       games: "The games",
@@ -527,6 +536,7 @@ export const translations = {
       errorCompute: "Error while computing the path.",
       errorSave: "Failed to save score.",
       pathsCount: "possible shortest paths",
+      timeLeft: "Time left",
       personalBest: "personal best: {n}",
     },
     game: {
@@ -648,6 +658,8 @@ export const translations = {
       joinBoard: "Join today's leaderboard",
       triesHeader: "Tries",
       timeHeader: "Time",
+      seeStats: "See my stats",
+      resultsTitle: "Daily challenge #{n}",
     },
     share: {
       share: "Share",

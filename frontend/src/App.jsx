@@ -7,6 +7,7 @@ import Contact from "./pages/Contact";
 import Home from "./pages/Home";
 import Privacy from "./pages/Privacy";
 import LinkGuessrLogo from "./components/LinkGuessrLogo";
+import { dailyStats } from "./lib/dailyStats";
 import PersonDrawer from "./components/PersonDrawer";
 import DailyPage from "./pages/DailyPage";
 import Duel from "./pages/Duel";
@@ -22,6 +23,13 @@ function App() {
     try { return localStorage.getItem("theme") || "dark"; } catch { return "dark"; }
   });
   const [menuOpen, setMenuOpen] = useState(false);
+  // Série de défis du jour réussis d'affilée (historique local), affichée façon Duolingo.
+  const [streak, setStreak] = useState(() => dailyStats().current);
+  useEffect(() => {
+    const update = () => setStreak(dailyStats().current);
+    window.addEventListener("lg:daily", update);
+    return () => window.removeEventListener("lg:daily", update);
+  }, []);
   const menuRef = useRef(null);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -52,38 +60,45 @@ function App() {
         </div>
         <p className="tagline">{t("app.tagline")}</p>
         {/* Nav moved into ellipsis menu */}
-        <div className="header-ellipsis" ref={menuRef}>
-          <button aria-label="menu" className="btn-ellipsis" onClick={() => setMenuOpen((o) => !o)}>⋯</button>
-          {menuOpen && (
-            <div className="popover">
-              <div className="menu-section">
-                <div className="menu-title">{t("nav.navigation")}</div>
-                <NavLink to="/" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.home")}</NavLink>
-                {GAMES.map((g) => (
-                  <NavLink key={g.key} to={g.path} onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t(`games.${g.key}.title`)}</NavLink>
-                ))}
-                <NavLink to="/a-propos" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.about")}</NavLink>
-                <NavLink to="/contact" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.contact")}</NavLink>
-                <NavLink to="/lab" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>Lab</NavLink>
-                <NavLink to="/politique-de-confidentialite" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.privacy")}</NavLink>
-              </div>
-              <hr className="menu-sep" />
-              <div className="control-group">
-                <label htmlFor="lang-select">{t("app.language")}</label>
-                <select id="lang-select" value={lang} onChange={(e) => setLang(e.target.value)}>
-                  <option value="fr">🇫🇷 Français</option>
-                  <option value="en">🇬🇧 English</option>
-                </select>
-              </div>
-              <div className="control-group" style={{ marginTop: 8 }}>
-                <label htmlFor="theme-select">{t("app.theme")}</label>
-                <select id="theme-select" value={theme} onChange={(e) => setTheme(e.target.value)}>
-                  <option value="light">☀️ {t("app.themeLight")}</option>
-                  <option value="dark">🌙 {t("app.themeDark")}</option>
-                </select>
-              </div>
-            </div>
+        <div className="header-actions">
+          {streak > 0 && (
+            <Link to="/" className="streak-chip" title={t("streak.label", { n: streak })} aria-label={t("streak.label", { n: streak })}>
+              <span aria-hidden="true">🔥</span> {streak}
+            </Link>
           )}
+          <div className="header-ellipsis" ref={menuRef}>
+            <button aria-label="menu" className="btn-ellipsis" onClick={() => setMenuOpen((o) => !o)}>⋯</button>
+            {menuOpen && (
+              <div className="popover">
+                <div className="menu-section">
+                  <div className="menu-title">{t("nav.navigation")}</div>
+                  <NavLink to="/" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.home")}</NavLink>
+                  {GAMES.map((g) => (
+                    <NavLink key={g.key} to={g.path} onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t(`games.${g.key}.title`)}</NavLink>
+                  ))}
+                  <NavLink to="/a-propos" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.about")}</NavLink>
+                  <NavLink to="/contact" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.contact")}</NavLink>
+                  <NavLink to="/lab" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>Lab</NavLink>
+                  <NavLink to="/politique-de-confidentialite" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.privacy")}</NavLink>
+                </div>
+                <hr className="menu-sep" />
+                <div className="control-group">
+                  <label htmlFor="lang-select">{t("app.language")}</label>
+                  <select id="lang-select" value={lang} onChange={(e) => setLang(e.target.value)}>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="en">🇬🇧 English</option>
+                  </select>
+                </div>
+                <div className="control-group" style={{ marginTop: 8 }}>
+                  <label htmlFor="theme-select">{t("app.theme")}</label>
+                  <select id="theme-select" value={theme} onChange={(e) => setTheme(e.target.value)}>
+                    <option value="light">☀️ {t("app.themeLight")}</option>
+                    <option value="dark">🌙 {t("app.themeDark")}</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
       <Routes>

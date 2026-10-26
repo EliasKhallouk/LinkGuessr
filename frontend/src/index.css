@@ -38,6 +38,8 @@
   --danger-border: rgba(239, 68, 68, 0.4);
   --overlay: rgba(5, 8, 20, 0.55);
   --card-shade: rgba(0, 0, 0, 0.45);
+  --warning-soft: rgba(245, 158, 11, 0.15);
+  --warning-border: rgba(245, 158, 11, 0.55);
   --violet-soft: rgba(124, 58, 237, 0.18);
   --violet-text: #C4B5FD;
   --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%239ca8c5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -105,6 +107,8 @@
   --danger-border: rgba(239, 68, 68, 0.45);
   --overlay: rgba(15, 23, 42, 0.35);
   --card-shade: rgba(15, 23, 42, 0.12);
+  --warning-soft: rgba(245, 158, 11, 0.14);
+  --warning-border: rgba(217, 119, 6, 0.5);
   --violet-soft: rgba(124, 58, 237, 0.1);
   --violet-text: #6D28D9;
   --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");

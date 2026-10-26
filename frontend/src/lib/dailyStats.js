@@ -8,6 +8,7 @@ export function recordDaily(number, solved, tries) {
   if (history[number]) return history;
   const next = { ...history, [number]: { solved, tries } };
   save(KEY, next);
+  window.dispatchEvent(new Event("lg:daily")); // le compteur de série du header se met à jour
   return next;
 }
 

@@ -14,6 +14,7 @@ import { dailyGrid, SITE_URL } from "../lib/share";
 import PersonPicker from "./PersonPicker";
 import ShareButton from "./ShareButton";
 import TriesTiles from "./TriesTiles";
+import Modal from "./Modal";
 import { confetti } from "../lib/confetti";
 
 function Countdown() {
@@ -42,6 +43,7 @@ export default function DailyChallenge() {
   const [error, setError] = useState(null);
   const [history, setHistory] = useState(null);
   const [shake, setShake] = useState(false);
+  const [resultsOpen, setResultsOpen] = useState(false);
 
   // Partie terminée : on l'inscrit une fois dans l'historique local (séries, répartition).
   useEffect(() => {
@@ -64,6 +66,8 @@ export default function DailyChallenge() {
       if (next.solved && !game.solved) confetti();
       setGame(next);
       setGuess(null);
+      // Comme Wordle : les statistiques s'ouvrent une fois les cases retournées.
+      if (next.finished) setTimeout(() => setResultsOpen(true), 900);
       if (next.finished) track("daily", "finish", { number: next.number, solved: next.solved, tries: next.tries });
     } catch (e) {
       setError(e.message);
@@ -76,6 +80,17 @@ export default function DailyChallenge() {
   if (!game) return <section className="panel daily fade-in"><div className="panel-body muted">{t("daily.loading")}</div></section>;
 
   const left = game.max_tries - game.wrong.length;
+  const share = game.finished && (
+    <ShareButton
+      text={[
+        `LinkGuessr #${game.number} 🔗`,
+        `${game.persons[game.path[0]].name} → ? → ${game.persons[game.path[2]].name}`,
+        `${dailyGrid(game.wrong.length, game.solved, game.max_tries)} · ${t("share.hints", { n: Math.min(game.wrong.length, 3) })}`,
+      ].join("\n")}
+      url={`${SITE_URL}/jour/${game.number}?src=partage`}
+      onShared={() => track("daily", "share", { number: game.number })}
+    />
+  );
   return (
     <section className="panel daily fade-in">
       <div className="panel-header">
@@ -110,27 +125,35 @@ export default function DailyChallenge() {
               {game.solved ? t("daily.won", { n: game.tries }) : t("daily.lost")}
             </p>
             <div style={{ marginTop: 8 }}><PersonChip person={game.answer} showDescription size={56} /></div>
+            <div className="toolbar" style={{ marginTop: 12 }}>
+              {share}
+              <button type="button" className="btn btn-more" onClick={() => setResultsOpen(true)}>{t("daily.seeStats")}</button>
+            </div>
+            <Countdown />
+          </div>
+        )}
+
+        {game.finished && (
+          <Modal open={resultsOpen} onClose={() => setResultsOpen(false)} title={t("daily.resultsTitle", { n: game.number })}>
+            <div className="results-head">
+              <TriesTiles total={game.max_tries} wrong={game.wrong.length} solved={game.solved}
+                label={game.solved ? t("daily.won", { n: game.tries }) : t("daily.lost")} />
+              <p className="results-verdict">{game.solved ? t("daily.won", { n: game.tries }) : t("daily.lost")}</p>
+              <PersonChip person={game.answer} showDescription size={48} />
+            </div>
             {game.stats?.players > 0 && (
-              <p className="muted" style={{ marginTop: 8 }}>
+              <p className="muted">
                 {t("daily.stats", { count: game.stats.players, players: game.stats.players, pct: Math.round((100 * game.stats.solved) / game.stats.players) })}
               </p>
             )}
-            <div className="toolbar" style={{ marginTop: 8 }}>
-              <ShareButton
-                text={[
-                  `LinkGuessr #${game.number} 🔗`,
-                  `${game.persons[game.path[0]].name} → ? → ${game.persons[game.path[2]].name}`,
-                  `${dailyGrid(game.wrong.length, game.solved, game.max_tries)} · ${t("share.hints", { n: Math.min(game.wrong.length, 3) })}`,
-                ].join("\n")}
-                url={`${SITE_URL}/jour/${game.number}?src=partage`}
-                onShared={() => track("daily", "share", { number: game.number })}
-              />
-            </div>
-            <Countdown />
             {history && <DailyStats history={history} highlight={game.solved ? game.tries : null} />}
+            <div className="results-share">
+              {share}
+              <Countdown />
+            </div>
             <DailyLeaderboard solved={game.solved} />
             <Feedback game="daily" />
-          </div>
+          </Modal>
         )}
       </div>
     </section>
