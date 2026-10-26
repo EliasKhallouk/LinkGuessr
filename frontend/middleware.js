@@ -28,6 +28,18 @@ async function metaFor(url) {
   if (parts[0] === "defi") {
     const game = url.searchParams.get("jeu");
     const score = Number(url.searchParams.get("score")) || "?";
+    if (game === "cache") {
+      // Seulement les deux bouts du chemin : la personne cachée ne doit pas apparaître dans l'aperçu.
+      const ends = (url.searchParams.get("chemin") || "").split("-");
+      const [qa, qb] = [ends[0], ends[ends.length - 1]];
+      const [ca, cb] = await Promise.all([api(`/person/${qa}/card`), api(`/person/${qb}/card`)]);
+      const tries = Number(url.searchParams.get("essais")) || 0;
+      const found = url.searchParams.get("trouve") === "1";
+      return { title: `Qui est caché entre ${ca.person.name} et ${cb.person.name} ? · LinkGuessr`,
+        description: found ? `Ton ami l'a trouvé en ${tries} ${tries > 1 ? "essais" : "essai"}. Et toi, tu trouves ?`
+          : "Ton ami n'a pas trouvé. Tu vas faire mieux ?",
+        image: `/api/og?type=cache&chemin=${ends.join("-")}&cache=${Number(url.searchParams.get("cache")) || 1}` };
+    }
     if (game === "relais") {
       const [qa, qb] = (url.searchParams.get("paire") || "").split("-");
       const [ca, cb] = await Promise.all([api(`/person/${qa}/card`), api(`/person/${qb}/card`)]);

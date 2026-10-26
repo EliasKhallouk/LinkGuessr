@@ -1,4 +1,4 @@
-// Images d'aperçu (Open Graph) générées à la volée : /api/og?type=jour&n=12, duel, nombre, personne.
+// Images d'aperçu (Open Graph) générées à la volée : /api/og?type=jour&n=12, duel, nombre, cache, personne.
 // Elles intriguent sans jamais révéler de réponse, et portent les crédits des sources.
 import { ImageResponse } from "@vercel/og";
 
@@ -83,6 +83,18 @@ async function render(params) {
     return frame("Défi : relie-les pas à pas", `Quelqu'un l'a fait en ${n} coup(s). Tu fais mieux ?`,
       h("div", { display: "flex", alignItems: "center", gap: 24 }, avatar(pa, ca.person.name), arrow,
         h("div", { fontSize: 64, color: "#f472b6" }, "· · ·"), arrow, avatar(pb, cb.person.name)));
+  }
+  if (type === "cache") {
+    // Les deux bouts du chemin et la personne cachée ; « · · · » pour les personnes intermédiaires.
+    const chain = (params.get("chemin") || "").split("-");
+    const masked = Number(params.get("cache")) || 1;
+    const [ca, cb] = await Promise.all([json(`/person/${chain[0]}/card`), json(`/person/${chain[chain.length - 1]}/card`)]);
+    const [pa, pb] = await Promise.all([photo(ca.person.image), photo(cb.person.image)]);
+    const dots = h("div", { fontSize: 56, color: "#9ca8c5", marginTop: -40 }, "· · ·");
+    return frame("Qui est caché ?", "Une personne relie les deux. Tu trouves qui ?",
+      h("div", { display: "flex", alignItems: "center", gap: 24 }, avatar(pa, ca.person.name), arrow,
+        masked > 1 ? [dots, arrow] : [], mystery(), arrow, masked < chain.length - 2 ? [dots, arrow] : [],
+        avatar(pb, cb.person.name)));
   }
   if (type === "nombre") {
     const n = Number(params.get("score")) || 0;

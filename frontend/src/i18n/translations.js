@@ -250,7 +250,6 @@ export const translations = {
       topTitle: "Les personnes les plus connectées",
       links: "liens",
       clues: "Ce qui la relie à ses voisins :",
-      hintPhoto: "Photo :",
       alsoRight: "{guess} est aussi relié aux deux : bonne réponse ! On pensait à {name}.",
       help: {
         facile: "Choisis parmi 4 personnes. Les phrases qui la relient et les indices sont donnés dès le départ.",
@@ -334,6 +333,8 @@ export const translations = {
       steps: { one: "{n} coup", other: "{n} coups" },
       optimal: "optimal\u00A0: {n}",
       exact: "exactes",
+      whoFound: { one: "Trouvé du premier coup ! Et toi, tu trouves qui c'est ? 👇", other: "Trouvé en {n} essais ! Et toi, tu trouves qui c'est ? 👇" },
+      whoLost: "Impossible à trouver 🤯 Tu vas jamais deviner 👇",
     },
     duel: {
       relayIntro: { one: "Quelqu'un a relié {a} à {b} en {n} coup.", other: "Quelqu'un a relié {a} à {b} en {n} coups." },
@@ -343,6 +344,10 @@ export const translations = {
       tie: "🤝 Égalité !",
       lost: { one: "Ton adversaire a fait mieux ({n} coup). Revanche ?", other: "Ton adversaire a fait mieux ({n} coups). Revanche ?" },
       lostScore: "Ton adversaire a fait mieux ({n} points). Revanche ?",
+      whoFound: { one: "Ton ami a trouvé la personne cachée du premier coup.", other: "Ton ami a trouvé la personne cachée en {n} essais." },
+      whoLost: "Ton ami n'a pas trouvé la personne cachée…",
+      whoCanYou: "Et toi, tu trouves ?",
+      whoWorse: "Ton ami a fait mieux. Revanche ?",
     },
     feedback: {
       question: "Ça t'a plu ?",
@@ -612,7 +617,6 @@ export const translations = {
       topTitle: "Most connected people",
       links: "links",
       clues: "What links them to their neighbours:",
-      hintPhoto: "Photo:",
       alsoRight: "{guess} is also linked to both: correct! We were thinking of {name}.",
       help: {
         facile: "Pick one of 4 people. The linking sentences and hints are given from the start.",
@@ -696,6 +700,8 @@ export const translations = {
       steps: { one: "{n} step", other: "{n} steps" },
       optimal: "optimal: {n}",
       exact: "exact",
+      whoFound: { one: "Got it on the first try! Can you guess who it is? 👇", other: "Got it in {n} tries! Can you guess who it is? 👇" },
+      whoLost: "Impossible to find 🤯 You'll never guess 👇",
     },
     duel: {
       relayIntro: { one: "Someone connected {a} to {b} in {n} step.", other: "Someone connected {a} to {b} in {n} steps." },
@@ -705,6 +711,10 @@ export const translations = {
       tie: "🤝 It's a tie!",
       lost: { one: "Your opponent did better ({n} step). Rematch?", other: "Your opponent did better ({n} steps). Rematch?" },
       lostScore: "Your opponent did better ({n} points). Rematch?",
+      whoFound: { one: "Your friend found the hidden person on the first try.", other: "Your friend found the hidden person in {n} tries." },
+      whoLost: "Your friend couldn't find the hidden person…",
+      whoCanYou: "Can you?",
+      whoWorse: "Your friend did better. Rematch?",
     },
     feedback: {
       question: "Did you enjoy it?",

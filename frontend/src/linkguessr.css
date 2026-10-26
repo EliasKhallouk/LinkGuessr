@@ -208,7 +208,6 @@ body.drawer-open { overflow: hidden; }
 .who-clues { margin-top: 12px; padding: 10px 12px; border-left: 3px solid var(--accent-primary); border-radius: 6px; background: rgba(124, 58, 237, 0.06); }
 .who-clues ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 .who-clues .hop-relation { display: block; }
-.who-blur { vertical-align: middle; border-radius: 50%; object-fit: cover; filter: blur(7px); }
 .who-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
 .who-choice { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px; text-align: left; cursor: pointer;
   color: var(--text-primary); font: inherit; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px;

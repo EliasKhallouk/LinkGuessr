@@ -10,15 +10,17 @@ import { newRound, track } from "../lib/tracking";
 import Feedback from "./Feedback";
 import TriesTiles from "./TriesTiles";
 import { confetti } from "../lib/confetti";
+import { duelUrl } from "../lib/share";
+import ShareButton from "./ShareButton";
 
 const GAME = "guess_who";
 
 // Aides selon le niveau : chaque indice apparaît après ce nombre d'erreurs (0 : dès le départ, absent : jamais).
-// clues : phrases à trou qui relient la personne cachée à ses voisins ; photo : sa photo floutée.
+// clues : phrases à trou qui relient la personne cachée à ses voisins.
 // L'API choisit aussi des énigmes plus simples en facile (liens forts, personne très connue, choix parmi 4).
 const HELP = {
   facile: { tries: 3, clues: 0, domain: 0, life: 0 },
-  moyen: { tries: 4, clues: 0, domain: 0, life: 1, photo: 2, initials: 3 },
+  moyen: { tries: 4, clues: 0, domain: 0, life: 1, initials: 2 },
   difficile: { tries: 4, domain: 1, clues: 2, initials: 3 },
   extreme: { tries: 4, domain: 1, life: 2, initials: 3 },
   humain: { tries: 3 },
@@ -39,9 +41,17 @@ function Choice({ person, disabled, onPick }) {
   );
 }
 
-export default function GuessWhoPath() {
+// Résultat partageable sans rien dévoiler : 🟥 erreur, 🟩 trouvé, ⬛ essai non utilisé.
+function grid(wrongCount, solved, maxTries) {
+  const cells = [...Array(wrongCount).fill("🟥"), ...(solved ? ["🟩"] : [])];
+  return cells.concat(Array(Math.max(0, maxTries - cells.length)).fill("⬛")).join("");
+}
+
+// `puzzle` ({ chemin, cache, niveau }) : énigme partagée par un ami (page /defi) ;
+// `rival` ({ found, tries }) : son résultat, comparé au nôtre à la fin.
+export default function GuessWhoPath({ puzzle = null, rival = null }) {
   const { t } = useI18n();
-  const [difficulty, setDifficulty] = useState("facile");
+  const [difficulty, setDifficulty] = useState(puzzle?.niveau || "facile");
   const [domain, setDomain] = useState("");
   const [domains, setDomains] = useState([]);
   const [challenge, setChallenge] = useState(null);
@@ -69,13 +79,13 @@ export default function GuessWhoPath() {
     setFound(null);
     setWrong([]);
     try {
-      setChallenge(await api.randomPath({ difficulty, domain }));
+      setChallenge(await (puzzle ? api.replayHidden(puzzle) : api.randomPath({ difficulty, domain })));
     } catch (e) {
       setError(e.message || t("guess.errorLoadPeople"));
     } finally {
       setLoading(false);
     }
-  }, [difficulty, domain, t]);
+  }, [difficulty, domain, puzzle, t]);
 
   useEffect(() => { fetchChallenge(); }, [fetchChallenge]);
 
@@ -114,7 +124,7 @@ export default function GuessWhoPath() {
     if (ok || newTries >= maxTries) {
       track(GAME, "finish", {
         answer: challenge.answer.qid, guessed: ok ? person.qid : null, path: challenge.path, tries: newTries,
-        found: ok, difficulty, domain: domain || null,
+        found: ok, difficulty, domain: domain || null, duel: Boolean(puzzle),
       });
     }
   };
@@ -127,20 +137,45 @@ export default function GuessWhoPath() {
   const hops = challenge && (revealed ? { ...challenge.hops, ...challenge.answer_hops } : challenge.hops);
   const clues = (challenge?.clues || []).filter((c) => c.relation || c.snippet);
   const lastWrong = wrong[wrong.length - 1];
+  const attempts = wrong.length + (found ? 1 : 0);
+
+  // Partage façon Wordle : le chemin avec ❓ à la place de la personne cachée, les cases, et un lien qui ouvre
+  // la même énigme chez l'ami. Le ton change selon qu'on a trouvé ou non.
+  const shareText = () => {
+    const names = challenge.path.map((q, i) => (i === challenge.masked_index ? "❓" : challenge.persons[q].name));
+    return [
+      `LinkGuessr · ${t("who.title")} ${t(`difficulty.${difficulty}`)}`,
+      names.join(" → "),
+      grid(wrong.length, Boolean(found), maxTries),
+      found ? t("share.whoFound", { n: attempts }) : t("share.whoLost"),
+    ].join("\n");
+  };
+  const shareUrl = () => duelUrl({
+    jeu: "cache", chemin: challenge.path.join("-"), cache: challenge.masked_index, niveau: difficulty,
+    essais: attempts, trouve: found ? 1 : 0,
+  });
+  // Comparaison avec l'ami : trouver bat ne pas trouver, puis moins d'essais.
+  const versus = rival && revealed && (() => {
+    const mine = found ? attempts : Infinity;
+    const theirs = rival.found ? rival.tries : Infinity;
+    return mine < theirs ? t("duel.beaten") : mine === theirs ? t("duel.tie") : t("duel.whoWorse");
+  })();
 
   return (
     <>
       <section className="panel fade-in">
         <div className="panel-header">
           <span className="panel-title">{t("who.title")}</span>
-          <div className="toolbar">
-            <DifficultyPicker value={difficulty} onChange={setDifficulty} />
-            <select value={domain} onChange={(e) => setDomain(e.target.value)} aria-label={t("who.domain")}>
-              <option value="">{t("who.allDomains")}</option>
-              {domains.map((d) => <option key={d} value={d}>{capitalize(d)}</option>)}
-            </select>
-            <button className="btn" onClick={fetchChallenge} disabled={loading}>{t("guess.newChallenge")}</button>
-          </div>
+          {!puzzle && (
+            <div className="toolbar">
+              <DifficultyPicker value={difficulty} onChange={setDifficulty} />
+              <select value={domain} onChange={(e) => setDomain(e.target.value)} aria-label={t("who.domain")}>
+                <option value="">{t("who.allDomains")}</option>
+                {domains.map((d) => <option key={d} value={d}>{capitalize(d)}</option>)}
+              </select>
+              <button className="btn" onClick={fetchChallenge} disabled={loading}>{t("guess.newChallenge")}</button>
+            </div>
+          )}
         </div>
         <div className="panel-body">
           <p className="muted who-level-help">{t(`who.help.${difficulty}`)}</p>
@@ -171,13 +206,10 @@ export default function GuessWhoPath() {
                 </div>
               )}
 
-              {!revealed && (shown("domain") || shown("life") || shown("photo") || shown("initials")) && (
+              {!revealed && (shown("domain") || shown("life") || shown("initials")) && (
                 <ul className="hints">
                   {shown("domain") && hints.domain && <li>{t("who.hintDomain")} <strong>{capitalize(hints.domain)}</strong></li>}
                   {shown("life") && hints.birth_year && <li>{t("who.hintLife")} <strong>{lifespan(hints)}</strong></li>}
-                  {shown("photo") && challenge.answer.image && (
-                    <li>{t("who.hintPhoto")} <img className="who-blur" src={commonsThumb(challenge.answer.image, 160)} alt="" width={64} height={64} /></li>
-                  )}
                   {shown("initials") && <li>{t("who.hintInitials")} <strong>{hints.initials}</strong> ({hints.name_length} {t("who.chars")})</li>}
                 </ul>
               )}
@@ -210,7 +242,12 @@ export default function GuessWhoPath() {
                     <p style={{ margin: "6px 0 0" }}>{t("who.alsoRight", { guess: found.name, name: challenge.answer.name })}</p>
                   )}
                   <div style={{ marginTop: 8 }}><PersonChip person={challenge.answer} showDescription size={56} /></div>
-                  <button className="btn" style={{ marginTop: 8 }} onClick={fetchChallenge}>{t("guess.next")}</button>
+                  {versus && <p style={{ margin: "8px 0 0", fontWeight: 600 }}>{versus}</p>}
+                  <div className="toolbar" style={{ marginTop: 8 }}>
+                    <ShareButton text={shareText()} url={shareUrl()} label={t("share.challenge")}
+                      onShared={() => track(GAME, "share", { found: Boolean(found), tries: attempts, difficulty })} />
+                    {!puzzle && <button className="btn" onClick={fetchChallenge}>{t("guess.next")}</button>}
+                  </div>
                   <Feedback game={GAME} />
                 </div>
               )}
