@@ -19,16 +19,18 @@ Commandes (sur la VM, avec l'environnement de l'API) :
 """
 import argparse
 import datetime as dt
+import hmac
 import random
 import re
 from zoneinfo import ZoneInfo
 
 import numpy as np
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
-from .core import QID, id_of, path_details, pool, startup, state
+from .config import ADMIN_TOKEN
+from .core import QID, id_of, path_details, pool, startup, state, summaries
 from .policy import RateLimiter
 from .graph import PathResult
 from .moderation import is_offensive
@@ -66,19 +68,20 @@ WEB = {"Q17125263", "Q57414145", "Q4110598", "Q2906862", "Q50279140",  # youtube
 POP, FOOT = "Q177220", "Q937857"                                        # chanteur, footballeur
 YOUTH_MIN_VIEWS = 50_000   # pages vues sur 12 mois
 CONTRAST_TOP = 3_000       # la personnalité « sans rapport » est parmi les 3 000 plus populaires
-MIDDLE_TOP = 0.02          # la personne cachée est dans le top 2 % : devinable
+MIDDLE_TOP = 0.005         # la personne cachée est dans le top 0,5 % : bien connue, donc devinable
 NO_REPEAT_DAYS = 30        # ni la star ni la personnalité « sans rapport » ne reviennent avant 30 jours
 FAMILIES = {
     "politique": "pouvoir", "militaire": "pouvoir", "noblesse": "pouvoir", "droit": "pouvoir", "religion": "pouvoir",
     "sciences": "savoirs", "sciences humaines": "savoirs", "éducation": "savoirs", "littérature": "savoirs",
 }
+ERAS = ["historique", "moderne"]  # la personnalité « sans rapport » : née avant 1900, ou d'un autre univers
 
 
 def youth_kind(row: dict) -> str | None:
     occupations, born = set(row["occupations"] or []), row["birth_year"] or 0
     if occupations & RAP and born >= 1975:
         return "rap"
-    if occupations & WEB and born >= 1980:
+    if occupations & WEB and born >= 1990:
         return "web"
     if POP in occupations and born >= 1990:
         return "pop"
@@ -87,23 +90,37 @@ def youth_kind(row: dict) -> str | None:
     return None
 
 
-def _youth(conn) -> dict[int, dict]:
-    rows = conn.execute(
-        """SELECT id, qid, name, birth_year, occupations, pageviews_12m FROM person
-           WHERE death_year IS NULL AND birth_year >= 1975 AND pageviews_12m >= %s AND occupations && %s""",
-        (YOUTH_MIN_VIEWS, sorted(RAP | WEB | {POP, FOOT})),
-    ).fetchall()
-    youth = {r["id"]: {**r, "kind": kind} for r in rows if (kind := youth_kind(r))}
-    for rank, i in enumerate(sorted(youth, key=lambda i: -youth[i]["pageviews_12m"])):
-        youth[i]["fame"] = 1 - rank / len(youth)  # notoriété actuelle, parmi les jeunes
-    return youth
+def day_profile(day: dt.date) -> tuple[str, str]:
+    """Catégorie de la star (cycle de 4 jours) et époque de la personnalité « sans rapport »
+    (alternée, et décalée à chaque cycle pour que toutes les combinaisons reviennent)."""
+    n = day.toordinal()
+    return YOUTH_KINDS[n % len(YOUTH_KINDS)], ERAS[(n + n // len(YOUTH_KINDS)) % len(ERAS)]
 
 
-def _contrasts(conn) -> dict[int, dict]:
-    ids = np.argsort(-state["graph"].popularity)[:CONTRAST_TOP].tolist()
-    rows = conn.execute("SELECT id, qid, name, birth_year, primary_domain FROM person WHERE id = ANY(%s)", (ids,)).fetchall()
-    return {r["id"]: r for r in rows
-            if (r["birth_year"] is not None and r["birth_year"] <= 1900) or FAMILIES.get(r["primary_domain"])}
+def _pools() -> dict:
+    """Stars jeunes, personnalités « sans rapport » et tous les chemins possibles entre elles.
+    Calculé une fois par processus (les données ne changent qu'à l'import mensuel)."""
+    if "daily_pools" in state:
+        return state["daily_pools"]
+    with pool.connection() as conn:
+        rows = conn.execute(
+            """SELECT id, qid, name, birth_year, occupations, pageviews_12m FROM person
+               WHERE death_year IS NULL AND birth_year >= 1975 AND pageviews_12m >= %s AND occupations && %s""",
+            (YOUTH_MIN_VIEWS, sorted(RAP | WEB | {POP, FOOT})),
+        ).fetchall()
+        youth = {r["id"]: {**r, "kind": kind} for r in rows if (kind := youth_kind(r))}
+        for rank, i in enumerate(sorted(youth, key=lambda i: -youth[i]["pageviews_12m"])):
+            youth[i]["fame"] = 1 - rank / len(youth)  # notoriété actuelle, parmi les jeunes
+        ids = np.argsort(-state["graph"].popularity)[:CONTRAST_TOP].tolist()
+        contrasts = {}
+        for r in conn.execute("SELECT id, qid, name, birth_year, primary_domain FROM person WHERE id = ANY(%s)",
+                              (ids,)).fetchall():
+            if r["birth_year"] is not None and r["birth_year"] <= 1900:
+                contrasts[r["id"]] = {**r, "era": "historique"}
+            elif FAMILIES.get(r["primary_domain"]):
+                contrasts[r["id"]] = {**r, "era": "moderne"}
+    state["daily_pools"] = {"youth": youth, "contrasts": contrasts, "triplets": _triplets(youth, contrasts)}
+    return state["daily_pools"]
 
 
 def _triplets(youth: dict, contrasts: dict) -> list[dict]:
@@ -123,7 +140,7 @@ def _triplets(youth: dict, contrasts: dict) -> list[dict]:
     for y, info in youth.items():
         ny, strong_y = neighbors(y), neighbors(y, strong)
         for m in ny:
-            if pop[m] < middle_min or m in contrasts:
+            if pop[m] < middle_min or m in contrasts or m in youth:
                 continue
             strong_m = neighbors(m, strong)
             for c in csr.neighbors_of(m).tolist():
@@ -135,44 +152,50 @@ def _triplets(youth: dict, contrasts: dict) -> list[dict]:
                 strength = ((m in strong_y) + (c in strong_m)) / 2
                 score = (1.0 * info["fame"] + 0.8 * era + 0.5 * float(pop[c]) + 0.7 * float(pop[m])
                          + 0.4 * strength - 0.08 * min(alternatives - 1, 10))
-                out.append({"youth": y, "middle": m, "contrast": c, "kind": info["kind"],
+                out.append({"youth": y, "middle": m, "contrast": c, "kind": info["kind"], "era": cinfo["era"],
                             "alternatives": alternatives, "score": score})
+    out.sort(key=lambda t: -t["score"])
     return out
 
 
+def qid(i: int) -> str:
+    return f"Q{int(state['qid_num'][i])}"
+
+
+def eligible(day: dt.date, existing: dict[dt.date, dict]) -> list[dict]:
+    """Chemins possibles pour `day`, du meilleur au moins bon : catégorie et époque du jour, réponse jamais
+    utilisée ailleurs, ni star ni personnalité « sans rapport » à moins de 30 jours d'écart.
+    Si le profil du jour n'a plus de candidat, on relâche l'époque puis la catégorie."""
+    others = {d: row for d, row in existing.items() if d != day}
+    used_answers = {row["answer"]["qid"] for row in others.values()}
+    window = {q for d, row in others.items() if abs((day - d).days) <= NO_REPEAT_DAYS
+              for q in (row["path"][0], row["path"][-1])}
+    triplets = [t for t in _pools()["triplets"]
+                if qid(t["middle"]) not in used_answers and qid(t["youth"]) not in window
+                and qid(t["contrast"]) not in window]
+    kind, era = day_profile(day)
+    for keep in (lambda t: t["kind"] == kind and t["era"] == era, lambda t: t["kind"] == kind, lambda t: True):
+        if found := [t for t in triplets if keep(t)]:
+            return found
+    return []
+
+
 def plan(days: int, start: dt.date, existing: dict[dt.date, dict]) -> list[tuple[dt.date, dict]]:
-    """Défis des `days` jours à partir de `start` (sans écrire) : catégorie du jour, meilleur score,
-    pas de répétition récente de la star ni de la personnalité « sans rapport », réponse jamais réutilisée."""
-    with pool.connection() as conn:
-        youth, contrasts = _youth(conn), _contrasts(conn)
-    triplets = _triplets(youth, contrasts)
-    qid_of = lambda i: youth[i]["qid"] if i in youth else contrasts[i]["qid"] if i in contrasts else None  # noqa: E731
-    used_answers = {row["answer"]["qid"] for row in existing.values()}
-    recent = [(d, row["path"][0], row["path"][-1]) for d, row in existing.items()]
+    """Défis des `days` jours à partir de `start` (sans écrire) pour les jours encore libres."""
+    existing = dict(existing)
     chosen = []
     for offset in range(days):
         day = start + dt.timedelta(days=offset)
         if day in existing:
             continue
-        kind = YOUTH_KINDS[day.toordinal() % len(YOUTH_KINDS)]
-        window = {q for d, *qs in recent if 0 < (day - d).days <= NO_REPEAT_DAYS for q in qs}
+        candidates = eligible(day, existing)
+        if not candidates:
+            raise RuntimeError(f"{day} : aucun défi possible")
         rng = random.Random(day.isoformat())
-        best = None
-        for t in triplets:
-            if t["kind"] != kind or qid_of(t["youth"]) in window or qid_of(t["contrast"]) in window:
-                continue
-            middle_qid = state["qid_num"][t["middle"]]
-            if f"Q{middle_qid}" in used_answers:
-                continue
-            value = t["score"] + rng.uniform(0, 0.15)  # un peu de hasard pour varier
-            if best is None or value > best[0]:
-                best = (value, t)
-        if best is None:
-            raise RuntimeError(f"{day} : aucun défi possible pour la catégorie {kind}")
-        t = best[1]
+        t = max(candidates[:50], key=lambda c: c["score"] + rng.uniform(0, 0.15))  # un peu de hasard pour varier
         chosen.append((day, t))
-        used_answers.add(f"Q{state['qid_num'][t['middle']]}")
-        recent.append((day, qid_of(t["youth"]), qid_of(t["contrast"])))
+        existing[day] = {"path": [qid(t["youth"]), qid(t["middle"]), qid(t["contrast"])],
+                         "answer": {"qid": qid(t["middle"])}, "forced": False}
     return chosen
 
 
@@ -256,7 +279,7 @@ def preview(days: int = 14, start: dt.date | None = None) -> None:
             ([i for _, t in chosen for i in (t["youth"], t["middle"], t["contrast"])],)).fetchall()}
     for day, t in chosen:
         y, m, c = names[t["youth"]], names[t["middle"]], names[t["contrast"]]
-        print(f"#{number_of(day):>3} {day} [{t['kind']:<4}] {y['name']} → [{m['name']} · {m['description'] or ''}]"
+        print(f"#{number_of(day):>3} {day} [{t['kind']:<4} {t['era'][:4]}] {y['name']} → [{m['name']} · {m['description'] or ''}]"
               f" → {c['name']} ({c['birth_year']}, {c['primary_domain']})  | {t['alternatives']} possible(s)")
 
 
@@ -426,6 +449,164 @@ def daily_leaderboard(response: Response, limit: int = 20):
             (today(), min(max(limit, 1), 100)),
         ).fetchall()
     return {"day": today().isoformat(), "entries": rows}
+
+
+# --- Administration des défis (page /admin/defis) ---------------------------------------------
+
+def require_admin(x_admin_token: str = Header("")) -> None:
+    if not ADMIN_TOKEN or not hmac.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(401, "Jeton invalide")
+
+
+admin_router = APIRouter(prefix="/admin/daily", dependencies=[Depends(require_admin)])
+
+
+def _editable(day: dt.date) -> None:
+    if day <= today():
+        raise HTTPException(409, "Ce jour est en cours ou passé : des joueurs y ont joué, il ne peut plus changer.")
+
+
+def _person_brief(p: dict) -> dict:
+    return {k: p.get(k) for k in ("qid", "name", "description", "image", "birth_year", "primary_domain", "popularity")}
+
+
+@admin_router.get("")
+def admin_list(past: int = 7, days: int = 60):
+    """Défis de `past` jours en arrière à `days` jours en avant, jours manquants compris."""
+    start, end = today() - dt.timedelta(days=past), today() + dt.timedelta(days=days)
+    with pool.connection() as conn:
+        rows = {r["day"]: r for r in conn.execute(
+            "SELECT * FROM app.daily_challenge WHERE day BETWEEN %s AND %s", (start, end)).fetchall()}
+        played = {r["day"]: r for r in conn.execute(
+            """SELECT day, count(*) FILTER (WHERE cardinality(guesses) > 0) AS players,
+                      count(*) FILTER (WHERE solved) AS solved
+               FROM app.daily_attempt WHERE day BETWEEN %s AND %s GROUP BY day""", (start, end)).fetchall()}
+    out = []
+    for offset in range((end - start).days + 1):
+        day = start + dt.timedelta(days=offset)
+        kind, era = day_profile(day)
+        item = {"day": day.isoformat(), "number": number_of(day), "profile": {"kind": kind, "era": era},
+                "editable": day > today(), "current": day == today(),
+                "players": played.get(day, {}).get("players", 0), "solved": played.get(day, {}).get("solved", 0)}
+        if row := rows.get(day):
+            item.update({"path": [_person_brief(row["persons"][q]) for q in row["path"]],
+                         "masked_index": row["masked_index"], "locked": row["forced"]})
+        out.append(item)
+    return {"today": today().isoformat(), "days": out}
+
+
+@admin_router.get("/{day}/candidates")
+def admin_candidates(day: dt.date, limit: int = 10):
+    """Les meilleures propositions de la recette pour ce jour (règles de non-répétition comprises)."""
+    with pool.connection() as conn:
+        existing = _existing(conn)
+    current = existing.get(day)
+    found = eligible(day, existing)
+    if current:  # on n'affiche pas le défi déjà en place
+        found = [t for t in found if qid(t["middle"]) != current["answer"]["qid"]]
+    found = found[:limit]
+    people = summaries(sorted({i for t in found for i in (t["youth"], t["middle"], t["contrast"])}))
+    return {"day": day.isoformat(), "candidates": [
+        {"path": [_person_brief(people[i]) for i in (t["youth"], t["middle"], t["contrast"])],
+         "kind": t["kind"], "era": t["era"], "alternatives": t["alternatives"], "score": round(t["score"], 3)}
+        for t in found]}
+
+
+def _country(conn, person_id: int) -> str | None:
+    return conn.execute("SELECT coalesce(birth_country, citizenships[1]) AS c FROM person WHERE id = %s",
+                        (person_id,)).fetchone()["c"]
+
+
+@admin_router.post("/{day}/regenerate")
+def admin_regenerate(day: dt.date):
+    """Remplace le défi du jour par la meilleure autre proposition de la recette."""
+    _editable(day)
+    with pool.connection() as conn:
+        existing = _existing(conn)
+        current = existing.get(day)
+        found = [t for t in eligible(day, existing) if not current or qid(t["middle"]) != current["answer"]["qid"]]
+        if not found:
+            raise HTTPException(404, "Aucune autre proposition pour ce jour")
+        rng = random.Random(f"{day.isoformat()}-{len(existing)}")
+        t = max(found[:20], key=lambda c: c["score"] + rng.uniform(0, 0.15))
+        answer = _store(conn, day, t["youth"], t["middle"], t["contrast"], t["alternatives"],
+                        _country(conn, t["middle"]), forced=False)
+    return {"ok": True, "answer": answer["name"]}
+
+
+class SetIn(BaseModel):
+    youth: str
+    middle: str
+    contrast: str
+
+
+@admin_router.post("/{day}/set")
+def admin_set(day: dt.date, body: SetIn):
+    """Défi choisi à la main : A → [cachée] → B, verrouillé (jamais recalculé automatiquement)."""
+    _editable(day)
+    y, m, c = id_of(body.youth), id_of(body.middle), id_of(body.contrast)
+    csr = state["graph"].csr["all"]
+    ny, nm = set(csr.neighbors_of(y).tolist()), set(csr.neighbors_of(m).tolist())
+    names = summaries([y, m, c])
+    if m not in ny:
+        raise HTTPException(400, f"{names[y]['name']} et {names[m]['name']} ne sont pas directement liés.")
+    if c not in nm:
+        raise HTTPException(400, f"{names[m]['name']} et {names[c]['name']} ne sont pas directement liés.")
+    if c in ny or c == y:
+        raise HTTPException(400, f"{names[y]['name']} et {names[c]['name']} sont directement liés : "
+                                 "le défi n'aurait pas d'intermédiaire à deviner.")
+    alternatives = len(ny & set(csr.neighbors_of(c).tolist()))
+    with pool.connection() as conn:
+        answer = _store(conn, day, y, m, c, alternatives, _country(conn, m), forced=True)
+    return {"ok": True, "answer": answer["name"], "alternatives": alternatives}
+
+
+class LockIn(BaseModel):
+    locked: bool
+
+
+@admin_router.post("/{day}/lock")
+def admin_lock(day: dt.date, body: LockIn):
+    """Verrou : un défi verrouillé n'est jamais recalculé par la génération automatique."""
+    _editable(day)
+    with pool.connection() as conn:
+        conn.execute("UPDATE app.daily_challenge SET forced = %s WHERE day = %s", (body.locked, day))
+    return {"ok": True}
+
+
+@admin_router.delete("/{day}")
+def admin_delete(day: dt.date):
+    """Supprime le défi : la génération de la nuit (ou « Régénérer ») remplira le jour."""
+    _editable(day)
+    with pool.connection() as conn:
+        conn.execute("DELETE FROM app.daily_challenge WHERE day = %s", (day,))
+    return {"ok": True}
+
+
+class SwapIn(BaseModel):
+    a: dt.date
+    b: dt.date
+
+
+@admin_router.post("/swap")
+def admin_swap(body: SwapIn):
+    """Échange le contenu de deux jours à venir (les numéros restent attachés aux dates)."""
+    _editable(body.a)
+    _editable(body.b)
+    fields = ["path", "masked_index", "answer", "persons", "hops", "hints", "forced"]
+    with pool.connection() as conn:
+        rows = {r["day"]: r for r in conn.execute(
+            f"SELECT day, {', '.join(fields)} FROM app.daily_challenge WHERE day = ANY(%s)", ([body.a, body.b],)).fetchall()}
+        if len(rows) != 2:
+            raise HTTPException(404, "Les deux jours doivent avoir un défi")
+        for day, other in ((body.a, rows[body.b]), (body.b, rows[body.a])):
+            conn.execute(
+                """UPDATE app.daily_challenge SET path = %s, masked_index = %s, answer = %s, persons = %s, hops = %s,
+                          hints = %s, forced = %s WHERE day = %s""",
+                (other["path"], other["masked_index"], Jsonb(other["answer"]), Jsonb(other["persons"]),
+                 Jsonb(other["hops"]), Jsonb(other["hints"]), other["forced"], day),
+            )
+    return {"ok": True}
 
 
 # --- Ligne de commande ---------------------------------------------------------------------

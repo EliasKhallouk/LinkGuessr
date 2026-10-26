@@ -36,6 +36,7 @@ app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_origin_rege
 app.middleware("http")(http_policy)
 app.include_router(game.router)
 app.include_router(daily.router)
+app.include_router(daily.admin_router)
 app.include_router(admin.router)
 app.include_router(seo.router)
 
