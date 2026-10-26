@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import admin, daily, game, seo
+from .clues import clues
 from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS
 from .core import id_of, path_details, person_columns, pool, startup, state, summaries
 from .graph import MODES, PathResult
@@ -23,14 +24,17 @@ from .text import normalize
 #   800 : Jennifer Lawrence ; 3 000 : Eddie Redmayne ; 12 000 : Kevin Mitnick ; 60 000 : quasi inconnus) ;
 # - hidden : « Qui est caché ? », rangs de popularité permis pour la personne à deviner (None : sans limite) ;
 #   dans les niveaux durs on écarte les stars, sinon les chemins passent toujours par Trump ou Napoléon ;
-# - hidden_length : longueur du chemin de « Qui est caché ? ».
+# - hidden_length, hidden_mode : longueur du chemin de « Qui est caché ? » et type de liens (forts en
+#   facile et moyen : les liens sont évidents, « Zidane → ? → Benzema ») ;
+# - choices : en facile, on répond en choisissant parmi 4 personnes.
 LEVELS = {
-    "facile": {"top": 200, "hidden": (1, 500), "hidden_length": (2, 2)},
-    "moyen": {"top": 800, "hidden": (1, 2_000), "hidden_length": (2, 3)},
+    "facile": {"top": 200, "hidden": (1, 300), "hidden_length": (2, 2), "hidden_mode": "strong", "choices": 4},
+    "moyen": {"top": 800, "hidden": (1, 2_000), "hidden_length": (2, 3), "hidden_mode": "strong"},
     "difficile": {"top": 3_000, "hidden": (200, 8_000), "hidden_length": (2, 3)},
     "extreme": {"top": 12_000, "hidden": (1_000, 30_000), "hidden_length": (3, 4)},
     "humain": {"top": 60_000, "hidden": (5_000, None), "hidden_length": (4, 6)},
 }
+CHOICES_TOP = 600  # les mauvaises propositions du choix multiple : parmi les 600 plus connus, même domaine
 LEVEL = f"^({'|'.join(LEVELS)})$"
 MIN_POOL = 200  # réservoir minimal, pour les petits domaines
 
@@ -219,13 +223,30 @@ def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, 
 def _pick_hidden(difficulty: str, domain: str | None, min_length: int, max_length: int) -> tuple[list[int], int]:
     """Un plus court chemin et la position de la personne à deviner, assez connue pour le niveau."""
     (lo, hi), rank = LEVELS[difficulty]["hidden"], state["pop_rank"]
+    mode = LEVELS[difficulty].get("hidden_mode", "all")
     for _ in range(30):
-        _, _, res = _pick_pair(difficulty, domain, "all", min_length, max_length, limit=20)
+        _, _, res = _pick_pair(difficulty, domain, mode, min_length, max_length, limit=20)
         choices = [(p, i) for p in res.paths for i in range(1, len(p) - 1)
                    if rank[p[i]] >= lo and (hi is None or rank[p[i]] <= hi)]
         if choices:
             return random.choice(choices)
     raise HTTPException(404, "Aucun chemin trouvé pour ce niveau, réessayez")
+
+
+def _valid_middles(before: int, after: int) -> set[int]:
+    """Toutes les personnes liées à la fois à `before` et à `after` : chacune est une bonne réponse."""
+    csr = state["graph"].csr["all"]
+    return set(csr.neighbors_of(before).tolist()) & set(csr.neighbors_of(after).tolist())
+
+
+def _wrong_choices(answer: int, chain: list[int], valid: set[int], n: int) -> list[int]:
+    """Mauvaises propositions plausibles : très connues, du même domaine, mais pas des bonnes réponses."""
+    pop, dom = state["graph"].popularity, state["domain"]
+    top = np.argpartition(-pop, CHOICES_TOP)[:CHOICES_TOP].tolist()
+    allowed = [i for i in top if i not in valid and i not in chain]
+    same = [i for i in allowed if dom[i] == dom[answer]]
+    picked = random.sample(same, min(n, len(same)))
+    return picked + random.sample([i for i in allowed if i not in picked], n - len(picked))
 
 
 def _pick_balanced(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int):
@@ -266,6 +287,13 @@ def random_pair(
     return {"from": people[s], "to": people[t], "length": res.length, "n_paths": res.n_paths}
 
 
+@app.get("/random_path/check")
+def random_path_check(before: str, after: str, guess: str):
+    """Une réponse autre que celle attendue est juste si elle est liée aux deux voisins de la personne cachée."""
+    b, a, g = id_of(before), id_of(after), id_of(guess)
+    return {"ok": g not in (a, b) and g in _valid_middles(b, a)}
+
+
 @app.get("/random_path")
 def random_path(
     difficulty: str = Query("moyen", pattern=LEVEL),
@@ -276,13 +304,21 @@ def random_path(
     """« Qui est caché ? » : un plus court chemin dont une personne intermédiaire est à deviner.
     Les indices (domaine, dates, initiales) sont donnés ; le nom reste dans `answer`, et les liens
     de la personne cachée (phrases qui la citent) dans `answer_hops`, à afficher une fois la réponse donnée."""
-    lo, hi = LEVELS[difficulty]["hidden_length"]
+    level = LEVELS[difficulty]
+    lo, hi = level["hidden_length"]
     ids, masked = _pick_hidden(difficulty, domain, min_length or lo, max_length or hi)
     details = path_details(PathResult(len(ids) - 1, 1, [ids]))
     chain = details["paths"][0]
     answer = details["persons"][chain[masked]]
     hidden = {k: v for k, v in details["hops"].items() if answer["qid"] in k.split("-")}
+    choices = None
+    if level.get("choices"):
+        wrong = _wrong_choices(ids[masked], ids, _valid_middles(ids[masked - 1], ids[masked + 1]), level["choices"] - 1)
+        choices = list(summaries(wrong).values()) + [answer]
+        random.shuffle(choices)
     return {
+        "choices": choices,
+        "clues": clues(hidden, answer, details["persons"]),
         "path": chain,
         "masked_index": masked,
         "persons": {q: p for q, p in details["persons"].items() if q != answer["qid"]},
