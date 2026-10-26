@@ -23,8 +23,9 @@ from .text import normalize
 # Niveaux de difficulté (calés sur les rangs de popularité, sur 765 000 personnes) :
 # - top : on tire les personnes parmi les N plus populaires (rang 200 : Ronaldinho, Cléopâtre ;
 #   800 : Jennifer Lawrence ; 3 000 : Eddie Redmayne ; 12 000 : Kevin Mitnick ; 60 000 : quasi inconnus) ;
-# - hidden : « Qui est caché ? », rangs de popularité permis pour la personne à deviner (None : sans limite) ;
-#   dans les niveaux durs on écarte les stars, sinon les chemins passent toujours par Trump ou Napoléon ;
+#   dans « Qui est caché ? », ce sont les personnes visibles du chemin, classées dans l'époque choisie ;
+# - hidden : « Qui est caché ? », rangs permis pour la personne à deviner (None : sans limite) ;
+#   dans les niveaux durs on écarte les stars, qu'on reconnaît trop vite ;
 # - hidden_length, hidden_mode : longueur du chemin de « Qui est caché ? » et type de liens (forts en
 #   facile et moyen : les liens sont évidents, « Zidane → ? → Benzema ») ;
 # - choices : en facile, on répond en choisissant parmi 4 personnes.
@@ -35,7 +36,8 @@ LEVELS = {
     "extreme": {"top": 12_000, "hidden": (1_000, 30_000), "hidden_length": (3, 4)},
     "humain": {"top": 60_000, "hidden": (5_000, None), "hidden_length": (4, 6)},
 }
-CHOICES_TOP = 300  # les mauvaises propositions du choix multiple : parmi les 300 plus connus de l'époque
+CHOICES_TOP = 400  # les leurres du choix multiple : parmi les 400 plus connus de l'époque…
+AGE_WINDOW = {"aujourdhui": 12, "tous": 60, "histoire": 100}  # … nés à moins de N ans de la personne cachée
 LEVEL = f"^({'|'.join(LEVELS)})$"
 MIN_POOL = 200  # réservoir minimal, pour les petits domaines
 
@@ -195,10 +197,10 @@ def neighbors(qid: str, limit: int = Query(50, ge=1, le=500)):
     return {"results": rows}
 
 
-def _candidates(difficulty: str, domain: str | None, era: str = "tous") -> np.ndarray:
-    """Les personnes les plus connues de l'époque (les LEVELS[…]["top"] premières ; dans un domaine, la même part
+def _candidates(difficulty: str, domain: str | None) -> np.ndarray:
+    """Les personnes les plus connues (les LEVELS[…]["top"] premières ; dans un domaine, la même part
     du domaine), au moins MIN_POOL si possible."""
-    order = state["eras"][era]["order"]
+    order = state["eras"]["tous"]["order"]
     if domain:
         if domain not in state["domain_names"]:
             raise HTTPException(400, f"Domaine inconnu. Domaines : {state['domain_names']}")
@@ -212,10 +214,9 @@ def _candidates(difficulty: str, domain: str | None, era: str = "tous") -> np.nd
     return order[:k]
 
 
-def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int, limit: int = 1,
-               era: str = "tous"):
+def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int, limit: int = 1):
     """Deux personnes tirées parmi les plus connues, reliées par un chemin de longueur voulue."""
-    graph, candidates, rng = state["graph"], _candidates(difficulty, domain, era), np.random.default_rng()
+    graph, candidates, rng = state["graph"], _candidates(difficulty, domain), np.random.default_rng()
     for _ in range(50):
         s, t = (int(x) for x in rng.choice(candidates, 2, replace=False))
         res = graph.shortest_paths(s, t, mode=mode, limit=limit)
@@ -224,49 +225,48 @@ def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, 
     raise HTTPException(404, "Aucune paire trouvée, élargir les critères")
 
 
-def _pick_hidden(difficulty: str, domain: str | None, min_length: int, max_length: int,
-                 era: str = "tous") -> tuple[list[int], int]:
-    """Un plus court chemin dont toutes les personnes sont de l'époque, et la position de la personne à deviner,
-    assez connue pour le niveau (rang dans le classement de l'époque)."""
-    (lo, hi), rank = LEVELS[difficulty]["hidden"], state["eras"][era]["rank"]
-    outside = state["graph"].n + 1
-    mode = LEVELS[difficulty].get("hidden_mode", "all")
-    for _ in range(30):
-        _, _, res = _pick_pair(difficulty, domain, mode, min_length, max_length, limit=20, era=era)
-        paths = [p for p in res.paths if all(rank[v] < outside for v in p)]
-        choices = [(p, i) for p in paths for i in range(1, len(p) - 1)
-                   if rank[p[i]] >= lo and (hi is None or rank[p[i]] <= hi)]
-        if choices:
-            return random.choice(choices)
-    raise HTTPException(404, "Aucun chemin trouvé pour ce niveau, réessayez")
-
-
-def _pick_around(difficulty: str, domain: str | None, era: str) -> tuple[list[int], int]:
-    """Énigme à une seule personne cachée, construite autour d'elle : on tire d'abord la personne à deviner parmi
-    les plus connues de l'époque, puis deux de ses voisins très connus qui ne sont pas liés entre eux (le chemin
-    A → cachée → B est alors un plus court chemin). Liens forts de préférence : le lien est plus évident.
-    Tirer deux personnes au hasard et espérer une star entre les deux échoue trop souvent."""
+def _pick_around(difficulty: str, domain: str | None, era: str, length: int) -> tuple[list[int], int]:
+    """Énigme construite autour de la personne cachée (pas de recherche de chemins, donc rapide et sans échec) :
+    1. on tire la personne à deviner M parmi les rangs permis par le niveau, dans l'époque ;
+    2. on tire sa position k sur un chemin de `length` liens, puis on s'éloigne de M pas à pas, k fois d'un côté
+       et length - k fois de l'autre, en passant à chaque pas à un voisin connu de l'époque (rang ≤ top) ;
+    3. chaque nouvelle personne n'est liée à aucune personne déjà sur le chemin, sauf celle d'où l'on vient :
+       pas de raccourci, chaque maillon compte (le chemin n'est pas forcément le plus court du graphe entier,
+       mais on accepte de toute façon toute personne liée aux deux voisins de la cachée).
+    Liens forts de préférence (plus évidents), sinon tous les liens."""
     level, rank = LEVELS[difficulty], state["eras"][era]["rank"]
     lo, hi = level["hidden"]
-    order = state["eras"][era]["order"]
-    middles = order[lo - 1:hi]
+    middles = state["eras"][era]["order"][lo - 1:hi]
     domain_id = state["domain_names"].index(domain) if domain in state["domain_names"] else None
-    rng = np.random.default_rng()
+    full, rng = state["graph"].csr["all"], np.random.default_rng()
+
+    def visible(v: int) -> bool:
+        return rank[v] <= level["top"] and (domain_id is None or state["domain"][v] == domain_id)
+
     for mode in (level.get("hidden_mode", "all"), "all"):
         csr = state["graph"].csr[mode]
-        for _ in range(200):
+        for _ in range(300):
             m = int(rng.choice(middles))
-            ends = [v for v in csr.neighbors_of(m).tolist() if rank[v] <= level["top"]
-                    and (domain_id is None or state["domain"][v] == domain_id)]
-            if len(ends) < 2:
+            if domain_id is not None and state["domain"][m] != domain_id:
                 continue
-            rng.shuffle(ends)
-            for a in ends[:10]:
-                linked = set(state["graph"].csr["all"].neighbors_of(a).tolist())
-                b = next((v for v in ends if v != a and v not in linked), None)
-                if b is not None:
-                    return [a, m, b], 1
-    raise HTTPException(404, "Aucun chemin trouvé pour ce niveau, réessayez")
+            k = int(rng.integers(1, length))
+            chain, near = [m], {m: set(full.neighbors_of(m).tolist())}
+            for at_start, steps in ((True, k), (False, length - k)):
+                for _ in range(steps):
+                    end = chain[0] if at_start else chain[-1]
+                    taken = set(chain).union(*(near[c] for c in chain if c != end))
+                    options = [v for v in csr.neighbors_of(end).tolist() if v not in taken and visible(v)]
+                    if not options:
+                        break
+                    v = int(rng.choice(options))
+                    near[v] = set(full.neighbors_of(v).tolist())
+                    if at_start:
+                        chain.insert(0, v)
+                    else:
+                        chain.append(v)
+            if len(chain) == length + 1:
+                return chain, k
+    raise HTTPException(404, "Aucune énigme trouvée pour ce niveau, réessayez")
 
 
 def _valid_middles(before: int, after: int) -> set[int]:
@@ -277,10 +277,19 @@ def _valid_middles(before: int, after: int) -> set[int]:
 
 def _wrong_choices(answer: int, chain: list[int], valid: set[int], n: int, rng: random.Random,
                    era: str = "tous") -> list[int]:
-    """Mauvaises propositions : très connues à cette époque (tous domaines : en facile, on doit pouvoir trancher),
-    mais jamais des bonnes réponses."""
-    top = state["eras"][era]["order"][:CHOICES_TOP].tolist()
-    return rng.sample([i for i in top if i not in valid and i not in chain], n)
+    """Leurres crédibles : parmi les plus connus de l'époque, ceux qui ressemblent le plus à la personne cachée
+    (même domaine, même genre, âge proche ; dans cet ordre d'importance), sinon on ne devine pas, on élimine.
+    Jamais une bonne réponse (personne liée aux deux voisins), jamais une personne du chemin."""
+    born, gender, dom = state["born"], state["gender"], state["domain"]
+    window = AGE_WINDOW[era]
+    candidates = [i for i in state["eras"][era]["order"][:CHOICES_TOP].tolist() if i not in valid and i not in chain]
+    rng.shuffle(candidates)  # au hasard parmi les leurres aussi ressemblants
+
+    def distance(i: int) -> int:
+        return (4 * (dom[i] != dom[answer]) + 2 * (gender[i] != gender[answer])
+                + (abs(int(born[i]) - int(born[answer])) > window))
+
+    return sorted(candidates, key=distance)[:n]
 
 
 def _pick_balanced(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int):
@@ -336,14 +345,11 @@ def random_path(
     min_length: int | None = Query(None, ge=2, le=8),
     max_length: int | None = Query(None, ge=2, le=12),
 ):
-    """« Qui est caché ? » : un plus court chemin dont une personne intermédiaire est à deviner.
+    """« Qui est caché ? » : un chemin dont une personne intermédiaire est à deviner (voir _pick_around).
     Les indices (domaine, dates, initiales) sont donnés ; le nom reste dans `answer`, et les liens
     de la personne cachée (phrases qui la citent) dans `answer_hops`, à afficher une fois la réponse donnée."""
     lo, hi = min_length or LEVELS[difficulty]["hidden_length"][0], max_length or LEVELS[difficulty]["hidden_length"][1]
-    if hi == 2:
-        ids, masked = _pick_around(difficulty, domain, epoque)
-    else:
-        ids, masked = _pick_hidden(difficulty, domain, lo, hi, epoque)
+    ids, masked = _pick_around(difficulty, domain, epoque, random.randint(lo, max(lo, hi)))
     return _puzzle(ids, masked, difficulty, random.Random(), epoque)
 
 

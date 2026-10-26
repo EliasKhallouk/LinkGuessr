@@ -25,7 +25,7 @@ def load_eras() -> None:
     n = state["graph"].n
     with pool.connection() as conn:
         rows = conn.execute(
-            """SELECT id, birth_year, death_year, coalesce(pageviews_12m, 0) AS views,
+            """SELECT id, birth_year, death_year, gender, coalesce(pageviews_12m, 0) AS views,
                       coalesce(occupations && %s, false) AS youth,
                       coalesce(occupations && %s, false) OR coalesce(sitelinks, 0) >= %s AS known_young,
                       coalesce(occupations && %s, false) AS excluded FROM person""",
@@ -44,6 +44,10 @@ def load_eras() -> None:
     youth[ids] = [r["youth"] for r in rows]
     known_young[ids] = [r["known_young"] for r in rows]
     excluded[ids] = [r["excluded"] for r in rows]
+    # Pour les leurres du choix multiple (personnes qui ressemblent à la cachée) : naissance et genre.
+    gender = np.zeros(n, dtype=np.int8)
+    gender[ids] = [{"homme": 1, "femme": 2}.get(r["gender"], 0) for r in rows]
+    state["born"], state["gender"] = born, gender
 
     popularity = state["graph"].popularity
     # Aujourd'hui : notoriété actuelle (pages vues des 12 derniers mois), pas le score global qui favorise l'histoire.
