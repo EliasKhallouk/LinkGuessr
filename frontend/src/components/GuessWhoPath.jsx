@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, lifespan } from "../api";
-import CommonsImg from "./CommonsImg";
+import Avatar from "./Avatar";
 import { useI18n } from "../i18n/I18nProvider";
 import { capitalize } from "../lib/format";
 import DifficultyPicker from "./DifficultyPicker";
@@ -33,9 +33,7 @@ const HELP = {
 function Choice({ person, disabled, onPick }) {
   return (
     <button type="button" className="who-choice" disabled={disabled} onClick={() => onPick(person)}>
-      {person.image
-        ? <CommonsImg className="person-avatar" file={person.image} width={44} height={44} />
-        : <span className="person-avatar placeholder" style={{ width: 44, height: 44 }}>{person.name.charAt(0)}</span>}
+      <Avatar person={person} size={44} />
       <span className="person-text">
         <strong>{person.name}</strong>
         {person.description && <span className="person-desc">{person.description}</span>}

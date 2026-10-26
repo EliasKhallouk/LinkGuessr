@@ -1,5 +1,5 @@
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import CommonsImg from "./CommonsImg";
+import Avatar from "./Avatar";
 
 // Lien vers une fiche : ouvre le panneau latéral sans quitter la page (jeux, duels, défis) ;
 // sur une page /personne, mène à la page de l'autre personne.
@@ -26,13 +26,7 @@ export default function PersonChip({ person, showDescription = false, size = 40,
   if (!person) return null;
   return (
     <span className="person-chip">
-      {person.image ? (
-        <CommonsImg className="person-avatar" file={person.image} width={size} height={size} loading="lazy" />
-      ) : (
-        <span className="person-avatar placeholder" style={{ width: size, height: size }}>
-          {(person.name || "?").charAt(0)}
-        </span>
-      )}
+      <Avatar person={person} size={size} />
       <span className="person-text">
         <Link className="chemin-link" to={link.to} state={link.state}>{person.name}</Link>
         {showDescription && person.description && <span className="person-desc">{person.description}</span>}
