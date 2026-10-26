@@ -2,8 +2,10 @@
 
 /* ----- Hub : cartes de jeux ----- */
 .section-title { margin: 8px 0 12px; font-size: 20px; font-weight: 800; letter-spacing: -0.2px; }
+/* Deux colonnes au plus : les couleurs des icônes forment une diagonale (bleu, violet / violet, bleu). */
 .game-grid { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+  grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 600px) { .game-grid { grid-template-columns: 1fr; } }
 .game-card {
   height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 14px; align-content: start;
   padding: 18px; border-radius: var(--radius-lg); background: var(--panel-bg); border: 2px solid var(--border-color);
@@ -14,7 +16,8 @@
 .game-card:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--card-shade); }
 .game-card-icon { grid-row: 1 / span 2; width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center;
   background: var(--accent-soft); color: var(--accent-text); }
-.game-grid li:nth-child(even) .game-card-icon { background: var(--violet-soft); color: var(--violet-text); }
+.game-grid li:nth-child(4n + 2) .game-card-icon,
+.game-grid li:nth-child(4n + 3) .game-card-icon { background: var(--violet-soft); color: var(--violet-text); }
 .game-card-text { display: flex; flex-direction: column; gap: 4px; }
 .game-card-title { font-size: 18px; font-weight: 800; line-height: 1.25; }
 .game-card-pitch { font-size: 14px; line-height: 1.45; color: var(--text-secondary); }
