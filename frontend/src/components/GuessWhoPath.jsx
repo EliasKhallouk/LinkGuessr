@@ -22,7 +22,7 @@ export const ERAS = ["aujourdhui", "tous", "histoire"];
 // clues : phrases à trou qui relient la personne cachée à ses voisins.
 // L'API choisit aussi des énigmes plus simples en facile (liens forts, personne très connue, choix parmi 4).
 const HELP = {
-  facile: { tries: 3, clues: 0, domain: 0, life: 0 },
+  facile: { tries: 2, clues: 0, domain: 0, life: 0 },  // 2 essais pour 4 propositions : sinon on gagne presque à coup sûr
   moyen: { tries: 4, clues: 0, domain: 0, life: 1, initials: 2 },
   difficile: { tries: 4, domain: 1, clues: 2, initials: 3 },
   extreme: { tries: 4, domain: 1, life: 2, initials: 3 },

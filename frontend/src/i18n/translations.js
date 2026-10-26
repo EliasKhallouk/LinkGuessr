@@ -254,7 +254,7 @@ export const translations = {
       clues: "Ce qui la relie à ses voisins :",
       alsoRight: "{guess} est aussi relié aux deux : bonne réponse ! On pensait à {name}.",
       help: {
-        facile: "Choisis parmi 4 personnes. Les phrases qui la relient et les indices sont donnés dès le départ.",
+        facile: "Choisis parmi 4 personnes, en 2 essais. Les phrases qui la relient et les indices sont donnés dès le départ.",
         moyen: "Phrases à trou et domaine dès le départ, puis un indice de plus à chaque erreur.",
         difficile: "Un indice à chaque erreur. Toute personne reliée aux deux voisins est acceptée.",
         extreme: "Peu d'indices, et des personnes moins connues.",
@@ -624,7 +624,7 @@ export const translations = {
       clues: "What links them to their neighbours:",
       alsoRight: "{guess} is also linked to both: correct! We were thinking of {name}.",
       help: {
-        facile: "Pick one of 4 people. The linking sentences and hints are given from the start.",
+        facile: "Pick one of 4 people, in 2 tries. The linking sentences and hints are given from the start.",
         moyen: "Fill-in-the-blank sentences and field from the start, then one more hint per mistake.",
         difficile: "One hint per mistake. Anyone linked to both neighbours counts.",
         extreme: "Few hints, and less famous people.",
