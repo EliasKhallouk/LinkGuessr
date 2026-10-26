@@ -268,7 +268,7 @@ def _pick_around(difficulty: str, domain: str | None, era: str, length: int) -> 
                         chain.append(v)
             if len(chain) == length + 1:
                 return chain, k
-    raise HTTPException(404, "Aucune énigme trouvée pour ce niveau, réessayez")
+    raise HTTPException(404, "Aucune énigme trouvée pour ce niveau, réessaie")
 
 
 def _valid_middles(before: int, after: int) -> set[int]:

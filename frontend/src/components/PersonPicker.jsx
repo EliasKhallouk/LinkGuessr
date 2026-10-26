@@ -5,7 +5,7 @@ import CommonsImg from "./CommonsImg";
 
 // Champ de recherche d'une personne. `value` est un objet personne (ou null) ;
 // les suggestions affichent photo + description pour lever les homonymies.
-export default function PersonPicker({ id, label, value, onChange, placeholder = "Tapez un nom…", autoFocus }) {
+export default function PersonPicker({ id, label, value, onChange, placeholder = "Tape un nom…", autoFocus }) {
   const [text, setText] = useState(value?.name || "");
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);

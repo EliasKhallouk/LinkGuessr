@@ -440,7 +440,7 @@ def daily_pseudo(body: PseudoIn, request: Request):
     pseudo_limiter.check(request)
     pseudo = normalize_name(body.pseudo)
     if is_offensive(pseudo):
-        raise HTTPException(422, "Ce pseudo n'est pas accepté, choisissez-en un autre.")
+        raise HTTPException(422, "Ce pseudo n'est pas accepté, choisis-en un autre.")
     day = today()
     with pool.connection() as conn:
         attempt = conn.execute("SELECT solved FROM app.daily_attempt WHERE day = %s AND device = %s",

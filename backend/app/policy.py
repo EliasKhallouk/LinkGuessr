@@ -46,7 +46,7 @@ class RateLimiter:
     def check(self, request: Request) -> None:
         from fastapi import HTTPException
         if not self.allow(client_ip(request)):
-            raise HTTPException(429, "Trop de requêtes, réessayez dans un instant.")
+            raise HTTPException(429, "Trop de requêtes, réessaie dans un instant.")
 
 
 # Routes coûteuses (calcul de graphe ou requêtes lourdes) : par IP et par minute.
@@ -90,7 +90,7 @@ async def http_policy(request: Request, call_next):
     path = request.url.path
     for prefix, limiter in ([] if is_admin(request) else LIMITS):
         if path.startswith(prefix) and not limiter.allow(client_ip(request)):
-            return JSONResponse({"detail": "Trop de requêtes, réessayez dans un instant."}, status_code=429,
+            return JSONResponse({"detail": "Trop de requêtes, réessaie dans un instant."}, status_code=429,
                                 headers={"Retry-After": "30", "Cache-Control": "no-store"})
     response = await call_next(request)
     if request.method == "GET" and "cache-control" not in response.headers and response.status_code < 400:
