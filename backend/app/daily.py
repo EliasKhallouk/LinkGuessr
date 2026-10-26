@@ -32,6 +32,7 @@ from pydantic import BaseModel, Field
 from .config import ADMIN_TOKEN
 from .core import QID, id_of, path_details, pool, startup, state, summaries
 from .policy import RateLimiter
+from .text import normalize
 from .graph import PathResult
 from .moderation import is_offensive
 
@@ -74,6 +75,8 @@ FAMILIES = {
     "politique": "pouvoir", "militaire": "pouvoir", "noblesse": "pouvoir", "droit": "pouvoir", "religion": "pouvoir",
     "sciences": "savoirs", "sciences humaines": "savoirs", "éducation": "savoirs", "littérature": "savoirs",
 }
+# Métiers exclus des défis (jeu tout public) : acteur pornographique, camgirl, idole de vidéo pour adultes.
+EXCLUDED_OCCUPATIONS = ["Q488111", "Q1027930", "Q1079215"]
 ERAS = ["historique", "moderne"]  # la personnalité « sans rapport » : née avant 1900, ou d'un autre univers
 
 
@@ -105,29 +108,43 @@ def _pools() -> dict:
     with pool.connection() as conn:
         rows = conn.execute(
             """SELECT id, qid, name, birth_year, occupations, pageviews_12m FROM person
-               WHERE death_year IS NULL AND birth_year >= 1975 AND pageviews_12m >= %s AND occupations && %s""",
-            (YOUTH_MIN_VIEWS, sorted(RAP | WEB | {POP, FOOT})),
+               WHERE death_year IS NULL AND birth_year >= 1975 AND pageviews_12m >= %s AND occupations && %s
+                 AND NOT occupations && %s""",
+            (YOUTH_MIN_VIEWS, sorted(RAP | WEB | {POP, FOOT}), EXCLUDED_OCCUPATIONS),
         ).fetchall()
         youth = {r["id"]: {**r, "kind": kind} for r in rows if (kind := youth_kind(r))}
         for rank, i in enumerate(sorted(youth, key=lambda i: -youth[i]["pageviews_12m"])):
             youth[i]["fame"] = 1 - rank / len(youth)  # notoriété actuelle, parmi les jeunes
         ids = np.argsort(-state["graph"].popularity)[:CONTRAST_TOP].tolist()
         contrasts = {}
-        for r in conn.execute("SELECT id, qid, name, birth_year, primary_domain FROM person WHERE id = ANY(%s)",
-                              (ids,)).fetchall():
+        for r in conn.execute("""SELECT id, qid, name, birth_year, primary_domain FROM person
+                                 WHERE id = ANY(%s) AND NOT coalesce(occupations && %s, false)""",
+                              (ids, EXCLUDED_OCCUPATIONS)).fetchall():
             if r["birth_year"] is not None and r["birth_year"] <= 1900:
                 contrasts[r["id"]] = {**r, "era": "historique"}
             elif FAMILIES.get(r["primary_domain"]):
                 contrasts[r["id"]] = {**r, "era": "moderne"}
-    state["daily_pools"] = {"youth": youth, "contrasts": contrasts, "triplets": _triplets(youth, contrasts)}
+        # Personnes cachées possibles : leur nom (pour écarter les homonymes de famille) et les métiers exclus.
+        pop = state["graph"].popularity
+        middle_ids = np.flatnonzero(pop >= np.quantile(pop, 1 - MIDDLE_TOP)).tolist()
+        middles = {r["id"]: r["name"] for r in conn.execute(
+            """SELECT id, name FROM person WHERE id = ANY(%s) AND NOT coalesce(occupations && %s, false)""",
+            (middle_ids, EXCLUDED_OCCUPATIONS)).fetchall()}
+    state["daily_pools"] = {"youth": youth, "contrasts": contrasts,
+                            "triplets": _triplets(youth, contrasts, middles)}
     return state["daily_pools"]
 
 
-def _triplets(youth: dict, contrasts: dict) -> list[dict]:
-    """Tous les chemins jeune → intermédiaire connu → sans rapport, à distance exactement 2, avec leur score."""
+def surname(name: str) -> str:
+    return normalize(re.sub(r"\s*\(.*\)$", "", name or "")).split(" ")[-1]
+
+
+def _triplets(youth: dict, contrasts: dict, middles: dict[int, str]) -> list[dict]:
+    """Tous les chemins jeune → intermédiaire connu → sans rapport, à distance exactement 2, avec leur score.
+    On écarte les défis trop évidents où la personne cachée porte le nom de famille d'une des deux autres
+    (« Luca Zidane → ? » : son père)."""
     graph = state["graph"]
     csr, strong, pop = graph.csr["all"], graph.csr["strong"], graph.popularity
-    middle_min = float(np.quantile(pop, 1 - MIDDLE_TOP))
     neighbor_sets: dict[int, set] = {}
 
     def neighbors(v: int, g=csr) -> set:
@@ -140,13 +157,15 @@ def _triplets(youth: dict, contrasts: dict) -> list[dict]:
     for y, info in youth.items():
         ny, strong_y = neighbors(y), neighbors(y, strong)
         for m in ny:
-            if pop[m] < middle_min or m in contrasts or m in youth:
+            if m not in middles or m in contrasts or m in youth or surname(middles[m]) == surname(info["name"]):
                 continue
             strong_m = neighbors(m, strong)
             for c in csr.neighbors_of(m).tolist():
                 if c not in contrasts or c == y or c in ny:
                     continue
                 cinfo = contrasts[c]
+                if surname(middles[m]) == surname(cinfo["name"]):
+                    continue
                 alternatives = len(ny & neighbors(c))  # personnes possibles au milieu (la bonne comprise)
                 era = min(abs((info["birth_year"] or 2000) - (cinfo["birth_year"] or 2000)) / 400, 1.0)
                 strength = ((m in strong_y) + (c in strong_m)) / 2
