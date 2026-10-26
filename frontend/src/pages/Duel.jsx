@@ -50,26 +50,30 @@ export default function Duel() {
   return (
     <main className="page fade-in">
       <section className="panel duel-banner">
-        <div className="panel-body">
-          <p style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
-            {game === "relais"
-              ? (pair ? t("duel.relayIntro", { a: pair.from.name, b: pair.to.name, n: score }) : "…")
-              : game === "cache"
-                ? (found ? t("duel.whoFound", { n: tries }) : t("duel.whoLost"))
-                : t("duel.countIntro", { n: score })}
-          </p>
-          <p className="muted" style={{ margin: "4px 0 0" }}>{game === "cache" ? t("duel.whoCanYou") : t("duel.canYou")}</p>
+        <div className="panel-body duel-banner-body">
+          <div>
+            <p style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
+              {game === "relais"
+                ? (pair ? t("duel.relayIntro", { a: pair.from.name, b: pair.to.name, n: score }) : "…")
+                : game === "cache"
+                  ? (found ? t("duel.whoFound", { n: tries }) : t("duel.whoLost"))
+                  : t("duel.countIntro", { n: score })}
+            </p>
+            <p className="muted" style={{ margin: "4px 0 0" }}>{game === "cache" ? t("duel.whoCanYou") : t("duel.canYou")}</p>
+          </div>
+          <Link className="btn btn-ghost" to="/">{t("duel.otherGames")}</Link>
         </div>
       </section>
       {game === "relais" && pair && <ConnectRelay fixedPair={pair} rivalSteps={score} />}
       {game === "nombre" && <GuessRelations rivalScore={score} />}
       {game === "cache" && <GuessWhoPath puzzle={puzzle} rival={rival} />}
-      <section className="panel" style={{ marginTop: 16 }}>
+      {/* « Qui est caché ? » propose les autres jeux dans sa carte de fin de partie. */}
+      {game !== "cache" && <section className="panel" style={{ marginTop: 16 }}>
         <div className="panel-body toolbar" style={{ justifyContent: "space-between" }}>
           <span>{t("home.moreGames")}</span>
           <Link className="btn btn-primary" to="/">{t("home.discover")}</Link>
         </div>
-      </section>
+      </section>}
     </main>
   );
 }

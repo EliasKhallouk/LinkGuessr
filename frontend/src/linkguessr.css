@@ -218,3 +218,8 @@ body.drawer-open { overflow: hidden; }
 .who-choice .person-text { min-width: 0; }
 .who-choice .person-desc { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 520px) { .who-choices { grid-template-columns: 1fr; } }
+
+/* Lien de partage : bandeau du haut et invitation aux autres jeux en fin de partie */
+.duel-banner-body { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.more-games { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 12px; padding: 12px; border-radius: 10px; background: rgba(0, 217, 255, 0.08); border: 1px solid var(--border-hover); }

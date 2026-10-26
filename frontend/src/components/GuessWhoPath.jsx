@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, commonsThumb, lifespan } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
 import { capitalize } from "../lib/format";
@@ -65,10 +66,12 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
   const [topList, setTopList] = useState([]);
   const [shake, setShake] = useState(false);
 
+  // Énigme d'un ami : ni filtres ni classement, pour que la fin de partie reste visible.
   useEffect(() => {
+    if (puzzle) return;
     api.domains().then(setDomains).catch(() => {});
     api.top("degree", { limit: 10 }).then(setTopList).catch(() => {});
-  }, []);
+  }, [puzzle]);
 
   const fetchChallenge = useCallback(async () => {
     newRound(GAME);
@@ -243,6 +246,12 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
                   )}
                   <div style={{ marginTop: 8 }}><PersonChip person={challenge.answer} showDescription size={56} /></div>
                   {versus && <p style={{ margin: "8px 0 0", fontWeight: 600 }}>{versus}</p>}
+                  {puzzle && (
+                    <div className="more-games">
+                      <span>{t("home.moreGames")}</span>
+                      <Link className="btn btn-primary" to="/">{t("home.discover")}</Link>
+                    </div>
+                  )}
                   <div className="toolbar" style={{ marginTop: 8 }}>
                     <ShareButton text={shareText()} url={shareUrl()} label={t("share.challenge")}
                       onShared={() => track(GAME, "share", { found: Boolean(found), tries: attempts, difficulty })} />

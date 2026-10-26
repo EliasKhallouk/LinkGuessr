@@ -348,6 +348,7 @@ export const translations = {
       whoLost: "Ton ami n'a pas trouvé la personne cachée…",
       whoCanYou: "Et toi, tu trouves ?",
       whoWorse: "Ton ami a fait mieux. Revanche ?",
+      otherGames: "Autres jeux →",
     },
     feedback: {
       question: "Ça t'a plu ?",
@@ -715,6 +716,7 @@ export const translations = {
       whoLost: "Your friend couldn't find the hidden person…",
       whoCanYou: "Can you?",
       whoWorse: "Your friend did better. Rematch?",
+      otherGames: "Other games →",
     },
     feedback: {
       question: "Did you enjoy it?",
