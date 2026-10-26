@@ -249,6 +249,16 @@ export const translations = {
       answerWas: "La réponse était\u00A0:",
       topTitle: "Les personnes les plus connectées",
       links: "liens",
+      clues: "Ce qui la relie à ses voisins :",
+      hintPhoto: "Photo :",
+      alsoRight: "{guess} est aussi relié aux deux : bonne réponse ! On pensait à {name}.",
+      help: {
+        facile: "Choisis parmi 4 personnes. Les phrases qui la relient et les indices sont donnés dès le départ.",
+        moyen: "Phrases à trou et domaine dès le départ, puis un indice de plus à chaque erreur.",
+        difficile: "Un indice à chaque erreur. Toute personne reliée aux deux voisins est acceptée.",
+        extreme: "Peu d'indices, et des personnes moins connues.",
+        humain: "Aucun indice. Seulement 3 essais. Bonne chance.",
+      },
     },
     person: {
       positions: "Fonctions",
@@ -601,6 +611,16 @@ export const translations = {
       answerWas: "The answer was:",
       topTitle: "Most connected people",
       links: "links",
+      clues: "What links them to their neighbours:",
+      hintPhoto: "Photo:",
+      alsoRight: "{guess} is also linked to both: correct! We were thinking of {name}.",
+      help: {
+        facile: "Pick one of 4 people. The linking sentences and hints are given from the start.",
+        moyen: "Fill-in-the-blank sentences and field from the start, then one more hint per mistake.",
+        difficile: "One hint per mistake. Anyone linked to both neighbours counts.",
+        extreme: "Few hints, and less famous people.",
+        humain: "No hints. Only 3 tries. Good luck.",
+      },
     },
     person: {
       positions: "Positions",

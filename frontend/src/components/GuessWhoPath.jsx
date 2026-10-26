@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { api, lifespan } from "../api";
+import { api, commonsThumb, lifespan } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
 import { capitalize } from "../lib/format";
 import DifficultyPicker from "./DifficultyPicker";
-import PathView from "./PathView";
+import PathView, { Snippet } from "./PathView";
 import PersonChip from "./PersonChip";
 import PersonPicker from "./PersonPicker";
 import { newRound, track } from "../lib/tracking";
@@ -12,7 +12,32 @@ import TriesTiles from "./TriesTiles";
 import { confetti } from "../lib/confetti";
 
 const GAME = "guess_who";
-const MAX_TRIES = 4; // après 4 erreurs, la réponse est révélée
+
+// Aides selon le niveau : chaque indice apparaît après ce nombre d'erreurs (0 : dès le départ, absent : jamais).
+// clues : phrases à trou qui relient la personne cachée à ses voisins ; photo : sa photo floutée.
+// L'API choisit aussi des énigmes plus simples en facile (liens forts, personne très connue, choix parmi 4).
+const HELP = {
+  facile: { tries: 3, clues: 0, domain: 0, life: 0 },
+  moyen: { tries: 4, clues: 0, domain: 0, life: 1, photo: 2, initials: 3 },
+  difficile: { tries: 4, domain: 1, clues: 2, initials: 3 },
+  extreme: { tries: 4, domain: 1, life: 2, initials: 3 },
+  humain: { tries: 3 },
+};
+
+function Choice({ person, disabled, onPick }) {
+  const thumb = commonsThumb(person.image, 96);
+  return (
+    <button type="button" className="who-choice" disabled={disabled} onClick={() => onPick(person)}>
+      {thumb
+        ? <img className="person-avatar" src={thumb} alt="" width={44} height={44} />
+        : <span className="person-avatar placeholder" style={{ width: 44, height: 44 }}>{person.name.charAt(0)}</span>}
+      <span className="person-text">
+        <strong>{person.name}</strong>
+        {person.description && <span className="person-desc">{person.description}</span>}
+      </span>
+    </button>
+  );
+}
 
 export default function GuessWhoPath() {
   const { t } = useI18n();
@@ -22,8 +47,9 @@ export default function GuessWhoPath() {
   const [challenge, setChallenge] = useState(null);
   const [guess, setGuess] = useState(null);
   const [tries, setTries] = useState(0);
-  const [found, setFound] = useState(false);
-  const [lastWrong, setLastWrong] = useState(null);
+  const [found, setFound] = useState(null);       // la personne trouvée (la réponse attendue ou une autre bonne)
+  const [wrong, setWrong] = useState([]);         // réponses fausses déjà données
+  const [checking, setChecking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [topList, setTopList] = useState([]);
@@ -40,8 +66,8 @@ export default function GuessWhoPath() {
     setError(null);
     setGuess(null);
     setTries(0);
-    setFound(false);
-    setLastWrong(null);
+    setFound(null);
+    setWrong([]);
     try {
       setChallenge(await api.randomPath({ difficulty, domain }));
     } catch (e) {
@@ -53,29 +79,54 @@ export default function GuessWhoPath() {
 
   useEffect(() => { fetchChallenge(); }, [fetchChallenge]);
 
-  const validate = () => {
-    if (!guess || !challenge || found) return;
+  const help = HELP[difficulty];
+  const maxTries = help.tries;
+
+  // Toute personne liée aux deux voisins de la personne cachée est une bonne réponse
+  // (les mauvaises propositions du choix multiple ne le sont jamais : l'API les écarte).
+  const isRight = async (person) => {
+    if (person.qid === challenge.answer.qid) return true;
+    if (challenge.choices || challenge.path.includes(person.qid)) return false;
+    const { path, masked_index: m } = challenge;
+    try {
+      return (await api.checkHidden(path[m - 1], path[m + 1], person.qid)).ok;
+    } catch {
+      return false;
+    }
+  };
+
+  const answer = async (person) => {
+    if (!person || !challenge || found || checking) return;
     track(GAME, "start", { difficulty });
-    const ok = guess.qid === challenge.answer.qid;
+    setChecking(true);
+    const ok = await isRight(person);
+    setChecking(false);
     const newTries = tries + (ok ? 0 : 1);
     setTries(newTries);
-    if (ok) setFound(true);
-    else setLastWrong(guess);
-    if (ok) confetti();
-    else setShake(true);
     setGuess(null);
-    if (ok || newTries >= MAX_TRIES) {
+    if (ok) {
+      setFound(person);
+      confetti();
+    } else {
+      setWrong((w) => [...w, person]);
+      setShake(true);
+    }
+    if (ok || newTries >= maxTries) {
       track(GAME, "finish", {
-        answer: challenge.answer.qid, path: challenge.path, tries: newTries, found: ok, difficulty, domain: domain || null,
+        answer: challenge.answer.qid, guessed: ok ? person.qid : null, path: challenge.path, tries: newTries,
+        found: ok, difficulty, domain: domain || null,
       });
     }
   };
 
-  const revealed = found || tries >= MAX_TRIES;
+  const revealed = Boolean(found) || tries >= maxTries;
+  const shown = (hint) => help[hint] != null && tries >= help[hint];
   const hints = challenge?.hints;
   const persons = challenge && (revealed ? { ...challenge.persons, [challenge.answer.qid]: challenge.answer } : challenge.persons);
   // Une fois la réponse donnée, on montre aussi pourquoi la personne cachée est reliée à ses voisins.
   const hops = challenge && (revealed ? { ...challenge.hops, ...challenge.answer_hops } : challenge.hops);
+  const clues = (challenge?.clues || []).filter((c) => c.relation || c.snippet);
+  const lastWrong = wrong[wrong.length - 1];
 
   return (
     <>
@@ -92,24 +143,59 @@ export default function GuessWhoPath() {
           </div>
         </div>
         <div className="panel-body">
+          <p className="muted who-level-help">{t(`who.help.${difficulty}`)}</p>
           {error && <div className="error-box"><p style={{ margin: 0 }}>{error}</p></div>}
           {!challenge ? (
             <p className="muted" style={{ margin: 0 }}>{t("guess.loadingPeople")}</p>
           ) : (
             <>
               <div className="tries-row" style={{ marginBottom: 8 }}>
-                <TriesTiles total={MAX_TRIES} wrong={tries} solved={found}
-                  label={found ? t("guess.good") : t("daily.triesLeft", { n: MAX_TRIES - tries })} />
-                {!revealed && <span className="muted tries-left" aria-hidden="true">{t("daily.triesLeft", { n: MAX_TRIES - tries })}</span>}
+                <TriesTiles total={maxTries} wrong={tries} solved={Boolean(found)}
+                  label={found ? t("guess.good") : t("daily.triesLeft", { n: maxTries - tries })} />
+                {!revealed && <span className="muted tries-left" aria-hidden="true">{t("daily.triesLeft", { n: maxTries - tries })}</span>}
               </div>
               <PathView path={challenge.path} persons={persons} hops={hops}
                 hiddenIndex={revealed ? null : challenge.masked_index} />
 
-              {!revealed && (
+              {!revealed && shown("clues") && clues.length > 0 && (
+                <div className="who-clues">
+                  <p className="muted" style={{ margin: "0 0 4px" }}>{t("who.clues")}</p>
+                  <ul>
+                    {clues.map((c) => (
+                      <li key={c.with}>
+                        {c.relation && <strong className="hop-relation">{c.relation}</strong>}
+                        {c.snippet && <Snippet text={c.snippet} />}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {!revealed && (shown("domain") || shown("life") || shown("photo") || shown("initials")) && (
+                <ul className="hints">
+                  {shown("domain") && hints.domain && <li>{t("who.hintDomain")} <strong>{capitalize(hints.domain)}</strong></li>}
+                  {shown("life") && hints.birth_year && <li>{t("who.hintLife")} <strong>{lifespan(hints)}</strong></li>}
+                  {shown("photo") && challenge.answer.image && (
+                    <li>{t("who.hintPhoto")} <img className="who-blur" src={commonsThumb(challenge.answer.image, 160)} alt="" width={64} height={64} /></li>
+                  )}
+                  {shown("initials") && <li>{t("who.hintInitials")} <strong>{hints.initials}</strong> ({hints.name_length} {t("who.chars")})</li>}
+                </ul>
+              )}
+
+              {!revealed && challenge.choices && (
+                <div className={`who-choices ${shake ? "shake" : ""}`} onAnimationEnd={() => setShake(false)}>
+                  {challenge.choices.map((p) => (
+                    <Choice key={p.qid} person={p} onPick={answer}
+                      disabled={checking || wrong.some((w) => w.qid === p.qid)} />
+                  ))}
+                </div>
+              )}
+
+              {!revealed && !challenge.choices && (
                 <form className={`row ${shake ? "shake" : ""}`} style={{ alignItems: "end" }} onAnimationEnd={(e) => { if (e.target === e.currentTarget) setShake(false); }}
-                  onSubmit={(e) => { e.preventDefault(); validate(); }}>
+                  onSubmit={(e) => { e.preventDefault(); answer(guess); }}>
                   <PersonPicker id="who-guess" label={t("who.question")} value={guess} onChange={setGuess} />
-                  <div><button type="submit" className="btn btn-primary" disabled={!guess}>{t("guess.verify")}</button></div>
+                  <div><button type="submit" className="btn btn-primary" disabled={!guess || checking}>{t("guess.verify")}</button></div>
                 </form>
               )}
 
@@ -117,17 +203,12 @@ export default function GuessWhoPath() {
                 <p style={{ color: "var(--danger)", fontWeight: 600 }}>{t("who.notThisOne", { name: lastWrong.name })}</p>
               )}
 
-              {!revealed && tries > 0 && (
-                <ul className="hints">
-                  {tries >= 1 && hints.domain && <li>{t("who.hintDomain")} <strong>{capitalize(hints.domain)}</strong></li>}
-                  {tries >= 2 && hints.birth_year && <li>{t("who.hintLife")} <strong>{lifespan(hints)}</strong></li>}
-                  {tries >= 3 && <li>{t("who.hintInitials")} <strong>{hints.initials}</strong> ({hints.name_length} {t("who.chars")})</li>}
-                </ul>
-              )}
-
               {revealed && (
                 <div className={found ? "success-box" : "panel result-box"} style={{ marginTop: 12 }}>
                   <p style={{ margin: 0, fontWeight: 600 }}>{found ? t("guess.good") : t("who.answerWas")}</p>
+                  {found && found.qid !== challenge.answer.qid && (
+                    <p style={{ margin: "6px 0 0" }}>{t("who.alsoRight", { guess: found.name, name: challenge.answer.name })}</p>
+                  )}
                   <div style={{ marginTop: 8 }}><PersonChip person={challenge.answer} showDescription size={56} /></div>
                   <button className="btn" style={{ marginTop: 8 }} onClick={fetchChallenge}>{t("guess.next")}</button>
                   <Feedback game={GAME} />
