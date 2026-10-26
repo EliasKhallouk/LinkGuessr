@@ -19,7 +19,7 @@ export default function LegalNotice() {
                 l'avoir communiquée à l'hébergeur (LCEN, art. 6-III-2). Aucune adresse n'est publiée ici. */}
           </p>
           <p>
-            Contact : <a className="chemin-link" href="mailto:linkguessr@gmail.com">linkguessr@gmail.com</a>
+            Contact : <a className="chemin-link" href="mailto:contact@linkguessr.com">contact@linkguessr.com</a>
             {" "}(voir aussi la page <Link className="chemin-link" to="/contact">Contact</Link>).
           </p>
 

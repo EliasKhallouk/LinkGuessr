@@ -18,7 +18,7 @@ export default function Privacy() {
           <p>{t("pages.privacy.local")}</p>
           <p>{t("pages.privacy.p3")}</p>
           <p>
-            {t("pages.privacy.p4prefix")} <a className="chemin-link" href="mailto:linkguessr@gmail.com">linkguessr@gmail.com</a>.
+            {t("pages.privacy.p4prefix")} <a className="chemin-link" href="mailto:contact@linkguessr.com">contact@linkguessr.com</a>.
           </p>
         </div>
       </section>

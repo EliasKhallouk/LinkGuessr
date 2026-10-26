@@ -14,7 +14,7 @@ export default function Contact() {
           <div className="panel-body">
             <p>{t("pages.contact.p1")}</p>
             <p style={{ marginTop: 8 }}>
-              {t("pages.contact.emailLabel")} <a className="chemin-link" href="mailto:linkguessr@gmail.com">linkguessr@gmail.com</a>
+              {t("pages.contact.emailLabel")} <a className="chemin-link" href="mailto:contact@linkguessr.com">contact@linkguessr.com</a>
             </p>
             <p style={{ marginTop: 8 }}>{t("pages.contact.socials")}</p>
           </div>
