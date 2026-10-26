@@ -1,11 +1,12 @@
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { commonsThumb } from "../api";
 import { apiUrl } from "../config";
 import PersonPicker from "../components/PersonPicker";
 
-const KINDS = { rap: "🎤 rap", web: "📱 web", pop: "🎵 pop", foot: "⚽ foot" };
-const ERAS = { historique: "🏛️ historique", moderne: "🌍 moderne" };
+const KINDS = { rap: ["🎤", "rap"], web: ["📱", "web"], pop: ["🎵", "pop"], foot: ["⚽", "foot"] };
+const ERAS = { historique: ["🏛️", "personnalité historique"], moderne: ["🌍", "personnalité moderne d'un autre univers"] };
 
 function readToken() {
   try { return sessionStorage.getItem("lg-admin") || ""; } catch { return ""; }
@@ -23,25 +24,63 @@ async function adminCall(token, path, { method = "GET", body } = {}) {
   return data;
 }
 
-function Mini({ person, hidden }) {
-  if (!person) return null;
+// Une personne : avatar + nom tronqué, dans une colonne de largeur fixe pour que tout s'aligne d'une ligne à l'autre.
+function Person({ person, hidden }) {
+  if (!person) return <span className="muted">—</span>;
   return (
-    <span className={`admin-person ${hidden ? "is-hidden" : ""}`} title={person.description || ""}>
+    <span className={`admin-person ${hidden ? "is-hidden" : ""}`} title={`${person.name}${person.description ? ` — ${person.description}` : ""}`}>
       {person.image
-        ? <img src={commonsThumb(person.image, 48)} alt="" width={24} height={24} />
-        : <span className="person-avatar placeholder" style={{ width: 24, height: 24 }}>{person.name.charAt(0)}</span>}
-      <span>{hidden ? <strong>[{person.name}]</strong> : person.name}</span>
+        ? <img src={commonsThumb(person.image, 56)} alt="" width={28} height={28} loading="lazy" />
+        : <span className="person-avatar placeholder" style={{ width: 28, height: 28 }}>{person.name.charAt(0)}</span>}
+      <span className="admin-person-name">{person.name}</span>
     </span>
   );
 }
 
-function Path({ path, masked = 1 }) {
+// Menu « ⋯ » : affiché par-dessus la page (portail) pour ne pas être coupé par le défilement du tableau.
+function RowMenu({ items }) {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState(null);
+  const button = useRef(null);
+  const menu = useRef(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const r = button.current.getBoundingClientRect();
+    setPosition({ top: r.bottom + 4, right: window.innerWidth - r.right });
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (e) => { if (!menu.current?.contains(e.target) && !button.current?.contains(e.target)) setOpen(false); };
+    const closeOnKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    const closeOnScroll = () => setOpen(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", closeOnKey);
+    window.addEventListener("scroll", closeOnScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", closeOnKey);
+      window.removeEventListener("scroll", closeOnScroll, true);
+    };
+  }, [open]);
+
   return (
-    <span className="admin-path">
-      {path.map((p, i) => (
-        <span key={p.qid}>{i > 0 && " → "}<Mini person={p} hidden={i === masked} /></span>
-      ))}
-    </span>
+    <>
+      <button ref={button} className="btn btn-ghost admin-more" aria-label="Plus d'actions" aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}>⋯</button>
+      {open && position && createPortal(
+        <ul ref={menu} className="admin-menu" style={{ top: position.top, right: position.right }}>
+          {items.filter(Boolean).map((item) => (
+            <li key={item.label}>
+              <button className={item.danger ? "is-danger" : ""} disabled={item.disabled}
+                onClick={() => { setOpen(false); item.onClick(); }}>{item.label}</button>
+            </li>
+          ))}
+        </ul>,
+        document.body,
+      )}
+    </>
   );
 }
 
@@ -53,9 +92,9 @@ function ManualEditor({ onSave, onCancel }) {
   return (
     <div className="admin-editor">
       <div className="row" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
-        <PersonPicker id="adm-youth" label="Star (à gauche)" value={youth} onChange={setYouth} />
+        <PersonPicker id="adm-youth" label="Star" value={youth} onChange={setYouth} />
         <PersonPicker id="adm-middle" label="Personne cachée" value={middle} onChange={setMiddle} />
-        <PersonPicker id="adm-contrast" label="Sans rapport (à droite)" value={contrast} onChange={setContrast} />
+        <PersonPicker id="adm-contrast" label="Sans rapport" value={contrast} onChange={setContrast} />
       </div>
       <div className="toolbar" style={{ marginTop: 8 }}>
         <button className="btn btn-primary" disabled={!youth || !middle || !contrast}
@@ -66,6 +105,8 @@ function ManualEditor({ onSave, onCancel }) {
   );
 }
 
+const COLUMNS = 7; // poignée, n°, jour, star, cachée, sans rapport, actions
+
 export default function AdminDaily() {
   const [token, setToken] = useState(readToken);
   const [data, setData] = useState(null);
@@ -73,7 +114,6 @@ export default function AdminDaily() {
   const [busy, setBusy] = useState(null);         // jour en cours de modification
   const [open, setOpen] = useState({});           // { "2026-11-02": "candidates" | "edit" }
   const [candidates, setCandidates] = useState({});
-  const [selected, setSelected] = useState([]);   // jours cochés pour l'échange
 
   const load = useCallback(async () => {
     setError(null);
@@ -94,6 +134,7 @@ export default function AdminDaily() {
     try {
       await adminCall(token, path, options);
       setOpen((o) => ({ ...o, [day]: null }));
+      setCandidates({});
       await load();
     } catch (e) {
       setError(`${day} : ${e.message}`);
@@ -102,8 +143,10 @@ export default function AdminDaily() {
     }
   };
 
+  const toggle = (day, panel) => setOpen((o) => ({ ...o, [day]: o[day] === panel ? null : panel }));
+
   const showCandidates = async (day) => {
-    setOpen((o) => ({ ...o, [day]: o[day] === "candidates" ? null : "candidates" }));
+    toggle(day, "candidates");
     if (!candidates[day]) {
       try {
         const res = await adminCall(token, `/${day}/candidates?limit=10`);
@@ -120,22 +163,19 @@ export default function AdminDaily() {
   const [dragged, setDragged] = useState(null);
   const [over, setOver] = useState(null);
   const movable = (d) => d.editable && d.path;
+  const move = (source, target) => act(source, "/move", { method: "POST", body: { source, target } });
   const drop = (target) => {
     const source = dragged;
     setDragged(null);
     setOver(null);
     setArmed(null);
-    if (source && source !== target) act(source, "/move", { method: "POST", body: { source, target } });
+    if (source && source !== target) move(source, target);
   };
-
-  // Monter / descendre (téléphone, où le glisser-déposer n'existe pas) : échange avec le jour voisin.
+  // Avancer / reculer d'un jour (menu ⋯, utile sur téléphone où le glisser-déposer n'existe pas).
   const neighbor = (index, step) => {
     const other = data?.days[index + step];
-    return other && other.editable && other.path ? other.day : null;
+    return other && movable(other) ? other.day : null;
   };
-  const move = (day, other) => act(day, "/swap", { method: "POST", body: { a: day, b: other } });
-
-  const toggleSelect = (day) => setSelected((s) => (s.includes(day) ? s.filter((d) => d !== day) : [...s, day].slice(-2)));
 
   return (
     <main className="page admin-daily">
@@ -148,17 +188,10 @@ export default function AdminDaily() {
           <form className="toolbar" onSubmit={(e) => { e.preventDefault(); load(); }}>
             <input type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder="Jeton admin" />
             <button className="btn" type="submit">Charger</button>
-            <button className="btn btn-primary" type="button" disabled={selected.length !== 2}
-              onClick={() => act(selected[0], "/swap", { method: "POST", body: { a: selected[0], b: selected[1] } })
-                .then(() => setSelected([]))}>
-              Interchanger les 2 jours cochés
-            </button>
           </form>
           <p className="muted" style={{ marginBottom: 0 }}>
-            Glisse une ligne par sa poignée ⠿ pour la déplacer (les autres se décalent).
-            Recette : star jeune → <strong>[personne cachée]</strong> → personnalité sans rapport. Un défi modifié à la main
-            est verrouillé 🔒 : la génération automatique de la nuit n'y touche plus. Le jour en cours et les jours passés
-            ne peuvent plus changer.
+            Glisse une ligne par sa poignée ⠿ pour la déplacer. 🔒 : verrouillé, la génération de la nuit n'y touche pas.
+            Le jour en cours et les jours passés ne peuvent plus changer.
           </p>
           {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
         </div>
@@ -166,95 +199,90 @@ export default function AdminDaily() {
 
       {data && (
         <section className="panel" style={{ marginTop: 12 }}>
-          <div className="panel-body" style={{ overflowX: "auto" }}>
+          <div className="panel-body admin-scroll">
             <table className="table admin-table">
-              <thead><tr><th></th><th>#</th><th>Jour</th><th>Profil</th><th>Défi</th><th>Joueurs</th><th>Actions</th></tr></thead>
+              <colgroup>
+                <col className="col-handle" /><col className="col-number" /><col className="col-day" />
+                <col className="col-person" /><col className="col-person" /><col className="col-person" /><col className="col-actions" />
+              </colgroup>
+              <thead>
+                <tr><th></th><th>#</th><th>Jour</th><th>Star</th><th>Personne cachée</th><th>Sans rapport</th><th></th></tr>
+              </thead>
               <tbody>
-                {data.days.map((d, index) => (
-                  <Fragment key={d.day}>
-                    <tr
-                      className={[d.current ? "is-current" : !d.editable ? "is-past" : "", dragged === d.day ? "is-dragged" : "",
-                        over === d.day && dragged && dragged !== d.day ? (dragged < d.day ? "drop-after" : "drop-before") : ""].join(" ")}
-                      draggable={armed === d.day}
-                      onDragStart={(e) => { setDragged(d.day); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", d.day); }}
-                      onDragOver={(e) => { if (dragged && movable(d)) { e.preventDefault(); setOver(d.day); } }}
-                      onDrop={(e) => { e.preventDefault(); if (dragged && movable(d)) drop(d.day); }}
-                      onDragEnd={() => { setDragged(null); setOver(null); setArmed(null); }}
-                    >
-                      <td className="admin-handle-cell">
-                        {movable(d) && (
-                          <span className="admin-handle" title="Glisser pour déplacer" onMouseDown={() => setArmed(d.day)}
-                            onMouseUp={() => setArmed(null)}>⠿</span>
-                        )}
-                        {movable(d) && (
-                          <input type="checkbox" checked={selected.includes(d.day)} onChange={() => toggleSelect(d.day)}
-                            aria-label="Sélectionner pour interchanger" />)}
-                      </td>
-                      <td>{d.number}</td>
-                      <td>{new Date(`${d.day}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })}
-                        {d.current && <span className="tag" style={{ marginLeft: 6 }}>en cours</span>}</td>
-                      <td className="muted">{KINDS[d.profile.kind]}<br />{ERAS[d.profile.era]}</td>
-                      <td>{d.path ? <>{d.locked && "🔒 "}<Path path={d.path} masked={d.masked_index} /></>
-                        : <span className="muted">Aucun défi</span>}</td>
-                      <td className="muted">{d.players ? `${d.players} (${d.solved} ✔)` : "—"}</td>
-                      <td>
-                        {d.editable ? (
-                          <div className="toolbar admin-actions">
-                            {d.path && (
-                              <span className="admin-arrows">
-                                <button className="btn btn-ghost" title="Avancer d'un jour" disabled={!neighbor(index, -1) || busy === d.day}
-                                  onClick={() => move(d.day, neighbor(index, -1))}>▲</button>
-                                <button className="btn btn-ghost" title="Reculer d'un jour" disabled={!neighbor(index, 1) || busy === d.day}
-                                  onClick={() => move(d.day, neighbor(index, 1))}>▼</button>
-                              </span>
-                            )}
-                            {d.path && (
-                              <>
-                                <button className="btn btn-ghost" title="Inverser la gauche et la droite" disabled={busy === d.day}
-                                  onClick={() => act(d.day, `/${d.day}/flip`, { method: "POST" })}>⇄</button>
-                              </>
-                            )}
-                            <button className="btn" disabled={busy === d.day} onClick={() => act(d.day, `/${d.day}/regenerate`, { method: "POST" })}>Régénérer</button>
-                            <button className="btn" onClick={() => showCandidates(d.day)}>Propositions</button>
-                            <button className="btn" onClick={() => setOpen((o) => ({ ...o, [d.day]: o[d.day] === "edit" ? null : "edit" }))}>Modifier</button>
-                            {d.path && (
-                              <button className="btn btn-ghost" onClick={() => act(d.day, `/${d.day}/lock`, { method: "POST", body: { locked: !d.locked } })}>
-                                {d.locked ? "Déverrouiller" : "Verrouiller"}
-                              </button>
-                            )}
-                            {d.path && (
-                              <button className="btn btn-ghost" onClick={() => act(d.day, `/${d.day}`, { method: "DELETE" },
-                                `Supprimer le défi #${d.number} ? La génération de la nuit remplira ce jour.`)}>Supprimer</button>
-                            )}
-                          </div>
-                        ) : <span className="muted">—</span>}
-                      </td>
-                    </tr>
-                    {open[d.day] === "candidates" && (
-                      <tr><td colSpan={7}>
-                        {!candidates[d.day] ? <span className="muted">Calcul des propositions…</span> : (
-                          <ul className="admin-candidates">
-                            {candidates[d.day].map((c, i) => (
-                              <li key={i}>
-                                <Path path={c.path} />
-                                <span className="muted"> · {KINDS[c.kind]} · {ERAS[c.era]} · {c.alternatives} possible(s) · score {c.score}</span>
-                                <button className="btn" onClick={() => act(d.day, `/${d.day}/set`, { method: "POST",
-                                  body: { youth: c.path[0].qid, middle: c.path[1].qid, contrast: c.path[2].qid } })}>Choisir</button>
-                              </li>
-                            ))}
-                            {candidates[d.day].length === 0 && <li className="muted">Aucune proposition.</li>}
-                          </ul>
-                        )}
-                      </td></tr>
-                    )}
-                    {open[d.day] === "edit" && (
-                      <tr><td colSpan={7}>
-                        <ManualEditor onCancel={() => setOpen((o) => ({ ...o, [d.day]: null }))}
-                          onSave={(body) => act(d.day, `/${d.day}/set`, { method: "POST", body })} />
-                      </td></tr>
-                    )}
-                  </Fragment>
-                ))}
+                {data.days.map((d, index) => {
+                  const [kindIcon, kindLabel] = KINDS[d.profile.kind];
+                  const [eraIcon, eraLabel] = ERAS[d.profile.era];
+                  const rowClass = [d.current ? "is-current" : !d.editable ? "is-past" : "",
+                    dragged === d.day ? "is-dragged" : "",
+                    over === d.day && dragged && dragged !== d.day ? (dragged < d.day ? "drop-after" : "drop-before") : ""].join(" ");
+                  return (
+                    <Fragment key={d.day}>
+                      <tr className={rowClass}
+                        draggable={armed === d.day}
+                        onDragStart={(e) => { setDragged(d.day); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", d.day); }}
+                        onDragOver={(e) => { if (dragged && movable(d)) { e.preventDefault(); setOver(d.day); } }}
+                        onDrop={(e) => { e.preventDefault(); if (dragged && movable(d)) drop(d.day); }}
+                        onDragEnd={() => { setDragged(null); setOver(null); setArmed(null); }}>
+                        <td>{movable(d) && (
+                          <span className="admin-handle" title="Glisser pour déplacer"
+                            onMouseDown={() => setArmed(d.day)} onMouseUp={() => setArmed(null)}>⠿</span>)}</td>
+                        <td className="admin-number">{d.number}{d.locked && <span title="Verrouillé"> 🔒</span>}</td>
+                        <td className="admin-day">
+                          <span>{new Date(`${d.day}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })}</span>
+                          <span className="admin-profile" title={`${kindLabel} · ${eraLabel}`}>{kindIcon}{eraIcon}</span>
+                          {d.current && <span className="tag">en cours</span>}
+                          {d.players > 0 && <span className="muted admin-players" title="joueurs · trouvé">{d.players} · {d.solved} ✔</span>}
+                        </td>
+                        {d.path
+                          ? d.path.map((p, i) => <td key={p.qid}><Person person={p} hidden={i === d.masked_index} /></td>)
+                          : <td colSpan={3} className="muted">Aucun défi</td>}
+                        <td className="admin-actions">
+                          {d.editable && (
+                            <>
+                              <button className="btn" disabled={busy === d.day}
+                                onClick={() => act(d.day, `/${d.day}/regenerate`, { method: "POST" })}>Régénérer</button>
+                              <RowMenu items={[
+                                { label: "Propositions…", onClick: () => showCandidates(d.day) },
+                                { label: "Modifier à la main…", onClick: () => toggle(d.day, "edit") },
+                                d.path && { label: "Inverser gauche ⇄ droite", onClick: () => act(d.day, `/${d.day}/flip`, { method: "POST" }) },
+                                d.path && { label: "Avancer d'un jour ▲", disabled: !neighbor(index, -1), onClick: () => move(d.day, neighbor(index, -1)) },
+                                d.path && { label: "Reculer d'un jour ▼", disabled: !neighbor(index, 1), onClick: () => move(d.day, neighbor(index, 1)) },
+                                d.path && { label: d.locked ? "Déverrouiller" : "Verrouiller",
+                                  onClick: () => act(d.day, `/${d.day}/lock`, { method: "POST", body: { locked: !d.locked } }) },
+                                d.path && { label: "Supprimer", danger: true, onClick: () => act(d.day, `/${d.day}`, { method: "DELETE" },
+                                  `Supprimer le défi #${d.number} ? La génération de la nuit remplira ce jour.`) },
+                              ]} />
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                      {open[d.day] === "candidates" && (
+                        <tr className="admin-panel-row"><td colSpan={COLUMNS}>
+                          {!candidates[d.day] ? <span className="muted">Calcul des propositions…</span> : (
+                            <div className="admin-candidates">
+                              {candidates[d.day].map((c, i) => (
+                                <Fragment key={i}>
+                                  {c.path.map((p, k) => <Person key={p.qid} person={p} hidden={k === 1} />)}
+                                  <span className="muted" title={`${KINDS[c.kind][1]} · ${ERAS[c.era][1]}`}>
+                                    {KINDS[c.kind][0]}{ERAS[c.era][0]} · {c.alternatives} possible{c.alternatives > 1 ? "s" : ""}</span>
+                                  <button className="btn" onClick={() => act(d.day, `/${d.day}/set`, { method: "POST",
+                                    body: { youth: c.path[0].qid, middle: c.path[1].qid, contrast: c.path[2].qid } })}>Choisir</button>
+                                </Fragment>
+                              ))}
+                              {candidates[d.day].length === 0 && <span className="muted">Aucune proposition.</span>}
+                            </div>
+                          )}
+                        </td></tr>
+                      )}
+                      {open[d.day] === "edit" && (
+                        <tr className="admin-panel-row"><td colSpan={COLUMNS}>
+                          <ManualEditor onCancel={() => toggle(d.day, "edit")}
+                            onSave={(body) => act(d.day, `/${d.day}/set`, { method: "POST", body })} />
+                        </td></tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

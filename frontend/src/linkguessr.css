@@ -158,28 +158,47 @@ body.drawer-open { overflow: hidden; }
 .home-intro p { margin: 0; color: var(--text-secondary); max-width: 720px; line-height: 1.5; }
 
 /* ----- Gestion des défis du jour ----- */
-.admin-daily .page { max-width: 1200px; }
 .admin-daily { max-width: 1200px; }
-.admin-table td { vertical-align: top; }
+.admin-scroll { overflow-x: auto; padding: 0; }
+/* Colonnes fixes : chaque personne est à la même place sur toutes les lignes */
+.admin-table { table-layout: fixed; width: 100%; min-width: 860px; }
+.admin-table .col-handle { width: 32px; }
+.admin-table .col-number { width: 56px; }
+.admin-table .col-day { width: 150px; }
+.admin-table .col-actions { width: 136px; }
+.admin-table td { vertical-align: middle; padding-top: 8px; padding-bottom: 8px; }
 .admin-table tr.is-current td { background: rgba(0, 217, 255, 0.08); }
-.admin-table tr.is-past td { opacity: 0.6; }
-.admin-path { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; }
-.admin-person { display: inline-flex; align-items: center; gap: 4px; }
-.admin-person img { border-radius: 50%; object-fit: cover; }
-.admin-person.is-hidden strong { color: var(--accent-primary); }
+.admin-table tr.is-past td { opacity: 0.55; }
+.admin-number { font-variant-numeric: tabular-nums; color: var(--text-secondary); white-space: nowrap; }
+.admin-day { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+.admin-day > span:first-child { min-width: 72px; }
+.admin-profile { cursor: help; letter-spacing: 2px; }
+.admin-players { flex-basis: 100%; font-size: 12px; }
+.admin-person { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.admin-person img, .admin-person .person-avatar { flex: none; border-radius: 50%; object-fit: cover; }
+.admin-person-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-person.is-hidden .admin-person-name { color: var(--accent-primary); font-weight: 600; }
+.admin-actions { text-align: right; white-space: nowrap; }
 .admin-actions .btn { padding: 4px 10px; font-size: 13px; }
-.admin-candidates { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-.admin-candidates li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.admin-more { font-size: 18px; line-height: 1; margin-left: 4px; }
+.admin-panel-row td { background: rgba(124, 58, 237, 0.05); }
+.admin-candidates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto auto; align-items: center; gap: 8px 16px; }
 .admin-candidates .btn { padding: 4px 10px; font-size: 13px; }
-.admin-editor { padding: 8px 0; }
+.admin-editor { padding: 4px 0; }
 
-/* Glisser-déposer des défis */
-.admin-handle-cell { white-space: nowrap; }
-.admin-handle { cursor: grab; padding: 0 6px; font-size: 18px; color: var(--text-muted); user-select: none; }
+/* Menu « ⋯ » */
+.admin-menu { position: fixed; z-index: 1000; margin: 0; padding: 4px; list-style: none; min-width: 210px;
+  background: var(--bg-base); border: 1px solid var(--border-color); border-radius: 10px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); }
+.admin-menu button { display: block; width: 100%; padding: 8px 12px; border: 0; border-radius: 6px; background: none;
+  color: var(--text-primary); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.admin-menu button:hover:not(:disabled) { background: rgba(124, 58, 237, 0.14); }
+.admin-menu button:disabled { opacity: 0.4; cursor: default; }
+.admin-menu button.is-danger { color: var(--danger); }
+
+/* Glisser-déposer des défis (souris uniquement ; sur téléphone : Avancer / Reculer dans le menu) */
+.admin-handle { cursor: grab; font-size: 18px; color: var(--text-muted); user-select: none; }
 .admin-handle:active { cursor: grabbing; }
 .admin-table tr.is-dragged td { opacity: 0.4; }
 .admin-table tr.drop-before td { box-shadow: inset 0 3px 0 var(--accent-primary); }
 .admin-table tr.drop-after td { box-shadow: inset 0 -3px 0 var(--accent-primary); }
-/* Les flèches ne servent que sur écran tactile (pas de glisser-déposer) */
-@media (pointer: fine) { .admin-arrows { display: none; } }
 @media (pointer: coarse) { .admin-handle { display: none; } }
