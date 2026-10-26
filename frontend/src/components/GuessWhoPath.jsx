@@ -177,7 +177,12 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
               <select value={era} onChange={(e) => setEra(e.target.value)} aria-label={t("who.era")}>
                 {ERAS.map((e) => <option key={e} value={e}>{t(`who.eras.${e}`)}</option>)}
               </select>
-              <DifficultyPicker value={difficulty} onChange={setDifficulty} />
+              {/* « Tu es humain ? » passe en culture générale : en « Aujourd'hui », ses longs chemins ne sont
+                  faits que de footballeurs inconnus. On peut toujours rechoisir l'époque ensuite. */}
+              <DifficultyPicker value={difficulty} onChange={(level) => {
+                setDifficulty(level);
+                if (level === "humain") setEra("tous");
+              }} />
               <select value={domain} onChange={(e) => setDomain(e.target.value)} aria-label={t("who.domain")}>
                 <option value="">{t("who.allDomains")}</option>
                 {domains.map((d) => <option key={d} value={d}>{capitalize(d)}</option>)}
