@@ -616,6 +616,47 @@ def admin_flip(day: dt.date):
     return {"ok": True}
 
 
+class MoveIn(BaseModel):
+    source: dt.date  # jour du défi qu'on déplace
+    target: dt.date  # jour où on le dépose
+
+
+DAILY_CONTENT = ["path", "masked_index", "answer", "persons", "hops", "hints", "forced"]
+
+
+def _write_content(conn, day: dt.date, content: dict) -> None:
+    conn.execute(
+        """UPDATE app.daily_challenge SET path = %s, masked_index = %s, answer = %s, persons = %s, hops = %s,
+                  hints = %s, forced = %s WHERE day = %s""",
+        (content["path"], content["masked_index"], Jsonb(content["answer"]), Jsonb(content["persons"]),
+         Jsonb(content["hops"]), Jsonb(content["hints"]), content["forced"], day),
+    )
+
+
+@admin_router.post("/move")
+def admin_move(body: MoveIn):
+    """Glisser-déposer : le défi de `source` prend la place de `target`, ceux d'entre les deux se décalent
+    d'un jour (comme une liste qu'on réordonne). Les numéros restent attachés aux dates."""
+    if body.source == body.target:
+        return {"ok": True}
+    _editable(body.source)
+    _editable(body.target)
+    first, last = sorted((body.source, body.target))
+    days = [first + dt.timedelta(days=i) for i in range((last - first).days + 1)]
+    with pool.connection() as conn:
+        rows = {r["day"]: r for r in conn.execute(
+            f"SELECT day, {', '.join(DAILY_CONTENT)} FROM app.daily_challenge WHERE day BETWEEN %s AND %s",
+            (first, last)).fetchall()}
+        if missing := [d.isoformat() for d in days if d not in rows]:
+            raise HTTPException(409, f"Jours sans défi dans l'intervalle : {', '.join(missing)}. Régénère-les d'abord.")
+        contents = [rows[d] for d in days]
+        # Vers une date plus tardive : le premier part à la fin ; vers une date plus tôt : le dernier passe devant.
+        contents = contents[1:] + contents[:1] if body.source == first else contents[-1:] + contents[:-1]
+        for day, content in zip(days, contents):
+            _write_content(conn, day, content)
+    return {"ok": True}
+
+
 class SwapIn(BaseModel):
     a: dt.date
     b: dt.date
@@ -626,19 +667,14 @@ def admin_swap(body: SwapIn):
     """Échange le contenu de deux jours à venir (les numéros restent attachés aux dates)."""
     _editable(body.a)
     _editable(body.b)
-    fields = ["path", "masked_index", "answer", "persons", "hops", "hints", "forced"]
     with pool.connection() as conn:
         rows = {r["day"]: r for r in conn.execute(
-            f"SELECT day, {', '.join(fields)} FROM app.daily_challenge WHERE day = ANY(%s)", ([body.a, body.b],)).fetchall()}
+            f"SELECT day, {', '.join(DAILY_CONTENT)} FROM app.daily_challenge WHERE day = ANY(%s)",
+            ([body.a, body.b],)).fetchall()}
         if len(rows) != 2:
             raise HTTPException(404, "Les deux jours doivent avoir un défi")
-        for day, other in ((body.a, rows[body.b]), (body.b, rows[body.a])):
-            conn.execute(
-                """UPDATE app.daily_challenge SET path = %s, masked_index = %s, answer = %s, persons = %s, hops = %s,
-                          hints = %s, forced = %s WHERE day = %s""",
-                (other["path"], other["masked_index"], Jsonb(other["answer"]), Jsonb(other["persons"]),
-                 Jsonb(other["hops"]), Jsonb(other["hints"]), other["forced"], day),
-            )
+        _write_content(conn, body.a, rows[body.b])
+        _write_content(conn, body.b, rows[body.a])
     return {"ok": True}
 
 

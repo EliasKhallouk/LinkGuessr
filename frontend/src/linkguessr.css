@@ -172,3 +172,14 @@ body.drawer-open { overflow: hidden; }
 .admin-candidates li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .admin-candidates .btn { padding: 4px 10px; font-size: 13px; }
 .admin-editor { padding: 8px 0; }
+
+/* Glisser-déposer des défis */
+.admin-handle-cell { white-space: nowrap; }
+.admin-handle { cursor: grab; padding: 0 6px; font-size: 18px; color: var(--text-muted); user-select: none; }
+.admin-handle:active { cursor: grabbing; }
+.admin-table tr.is-dragged td { opacity: 0.4; }
+.admin-table tr.drop-before td { box-shadow: inset 0 3px 0 var(--accent-primary); }
+.admin-table tr.drop-after td { box-shadow: inset 0 -3px 0 var(--accent-primary); }
+/* Les flèches ne servent que sur écran tactile (pas de glisser-déposer) */
+@media (pointer: fine) { .admin-arrows { display: none; } }
+@media (pointer: coarse) { .admin-handle { display: none; } }

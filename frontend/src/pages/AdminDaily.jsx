@@ -114,7 +114,21 @@ export default function AdminDaily() {
     }
   };
 
-  // Monter / descendre : échange avec le jour voisin (s'il est modifiable et a un défi).
+  // Glisser-déposer : on attrape la ligne par sa poignée ⠿ et on la dépose sur un autre jour à venir ;
+  // les défis intermédiaires se décalent d'un jour (route /move).
+  const [armed, setArmed] = useState(null);   // poignée tenue : la ligne devient déplaçable
+  const [dragged, setDragged] = useState(null);
+  const [over, setOver] = useState(null);
+  const movable = (d) => d.editable && d.path;
+  const drop = (target) => {
+    const source = dragged;
+    setDragged(null);
+    setOver(null);
+    setArmed(null);
+    if (source && source !== target) act(source, "/move", { method: "POST", body: { source, target } });
+  };
+
+  // Monter / descendre (téléphone, où le glisser-déposer n'existe pas) : échange avec le jour voisin.
   const neighbor = (index, step) => {
     const other = data?.days[index + step];
     return other && other.editable && other.path ? other.day : null;
@@ -141,6 +155,7 @@ export default function AdminDaily() {
             </button>
           </form>
           <p className="muted" style={{ marginBottom: 0 }}>
+            Glisse une ligne par sa poignée ⠿ pour la déplacer (les autres se décalent).
             Recette : star jeune → <strong>[personne cachée]</strong> → personnalité sans rapport. Un défi modifié à la main
             est verrouillé 🔒 : la génération automatique de la nuit n'y touche plus. Le jour en cours et les jours passés
             ne peuvent plus changer.
@@ -157,10 +172,24 @@ export default function AdminDaily() {
               <tbody>
                 {data.days.map((d, index) => (
                   <Fragment key={d.day}>
-                    <tr className={d.current ? "is-current" : !d.editable ? "is-past" : ""}>
-                      <td>{d.editable && d.path && (
-                        <input type="checkbox" checked={selected.includes(d.day)} onChange={() => toggleSelect(d.day)}
-                          aria-label="Sélectionner pour interchanger" />)}</td>
+                    <tr
+                      className={[d.current ? "is-current" : !d.editable ? "is-past" : "", dragged === d.day ? "is-dragged" : "",
+                        over === d.day && dragged && dragged !== d.day ? (dragged < d.day ? "drop-after" : "drop-before") : ""].join(" ")}
+                      draggable={armed === d.day}
+                      onDragStart={(e) => { setDragged(d.day); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", d.day); }}
+                      onDragOver={(e) => { if (dragged && movable(d)) { e.preventDefault(); setOver(d.day); } }}
+                      onDrop={(e) => { e.preventDefault(); if (dragged && movable(d)) drop(d.day); }}
+                      onDragEnd={() => { setDragged(null); setOver(null); setArmed(null); }}
+                    >
+                      <td className="admin-handle-cell">
+                        {movable(d) && (
+                          <span className="admin-handle" title="Glisser pour déplacer" onMouseDown={() => setArmed(d.day)}
+                            onMouseUp={() => setArmed(null)}>⠿</span>
+                        )}
+                        {movable(d) && (
+                          <input type="checkbox" checked={selected.includes(d.day)} onChange={() => toggleSelect(d.day)}
+                            aria-label="Sélectionner pour interchanger" />)}
+                      </td>
                       <td>{d.number}</td>
                       <td>{new Date(`${d.day}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })}
                         {d.current && <span className="tag" style={{ marginLeft: 6 }}>en cours</span>}</td>
@@ -172,11 +201,15 @@ export default function AdminDaily() {
                         {d.editable ? (
                           <div className="toolbar admin-actions">
                             {d.path && (
-                              <>
+                              <span className="admin-arrows">
                                 <button className="btn btn-ghost" title="Avancer d'un jour" disabled={!neighbor(index, -1) || busy === d.day}
                                   onClick={() => move(d.day, neighbor(index, -1))}>▲</button>
                                 <button className="btn btn-ghost" title="Reculer d'un jour" disabled={!neighbor(index, 1) || busy === d.day}
                                   onClick={() => move(d.day, neighbor(index, 1))}>▼</button>
+                              </span>
+                            )}
+                            {d.path && (
+                              <>
                                 <button className="btn btn-ghost" title="Inverser la gauche et la droite" disabled={busy === d.day}
                                   onClick={() => act(d.day, `/${d.day}/flip`, { method: "POST" })}>⇄</button>
                               </>
