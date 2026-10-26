@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { DataSet, Network } from "vis-network/standalone";
 import { apiUrl } from "../config";
 
@@ -10,6 +11,14 @@ export default function Graph({ nodesData = null, edgesData = null, height = "48
   const [loading, setLoading] = useState(!nodesData || !edgesData);
   const networkRef = useRef(null);
   const networkInstance = useRef(null);
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const openPerson = useRef(null);
+  openPerson.current = (qid) => {
+    const next = new URLSearchParams(params);
+    next.set("personne", qid);
+    navigate({ search: next.toString() });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -57,11 +66,7 @@ export default function Graph({ nodesData = null, edgesData = null, height = "48
       );
 
       networkInstance.current.on("click", (params) => {
-        if (params.nodes && params.nodes.length > 0) {
-          const nodeId = params.nodes[0];
-          const nodeData = visNodes.get(nodeId);
-          alert(`Vous avez cliqué sur : ${nodeData.label || nodeData.id}`);
-        }
+        if (params.nodes && params.nodes.length > 0) openPerson.current(params.nodes[0]);
       });
     };
 
@@ -107,6 +112,8 @@ export default function Graph({ nodesData = null, edgesData = null, height = "48
         ) : (
           <div
             ref={networkRef}
+            role="img"
+            aria-label={`${title} : ${nodes.length} personnes, ${edges.length} liens`}
             style={{
               height: height,
               marginBottom: "8px",

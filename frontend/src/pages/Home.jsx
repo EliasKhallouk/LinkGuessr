@@ -28,11 +28,12 @@ export default function Home() {
           <ul className="game-grid">
             {GAMES.map((g) => (
               <li key={g.key}>
-                <Link to={g.path} className="game-card">
+                <Link to={g.path} className="game-card" aria-labelledby={`game-${g.key}-title`}
+                  aria-describedby={`game-${g.key}-pitch`}>
                   <span className="game-card-icon"><GameIcon game={g.key} size={44} /></span>
                   <span className="game-card-text">
-                    <span className="game-card-title">{t(`games.${g.key}.title`)}</span>
-                    <span className="game-card-pitch">{t(`games.${g.key}.pitch`)}</span>
+                    <span className="game-card-title" id={`game-${g.key}-title`}>{t(`games.${g.key}.title`)}</span>
+                    <span className="game-card-pitch" id={`game-${g.key}-pitch`}>{t(`games.${g.key}.pitch`)}</span>
                   </span>
                   <span className="game-card-tag">{t(`games.${g.key}.tag`)}</span>
                   <span className="game-card-play" aria-hidden="true">{t("hub.play")} →</span>

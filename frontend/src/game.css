@@ -280,3 +280,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { box-shadow: 
 /* Suggestions de noms : fond opaque, descriptions sur deux lignes au plus. */
 .ac-list { background: var(--bg-base); }
 .picker-item .person-desc { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Focus clavier bien visible sur les cartes et les propositions (fond et bordure arrondis). */
+.game-card:focus-visible, .who-choice:focus-visible { outline: 3px solid var(--accent-primary); outline-offset: 3px; }

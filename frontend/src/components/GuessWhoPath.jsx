@@ -32,7 +32,8 @@ const HELP = {
 
 function Choice({ person, disabled, onPick }) {
   return (
-    <button type="button" className="who-choice" disabled={disabled} onClick={() => onPick(person)}>
+    <button type="button" className="who-choice" disabled={disabled} onClick={() => onPick(person)}
+      aria-label={person.description ? `${person.name}, ${person.description}` : person.name}>
       <Avatar person={person} size={44} />
       <span className="person-text">
         <strong>{person.name}</strong>
@@ -227,7 +228,8 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
               )}
 
               {!revealed && challenge.choices && (
-                <div className={`who-choices ${shake ? "shake" : ""}`} onAnimationEnd={() => setShake(false)}>
+                <div className={`who-choices ${shake ? "shake" : ""}`} onAnimationEnd={() => setShake(false)}
+                  role="group" aria-label={t("who.question")}>
                   {challenge.choices.map((p) => (
                     <Choice key={p.qid} person={p} onPick={answer}
                       disabled={checking || wrong.some((w) => w.qid === p.qid)} />

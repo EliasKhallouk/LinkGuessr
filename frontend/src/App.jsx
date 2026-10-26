@@ -69,7 +69,8 @@ function App() {
             </Link>
           )}
           <div className="header-ellipsis" ref={menuRef}>
-            <button aria-label="menu" className="btn-ellipsis" onClick={() => setMenuOpen((o) => !o)}>⋯</button>
+            <button aria-label={t("nav.menu")} aria-expanded={menuOpen} aria-haspopup="true" className="btn-ellipsis"
+              onClick={() => setMenuOpen((o) => !o)}>⋯</button>
             {menuOpen && (
               <div className="popover">
                 <div className="menu-section">

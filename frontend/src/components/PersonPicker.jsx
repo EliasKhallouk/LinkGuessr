@@ -92,6 +92,11 @@ export default function PersonPicker({ id, label, value, onChange, placeholder =
         ref={input}
         id={id}
         type="text"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={Boolean(visible)}
+        aria-controls={`${id}-list`}
+        aria-activedescendant={visible && results[active] ? `${id}-opt-${active}` : undefined}
         autoComplete="off"
         autoFocus={autoFocus}
         value={text}
@@ -101,12 +106,13 @@ export default function PersonPicker({ id, label, value, onChange, placeholder =
         onKeyDown={onKeyDown}
       />
       {visible && position && createPortal(
-        <ul ref={list} className="ac-list picker-list" role="listbox"
+        <ul ref={list} id={`${id}-list`} className="ac-list picker-list" role="listbox"
           style={{ position: "fixed", top: position.top, left: position.left, width: position.width, zIndex: 9999 }}>
           {pending && !results.length && <li className="ac-item muted">Recherche…</li>}
           {results.map((p, i) => (
             <li
               key={p.qid}
+              id={`${id}-opt-${i}`}
               role="option"
               aria-selected={i === active}
               className={`ac-item picker-item ${i === active ? "active" : ""}`}

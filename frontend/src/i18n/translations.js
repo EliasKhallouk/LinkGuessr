@@ -58,6 +58,7 @@ export const translations = {
       themeDark: "Sombre",
     },
     nav: {
+      menu: "Menu",
       home: "Accueil",
       about: "À propos",
       contact: "Contact",
@@ -425,6 +426,7 @@ export const translations = {
       themeDark: "Dark",
     },
     nav: {
+      menu: "Menu",
       home: "Home",
       about: "About",
       searchLabel: "Search neighbors",

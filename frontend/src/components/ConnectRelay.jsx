@@ -196,7 +196,8 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
                     <li key={n.qid} className={hint?.qid === n.qid ? "is-hint" : ""}>
                       <PersonChip person={n} showDescription size={32} />
                       <span className="muted">{n.degree?.toLocaleString()} {t("who.links")}</span>
-                      <button className="btn" onClick={() => choose(n)} disabled={loading}>{t("relay.choose")}</button>
+                      <button className="btn" onClick={() => choose(n)} disabled={loading}
+                        aria-label={`${t("relay.choose")} ${n.name}`}>{t("relay.choose")}</button>
                     </li>
                   ))}
                 </ul>
