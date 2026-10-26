@@ -46,7 +46,7 @@ export const api = {
   randomPair: (opts = {}) => get("/random_pair", opts),
   randomPath: (opts = {}) => get("/random_path", opts),
   checkHidden: (before, after, guess) => get("/random_path/check", { before, after, guess }),
-  replayHidden: ({ chemin, cache, niveau }) => get("/random_path/replay", { chemin, cache, niveau }),
+  replayHidden: ({ chemin, cache, niveau, epoque }) => get("/random_path/replay", { chemin, cache, niveau, epoque }),
   top: (by = "popularity", opts = {}) => get("/top", { by, ...opts }).then((d) => d.results),
   popularPairs: (period = "7", limit = 10) => get("/popular_pairs", { period, limit }).then((d) => d.results),
   leaderboard: (game, period = "all", limit = 10) => get("/leaderboard", { game, period, limit }).then((d) => d.entries),

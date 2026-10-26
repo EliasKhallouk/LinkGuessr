@@ -15,6 +15,8 @@ import { duelUrl } from "../lib/share";
 import ShareButton from "./ShareButton";
 
 const GAME = "guess_who";
+// Époques : aujourd'hui (vivants nés après 1970, classés par notoriété actuelle), culture générale, histoire.
+export const ERAS = ["aujourdhui", "tous", "histoire"];
 
 // Aides selon le niveau : chaque indice apparaît après ce nombre d'erreurs (0 : dès le départ, absent : jamais).
 // clues : phrases à trou qui relient la personne cachée à ses voisins.
@@ -53,6 +55,7 @@ function grid(wrongCount, solved, maxTries) {
 export default function GuessWhoPath({ puzzle = null, rival = null }) {
   const { t } = useI18n();
   const [difficulty, setDifficulty] = useState(puzzle?.niveau || "facile");
+  const [era, setEra] = useState(puzzle?.epoque || "aujourdhui");
   const [domain, setDomain] = useState("");
   const [domains, setDomains] = useState([]);
   const [challenge, setChallenge] = useState(null);
@@ -82,13 +85,13 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
     setFound(null);
     setWrong([]);
     try {
-      setChallenge(await (puzzle ? api.replayHidden(puzzle) : api.randomPath({ difficulty, domain })));
+      setChallenge(await (puzzle ? api.replayHidden(puzzle) : api.randomPath({ difficulty, domain, epoque: era })));
     } catch (e) {
       setError(e.message || t("guess.errorLoadPeople"));
     } finally {
       setLoading(false);
     }
-  }, [difficulty, domain, puzzle, t]);
+  }, [difficulty, domain, era, puzzle, t]);
 
   useEffect(() => { fetchChallenge(); }, [fetchChallenge]);
 
@@ -127,7 +130,7 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
     if (ok || newTries >= maxTries) {
       track(GAME, "finish", {
         answer: challenge.answer.qid, guessed: ok ? person.qid : null, path: challenge.path, tries: newTries,
-        found: ok, difficulty, domain: domain || null, duel: Boolean(puzzle),
+        found: ok, difficulty, era, domain: domain || null, duel: Boolean(puzzle),
       });
     }
   };
@@ -147,14 +150,14 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
   const shareText = () => {
     const names = challenge.path.map((q, i) => (i === challenge.masked_index ? "❓" : challenge.persons[q].name));
     return [
-      `LinkGuessr · ${t("who.title")} ${t(`difficulty.${difficulty}`)}`,
+      `LinkGuessr · ${t("who.title")} ${t(`who.eras.${era}`)} · ${t(`difficulty.${difficulty}`)}`,
       names.join(" → "),
       grid(wrong.length, Boolean(found), maxTries),
       found ? t("share.whoFound", { n: attempts }) : t("share.whoLost"),
     ].join("\n");
   };
   const shareUrl = () => duelUrl({
-    jeu: "cache", chemin: challenge.path.join("-"), cache: challenge.masked_index, niveau: difficulty,
+    jeu: "cache", chemin: challenge.path.join("-"), cache: challenge.masked_index, niveau: difficulty, epoque: era,
     essais: attempts, trouve: found ? 1 : 0,
   });
   // Comparaison avec l'ami : trouver bat ne pas trouver, puis moins d'essais.
@@ -171,6 +174,9 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
           <span className="panel-title">{t("who.title")}</span>
           {!puzzle && (
             <div className="toolbar">
+              <select value={era} onChange={(e) => setEra(e.target.value)} aria-label={t("who.era")}>
+                {ERAS.map((e) => <option key={e} value={e}>{t(`who.eras.${e}`)}</option>)}
+              </select>
               <DifficultyPicker value={difficulty} onChange={setDifficulty} />
               <select value={domain} onChange={(e) => setDomain(e.target.value)} aria-label={t("who.domain")}>
                 <option value="">{t("who.allDomains")}</option>

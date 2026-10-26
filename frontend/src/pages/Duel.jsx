@@ -3,13 +3,14 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import ConnectRelay from "../components/ConnectRelay";
 import GuessRelations from "../components/GuessRelations";
-import GuessWhoPath from "../components/GuessWhoPath";
+import GuessWhoPath, { ERAS } from "../components/GuessWhoPath";
 import { LEVELS } from "../components/DifficultyPicker";
 import { useI18n } from "../i18n/I18nProvider";
 import { track } from "../lib/tracking";
 
 // Page d'arrivée d'un lien de duel : /defi?jeu=relais&paire=Q1-Q2&score=3, /defi?jeu=nombre&score=340
-// ou /defi?jeu=cache&chemin=Q1-Q2-Q3&cache=1&niveau=facile&essais=2&trouve=1 (même énigme « Qui est caché ? »).
+// ou /defi?jeu=cache&chemin=Q1-Q2-Q3&cache=1&niveau=facile&epoque=aujourdhui&essais=2&trouve=1
+// (même énigme « Qui est caché ? »).
 const GAMES = { relais: "relay", nombre: "guess_count", cache: "guess_who" };
 export default function Duel() {
   const { t } = useI18n();
@@ -23,7 +24,8 @@ export default function Duel() {
   const chemin = params.get("chemin") || "";
   const cache = Number(params.get("cache"));
   const niveau = LEVELS.includes(params.get("niveau")) ? params.get("niveau") : "moyen";
-  const puzzle = useMemo(() => ({ chemin, cache, niveau }), [chemin, cache, niveau]);
+  const epoque = ERAS.includes(params.get("epoque")) ? params.get("epoque") : "tous";
+  const puzzle = useMemo(() => ({ chemin, cache, niveau, epoque }), [chemin, cache, niveau, epoque]);
   const tries = Number(params.get("essais")) || 0;
   const found = params.get("trouve") === "1";
   const rival = useMemo(() => ({ found, tries }), [found, tries]);
