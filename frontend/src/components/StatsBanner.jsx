@@ -44,7 +44,7 @@ export default function StatsBanner() {
       <div className="stat"><strong>{persons.toLocaleString(locale)}</strong><span>{t("stats.persons")}</span></div>
       <div className="stat"><strong>{links.toLocaleString(locale)}</strong><span>{t("stats.links")}</span></div>
       {stats.data_date && (
-        <div className="stat stat-date"><span>{t("stats.dataDate", { date: formatDate(stats.data_date, lang) })}</span></div>
+        <p className="stat-date">{t("stats.dataDate", { date: formatDate(stats.data_date, lang) })}</p>
       )}
     </div>
   );

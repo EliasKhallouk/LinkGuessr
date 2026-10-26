@@ -20,6 +20,7 @@ export default function Home() {
           <h2>{t("home.title")}</h2>
           <p>{t("home.text")}</p>
         </header>
+        <StatsBanner />
         <DailyChallenge />
 
         <section aria-labelledby="games-title">
@@ -40,8 +41,6 @@ export default function Home() {
             ))}
           </ul>
         </section>
-
-        <StatsBanner />
       </div>
     </main>
   );
