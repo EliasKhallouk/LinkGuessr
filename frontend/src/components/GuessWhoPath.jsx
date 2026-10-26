@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, lifespan } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
+import { capitalize } from "../lib/format";
 import DifficultyPicker from "./DifficultyPicker";
 import PathView from "./PathView";
 import PersonChip from "./PersonChip";
@@ -78,7 +79,7 @@ export default function GuessWhoPath() {
             <DifficultyPicker value={difficulty} onChange={setDifficulty} />
             <select value={domain} onChange={(e) => setDomain(e.target.value)} aria-label={t("who.domain")}>
               <option value="">{t("who.allDomains")}</option>
-              {domains.map((d) => <option key={d} value={d}>{d}</option>)}
+              {domains.map((d) => <option key={d} value={d}>{capitalize(d)}</option>)}
             </select>
             <button className="btn" onClick={fetchChallenge} disabled={loading}>{t("guess.newChallenge")}</button>
           </div>
@@ -105,7 +106,7 @@ export default function GuessWhoPath() {
 
               {!revealed && tries > 0 && (
                 <ul className="hints">
-                  {tries >= 1 && hints.domain && <li>{t("who.hintDomain")} <strong>{hints.domain}</strong></li>}
+                  {tries >= 1 && hints.domain && <li>{t("who.hintDomain")} <strong>{capitalize(hints.domain)}</strong></li>}
                   {tries >= 2 && hints.birth_year && <li>{t("who.hintLife")} <strong>{lifespan(hints)}</strong></li>}
                   {tries >= 3 && <li>{t("who.hintInitials")} <strong>{hints.initials}</strong> ({hints.name_length} {t("who.chars")})</li>}
                 </ul>

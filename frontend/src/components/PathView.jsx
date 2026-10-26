@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from "react";
 import { wikiUrl } from "../api";
+import { useI18n } from "../i18n/I18nProvider";
 import PersonChip from "./PersonChip";
 
 // Phrase extraite d'un article Wikipédia (CC BY-SA 4.0) : on renvoie toujours vers l'article d'origine.
@@ -11,9 +13,30 @@ function tidy(text) {
 }
 
 export function Snippet({ text, article }) {
+  const { t } = useI18n();
+  const quote = useRef(null);
+  const [expanded, setExpanded] = useState(false);
+  const [clamped, setClamped] = useState(false);
+
+  // Le bouton n'apparaît que si la citation dépasse deux lignes ; on remesure quand la largeur change
+  // (et quand un onglet caché devient visible).
+  useEffect(() => {
+    const el = quote.current;
+    if (!el || expanded || typeof ResizeObserver === "undefined") return undefined;
+    const measure = () => setClamped(el.scrollHeight > el.clientHeight + 1);
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text, expanded]);
+
   return (
     <span className="snippet">
-      <q className="hop-snippet">{tidy(text)}</q>{" "}
+      <q ref={quote} className={`hop-snippet ${expanded ? "" : "is-clamped"}`}>{tidy(text)}</q>
+      {(clamped || expanded) && (
+        <button type="button" className="snippet-more" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
+          {expanded ? t("common.readLess") : t("common.readMore")}
+        </button>
+      )}{" "}
       {article?.title && (
         <a className="snippet-source" href={wikiUrl(article.title)} target="_blank" rel="noreferrer">
           Wikipédia · {article.name}
@@ -51,8 +74,9 @@ function HopExplanation({ hop, from, to }) {
 }
 
 // Sens du lien entre la personne du haut et celle du bas, d'après qui cite qui dans son article.
+const UNKNOWN = { arrow: "—", title: "lien inconnu" };
 function linkDirection(hop, upper, lower) {
-  if (!hop || !upper || !lower) return { arrow: "—", title: "" };
+  if (!hop || !upper || !lower) return UNKNOWN;
   const upperCites = hop.text.some((r) => r.source_id === upper.id);
   const lowerCites = hop.text.some((r) => r.source_id === lower.id);
   if (upperCites && lowerCites) return { arrow: "↕", title: `${upper.name} et ${lower.name} se citent mutuellement` };
@@ -71,13 +95,13 @@ export default function PathView({ path, persons, hops, hiddenIndex = null }) {
         const next = path[i + 1];
         const hopKey = next && (hops[`${qid}-${next}`] ? `${qid}-${next}` : `${next}-${qid}`);
         const showHop = next && i !== hiddenIndex && i + 1 !== hiddenIndex;
-        const direction = showHop ? linkDirection(hops[hopKey], person, persons[next]) : { arrow: "—", title: "" };
+        const direction = showHop ? linkDirection(hops[hopKey], person, persons[next]) : UNKNOWN;
         return (
           <li key={`${qid}-${i}`}>
             <PersonChip person={person} hidden={i === hiddenIndex} showDescription />
             {next && (
               <div className="path-link">
-                <span className="path-arrow" title={direction.title} aria-label={direction.title}>{direction.arrow}</span>
+                <span className="path-arrow" role="img" title={direction.title} aria-label={direction.title}>{direction.arrow}</span>
                 {showHop && <HopExplanation hop={hops[hopKey]} from={person} to={persons[next]} />}
               </div>
             )}

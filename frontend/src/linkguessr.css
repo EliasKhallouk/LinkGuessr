@@ -1,14 +1,16 @@
 /* Composants de la refonte (personnes, chemins, compteur, fiche). S'appuie sur les variables de index.css. */
 :root {
-  --success: var(--accent-success);
-  --danger: var(--accent-danger);
-  --border: var(--border-color);
+  /* Couleurs de texte (les fonds d'accent restent --accent-success / --accent-danger) */
+  --success: var(--text-success);
+  --danger: var(--text-danger);
 }
 
 /* ----- Barres d'outils et boutons ----- */
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .toolbar .btn, .result-box .btn, .neighbor-list .btn, .table .btn { padding: 8px 14px; font-size: 14px; }
 .btn-primary { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+/* Le bouton principal porte déjà un contour cyan : au clavier, il change de couleur pour rester repérable. */
+.btn-primary:focus-visible { outline-color: var(--text-primary); outline-offset: 4px; }
 .toolbar input[type="text"] { flex: 1 1 220px; }
 .title-link { color: inherit; text-decoration: none; }
 
@@ -24,24 +26,24 @@
 }
 .person-text { display: flex; flex-direction: column; min-width: 0; }
 .person-desc { font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; }
-.hidden-person .person-avatar { border: 2px dashed var(--accent-primary); color: var(--accent-primary); }
+.hidden-person .person-avatar { border: 2px dashed var(--accent-primary); color: var(--accent-text); }
 
 /* ----- Sélecteur de personne ----- */
 .person-picker { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .picker-item { display: flex; align-items: center; gap: 10px; }
 .picker-item img { border-radius: 50%; object-fit: cover; flex: none; }
 .picker-item > span { display: flex; flex-direction: column; min-width: 0; }
-.picker-item.active .person-desc, .picker-item:hover .person-desc { color: rgba(255, 255, 255, 0.85); }
+.picker-item.active .person-desc, .picker-item:hover .person-desc { color: var(--on-accent); }
 
 /* ----- Paire et chemin ----- */
 .pair { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
-.pair-sep { font-size: 24px; color: var(--accent-primary); }
+.pair-sep { font-size: 24px; color: var(--accent-text); }
 .result-box { padding: 16px; border-radius: var(--radius-md); }
 
 .path-view { list-style: none; padding: 0; margin: 12px 0 0; }
 .path-link { display: flex; gap: 12px; align-items: flex-start; margin: 4px 0 4px 18px; padding-left: 12px;
   border-left: 2px solid var(--border-color); }
-.path-arrow { color: var(--accent-primary); font-weight: 700; }
+.path-arrow { color: var(--accent-text); font-weight: 700; }
 .hop-explain { display: flex; flex-direction: column; gap: 4px; padding: 4px 0 8px; font-size: 14px; }
 .hop-relation { color: var(--text-secondary); }
 .hop-snippet { color: var(--text-secondary); font-style: italic; line-height: 1.5; }
@@ -52,9 +54,9 @@
 .relay-history { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 8px; }
 .neighbor-list { list-style: none; padding: 8px; margin: 8px 0 0; max-height: 420px; overflow-y: auto;
   border: 1px solid var(--border-color); border-radius: var(--radius-sm); }
-.neighbor-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
+.neighbor-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center;
   padding: 6px 0; border-bottom: 1px dashed var(--border-color); }
-.neighbor-list li.is-hint { background: rgba(16, 185, 129, 0.12); border-radius: var(--radius-sm); }
+.neighbor-list li.is-hint { background: var(--success-soft); border-radius: var(--radius-sm); }
 
 /* ----- Tableaux ----- */
 .table { width: 100%; border-collapse: collapse; }
@@ -64,8 +66,7 @@
 /* ----- Compteur de la page d'accueil ----- */
 .stats-banner { display: flex; flex-wrap: wrap; gap: 24px; align-items: baseline; margin-bottom: 16px; }
 .stat { display: flex; flex-direction: column; }
-.stat strong { font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums;
-  background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.stat strong { font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text-primary); }
 .stat span { color: var(--text-secondary); font-size: 14px; }
 .stat-date { margin-left: auto; }
 
@@ -74,7 +75,7 @@
 .person-header { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
 .person-portrait { width: 160px; height: 200px; object-fit: cover; border-radius: var(--radius-md); flex: none; }
 .tag { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px;
-  border: 1px solid var(--border-hover); color: var(--accent-primary); }
+  border: 1px solid var(--border-hover); color: var(--accent-text); }
 .fact-list, .link-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .fact-list li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .link-list li { display: flex; flex-direction: column; gap: 4px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-color); }
@@ -83,14 +84,22 @@
   .stat strong { font-size: 24px; }
   .stat-date { margin-left: 0; }
   .person-portrait { width: 100%; height: auto; max-height: 320px; }
-  .neighbor-list li { grid-template-columns: 1fr auto; }
+  .neighbor-list li { grid-template-columns: minmax(0, 1fr) auto; }
   .neighbor-list li .muted { display: none; }
 }
 
 /* ----- Crédits et licences ----- */
-.snippet { display: inline; }
+.snippet { display: block; }
+/* Citation limitée à deux lignes tant qu'on n'a pas cliqué sur « Lire la suite » */
+.hop-snippet.is-clamped { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.snippet-more { padding: 0; margin-right: 8px; color: var(--accent-text); font-size: 13px; font-weight: 600; text-decoration: underline; }
+
+/* « Voir plus » sous les listes longues */
+.btn-more { margin-top: 8px; padding: 8px 14px; font-size: 14px; background: transparent; color: var(--text-primary);
+  border: 1px solid var(--border-color); box-shadow: none; }
+.btn-more:hover { border-color: var(--border-hover); }
 .snippet-source { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-.snippet-source:hover { color: var(--accent-primary); }
+.snippet-source:hover { color: var(--accent-text); }
 .person-figure { margin: 0; display: flex; flex-direction: column; gap: 4px; max-width: 160px; }
 .image-credit { font-size: 11px; color: var(--text-muted); line-height: 1.4; word-break: break-word; }
 .image-credit a { color: inherit; }
@@ -104,8 +113,8 @@
 
 /* ----- Fiche en panneau latéral ----- */
 body.drawer-open { overflow: hidden; }
-.drawer-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(5, 8, 20, 0.55);
-  backdrop-filter: blur(2px); display: flex; justify-content: flex-end; animation: fadeIn 0.2s ease; }
+.drawer-backdrop { position: fixed; inset: 0; z-index: 1000; background: var(--overlay);
+  display: flex; justify-content: flex-end; animation: fadeIn 0.2s ease; }
 .drawer { width: min(640px, 100%); height: 100%; background: var(--bg-base); border-left: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg); display: flex; flex-direction: column; animation: drawerIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
 .drawer-header { position: sticky; top: 0; padding: 12px 16px; border-bottom: 1px solid var(--border-color);
@@ -128,8 +137,8 @@ body.drawer-open { overflow: hidden; }
 .daily .panel-title::before { content: "📅 "; }
 
 /* ----- Partage et duels ----- */
-.btn-share { background: var(--gradient-secondary); }
-.duel-banner { margin-bottom: 16px; border: 2px solid var(--accent-tertiary); }
+.btn-share { background: var(--share-bg); color: var(--on-share); }
+.duel-banner { margin-bottom: 16px; border: 2px solid var(--accent-secondary); }
 
 /* ----- Statistiques du défi ----- */
 .daily-stats { margin-top: 16px; }
@@ -140,11 +149,11 @@ body.drawer-open { overflow: hidden; }
 .distribution { margin-top: 12px; display: grid; gap: 4px; max-width: 360px; }
 .dist-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .dist-bar { background: var(--border-color); border-radius: 4px; padding: 2px 6px; text-align: right; min-width: 24px; }
-.dist-bar.is-today { background: var(--accent-success); color: white; }
+.dist-bar.is-today { background: var(--accent-success); color: var(--on-accent); }
 
 /* ----- Retour des joueurs ----- */
 .feedback { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--text-secondary); }
-.btn-ghost { background: transparent; border: 1px solid var(--border-color); box-shadow: none; font-size: 18px; }
+.btn-ghost { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); box-shadow: none; font-size: 18px; }
 
 /* ----- Présentation sur l'accueil ----- */
 .home-intro { margin-bottom: 12px; }

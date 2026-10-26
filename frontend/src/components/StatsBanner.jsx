@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
+import { formatLongDate } from "../lib/format";
 
 // Compteur animé de 0 à `value` (ease-out), respecte « réduire les animations ».
 function useCountUp(value, durationMs = 1400) {
@@ -27,7 +28,7 @@ function useCountUp(value, durationMs = 1400) {
 function formatDate(yyyymmdd, lang) {
   if (!yyyymmdd) return null;
   const d = new Date(`${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}T00:00:00`);
-  return d.toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  return formatLongDate(d, lang);
 }
 
 export default function StatsBanner() {

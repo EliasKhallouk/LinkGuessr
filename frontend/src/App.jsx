@@ -6,13 +6,13 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Home from "./pages/Home";
 import Privacy from "./pages/Privacy";
+import LinkGuessrLogo from "./components/LinkGuessrLogo";
 import PersonDrawer from "./components/PersonDrawer";
 import DailyPage from "./pages/DailyPage";
 import Duel from "./pages/Duel";
 import Admin from "./pages/Admin";
 import Lab from "./pages/Lab";
 import Person from "./pages/Person";
-import "./playful-effects.css";
 
 function App() {
   const { t, lang, setLang } = useI18n();
@@ -43,8 +43,10 @@ function App() {
     <div className="app-shell">
       <header className="header">
         <div className="brand">
-          <span className="logo-dot" />
-          <h1 className="title"><Link to="/" className="title-link">LinkGuessr</Link></h1>
+          <LinkGuessrLogo size={36} className="brand-logo" />
+          <h1 className="title">
+            <Link to="/" className="title-link">Link<span className="title-accent">Guessr</span></Link>
+          </h1>
         </div>
         <p className="tagline">{t("app.tagline")}</p>
         {/* Nav moved into ellipsis menu */}
@@ -94,7 +96,7 @@ function App() {
       <PersonDrawer />
 
       <footer className="footer">
-        <span>© {new Date().getFullYear()} LinkGuessr - Elias Khallouk</span>
+        <span>© {new Date().getFullYear()} LinkGuessr – Elias Khallouk</span>
         <span className="footer-credits">
           {t("footer.data")}{" "}
           <a href="https://fr.wikipedia.org" target="_blank" rel="noreferrer">Wikipédia</a>
