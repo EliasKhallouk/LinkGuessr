@@ -241,6 +241,34 @@ def _pick_hidden(difficulty: str, domain: str | None, min_length: int, max_lengt
     raise HTTPException(404, "Aucun chemin trouvé pour ce niveau, réessayez")
 
 
+def _pick_around(difficulty: str, domain: str | None, era: str) -> tuple[list[int], int]:
+    """Énigme à une seule personne cachée, construite autour d'elle : on tire d'abord la personne à deviner parmi
+    les plus connues de l'époque, puis deux de ses voisins très connus qui ne sont pas liés entre eux (le chemin
+    A → cachée → B est alors un plus court chemin). Liens forts de préférence : le lien est plus évident.
+    Tirer deux personnes au hasard et espérer une star entre les deux échoue trop souvent."""
+    level, rank = LEVELS[difficulty], state["eras"][era]["rank"]
+    lo, hi = level["hidden"]
+    order = state["eras"][era]["order"]
+    middles = order[lo - 1:hi]
+    domain_id = state["domain_names"].index(domain) if domain in state["domain_names"] else None
+    rng = np.random.default_rng()
+    for mode in (level.get("hidden_mode", "all"), "all"):
+        csr = state["graph"].csr[mode]
+        for _ in range(200):
+            m = int(rng.choice(middles))
+            ends = [v for v in csr.neighbors_of(m).tolist() if rank[v] <= level["top"]
+                    and (domain_id is None or state["domain"][v] == domain_id)]
+            if len(ends) < 2:
+                continue
+            rng.shuffle(ends)
+            for a in ends[:10]:
+                linked = set(state["graph"].csr["all"].neighbors_of(a).tolist())
+                b = next((v for v in ends if v != a and v not in linked), None)
+                if b is not None:
+                    return [a, m, b], 1
+    raise HTTPException(404, "Aucun chemin trouvé pour ce niveau, réessayez")
+
+
 def _valid_middles(before: int, after: int) -> set[int]:
     """Toutes les personnes liées à la fois à `before` et à `after` : chacune est une bonne réponse."""
     csr = state["graph"].csr["all"]
@@ -311,8 +339,11 @@ def random_path(
     """« Qui est caché ? » : un plus court chemin dont une personne intermédiaire est à deviner.
     Les indices (domaine, dates, initiales) sont donnés ; le nom reste dans `answer`, et les liens
     de la personne cachée (phrases qui la citent) dans `answer_hops`, à afficher une fois la réponse donnée."""
-    lo, hi = LEVELS[difficulty]["hidden_length"]
-    ids, masked = _pick_hidden(difficulty, domain, min_length or lo, max_length or hi, epoque)
+    lo, hi = min_length or LEVELS[difficulty]["hidden_length"][0], max_length or LEVELS[difficulty]["hidden_length"][1]
+    if hi == 2:
+        ids, masked = _pick_around(difficulty, domain, epoque)
+    else:
+        ids, masked = _pick_hidden(difficulty, domain, lo, hi, epoque)
     return _puzzle(ids, masked, difficulty, random.Random(), epoque)
 
 
