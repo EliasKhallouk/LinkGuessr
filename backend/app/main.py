@@ -228,6 +228,26 @@ def _pick_hidden(difficulty: str, domain: str | None, min_length: int, max_lengt
     raise HTTPException(404, "Aucun chemin trouvé pour ce niveau, réessayez")
 
 
+def _pick_balanced(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int):
+    """Comme _pick_pair, mais la longueur visée est tirée à parts égales entre min et max : sinon presque
+    toutes les paires sont à 2 ou 3 liens et répondre toujours le même chiffre suffit.
+    Si la longueur visée est trop rare, on garde la paire trouvée la plus proche."""
+    graph, candidates, rng = state["graph"], _candidates(difficulty, domain), np.random.default_rng()
+    target, best = int(rng.integers(min_length, max_length + 1)), None
+    for _ in range(120):
+        s, t = (int(x) for x in rng.choice(candidates, 2, replace=False))
+        res = graph.shortest_paths(s, t, mode=mode, limit=1)
+        if res.length is None or not min_length <= res.length <= max_length:
+            continue
+        if res.length == target:
+            return s, t, res
+        if best is None or abs(res.length - target) < abs(best[2].length - target):
+            best = (s, t, res)
+    if best is None:
+        raise HTTPException(404, "Aucune paire trouvée, élargir les critères")
+    return best
+
+
 @app.get("/random_pair")
 def random_pair(
     difficulty: str = Query("moyen", pattern=LEVEL),
@@ -235,10 +255,13 @@ def random_pair(
     mode: str = Query("all", pattern=f"^({'|'.join(MODES)})$"),
     min_length: int = Query(2, ge=1, le=8),
     max_length: int = Query(6, ge=1, le=12),
+    balanced: bool = False,
 ):
     """Deux personnes connues (selon la difficulté) et la longueur du plus court chemin.
-    Le chemin lui-même n'est pas renvoyé : le joueur le demande à /path après avoir répondu."""
-    s, t, res = _pick_pair(difficulty, domain, mode, min_length, max_length)
+    Le chemin lui-même n'est pas renvoyé : le joueur le demande à /path après avoir répondu.
+    balanced=true : longueurs réparties à parts égales (jeu « Combien de liens »)."""
+    pick = _pick_balanced if balanced else _pick_pair
+    s, t, res = pick(difficulty, domain, mode, min_length, max_length)
     people = summaries([s, t])
     return {"from": people[s], "to": people[t], "length": res.length, "n_paths": res.n_paths}
 

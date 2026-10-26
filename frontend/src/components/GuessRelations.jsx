@@ -13,6 +13,10 @@ import { confetti } from "../lib/confetti";
 
 const GAME = "guess_count";
 const GAME_DURATION = 60; // secondes
+// Relations fortes uniquement (citation mutuelle ou relation Wikidata) : avec tous les liens, presque tout
+// fait 2 ou 3. Longueurs possibles selon le niveau, tirées à parts égales par l'API (balanced).
+const MODE = "strong";
+const LENGTHS = { facile: [2, 5], moyen: [2, 6], difficile: [3, 6], extreme: [4, 7], humain: [4, 8] };
 
 // Points : exact 100 (+20 par bonne réponse d'affilée), à 1 près 60, à 2 près 30.
 function pointsFor(diff, streak) {
@@ -53,17 +57,20 @@ export default function GuessRelations({ rivalScore = null }) {
     return () => clearInterval(id);
   }, [gameActive, timeLeft]);
 
-  // `focus` : place le curseur dans le champ. Par défaut seulement avec une souris : sur téléphone,
-  // ouvrir le clavier sans action du joueur masquerait la moitié de l'écran.
   // La paire suivante est demandée dès qu'une question s'affiche, pour enchaîner sans attendre.
   const fetchPair = () => {
+    const ask = () => api.randomPair({
+      difficulty, mode: MODE, balanced: true, min_length: LENGTHS[difficulty][0], max_length: LENGTHS[difficulty][1],
+    });
     const ready = prefetched.current?.difficulty === difficulty && prefetched.current.promise;
-    const promise = api.randomPair({ difficulty });
+    const promise = ask();
     promise.catch(() => {});
     prefetched.current = { difficulty, promise };
-    return ready || api.randomPair({ difficulty });
+    return ready || ask();
   };
 
+  // `focus` : place le curseur dans le champ. Par défaut seulement avec une souris : sur téléphone,
+  // ouvrir le clavier sans action du joueur masquerait la moitié de l'écran.
   const newChallenge = async (focus = window.matchMedia?.("(pointer: fine)").matches) => {
     setError(null);
     setOutcome(null);
@@ -89,6 +96,17 @@ export default function GuessRelations({ rivalScore = null }) {
     return pair && guess !== "" && Number.isInteger(n) && n >= 0 && !answered && !loading
       && !(gameActive && timeLeft <= 0);
   }, [pair, guess, answered, loading, gameActive, timeLeft]);
+  const canGoNext = answered && timeLeft > 0 && !loading;
+
+  // Entrée quand le curseur n'est plus dans le formulaire (clic ailleurs) : question suivante.
+  useEffect(() => {
+    if (!canGoNext) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Enter" && !e.target.closest?.("form, button, a, input, textarea, select")) newChallenge(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   const handleSubmit = async () => {
     const actual = pair.length;
@@ -97,7 +115,7 @@ export default function GuessRelations({ rivalScore = null }) {
     setOutcome({ actual, correct: diff === 0, details: null });
     api.logEvent(GAME, {
       from: pair.from.qid, to: pair.to.qid, length: actual, n_paths: pair.n_paths, guess: value,
-      ms: Math.round(performance.now() - shownAt.current), difficulty, timed: gameActive,
+      ms: Math.round(performance.now() - shownAt.current), difficulty, mode: MODE, timed: gameActive,
     });
 
     if (gameActive) {
@@ -116,7 +134,7 @@ export default function GuessRelations({ rivalScore = null }) {
       }
     }
     try {
-      const details = await api.path(pair.from.qid, pair.to.qid, { limit: 1 });
+      const details = await api.path(pair.from.qid, pair.to.qid, { limit: 1, mode: MODE });
       setOutcome((o) => o && { ...o, details });
     } catch { /* le chemin détaillé est un bonus */ }
   };
@@ -215,7 +233,7 @@ export default function GuessRelations({ rivalScore = null }) {
                   e.preventDefault();
                   // Entrée : valide, puis Entrée à nouveau : question suivante.
                   if (canSubmit) handleSubmit();
-                  else if (answered && timeLeft > 0 && !loading) newChallenge(true);
+                  else if (canGoNext) newChallenge(true);
                 }}
               >
                 <div>
@@ -234,9 +252,14 @@ export default function GuessRelations({ rivalScore = null }) {
                   />
                 </div>
                 <div>
-                  <button type="submit" className="btn" disabled={!canSubmit}>{t("guess.verify")}</button>
+                  {/* Le bouton reste actif après la réponse : un formulaire dont le bouton d'envoi est désactivé
+                      ignore la touche Entrée. Il devient « Suivant ». */}
+                  <button type="submit" className={`btn ${answered ? "btn-primary" : ""}`} disabled={!canSubmit && !canGoNext}>
+                    {answered ? t("guess.next") : t("guess.verify")}
+                  </button>
                 </div>
               </form>
+              <p className="muted" style={{ margin: "6px 0 0", fontSize: 13 }}>{t("guess.strongHint")}</p>
 
               {outcome && (
                 <div className={outcome.correct ? "success-box" : "panel result-box"} style={{ marginTop: 12 }}>
@@ -249,11 +272,6 @@ export default function GuessRelations({ rivalScore = null }) {
                   </p>
                   {outcome.details && (
                     <PathView path={outcome.details.paths[0]} persons={outcome.details.persons} hops={outcome.details.hops} />
-                  )}
-                  {timeLeft > 0 && (
-                    <button className="btn" style={{ marginTop: 8 }} onClick={() => newChallenge(true)}>
-                      {t("guess.next")}
-                    </button>
                   )}
                 </div>
               )}
