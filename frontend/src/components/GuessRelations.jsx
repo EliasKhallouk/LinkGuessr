@@ -44,7 +44,7 @@ export default function GuessRelations({ rivalScore = null }) {
   const [submitError, setSubmitError] = useState(null);
   const [popup, setPopup] = useState(null);
   const guessInputRef = useRef(null);
-  const nextBtnRef = useRef(null);
+  const prefetched = useRef(null);   // { difficulty, promise } : la paire suivante, chargée d'avance
 
   useEffect(() => {
     if (!gameActive) return;
@@ -55,13 +55,22 @@ export default function GuessRelations({ rivalScore = null }) {
 
   // `focus` : place le curseur dans le champ. Par défaut seulement avec une souris : sur téléphone,
   // ouvrir le clavier sans action du joueur masquerait la moitié de l'écran.
+  // La paire suivante est demandée dès qu'une question s'affiche, pour enchaîner sans attendre.
+  const fetchPair = () => {
+    const ready = prefetched.current?.difficulty === difficulty && prefetched.current.promise;
+    const promise = api.randomPair({ difficulty });
+    promise.catch(() => {});
+    prefetched.current = { difficulty, promise };
+    return ready || api.randomPair({ difficulty });
+  };
+
   const newChallenge = async (focus = window.matchMedia?.("(pointer: fine)").matches) => {
     setError(null);
     setOutcome(null);
     setGuess("");
     setLoading(true);
     try {
-      setPair(await api.randomPair({ difficulty }));
+      setPair(await fetchPair());
       shownAt.current = performance.now();
       if (focus) requestAnimationFrame(() => guessInputRef.current?.focus());
     } catch (e) {
@@ -73,10 +82,6 @@ export default function GuessRelations({ rivalScore = null }) {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { newChallenge(); }, [difficulty]);
-
-  useEffect(() => {
-    if (outcome && gameActive && timeLeft > 0) nextBtnRef.current?.focus();
-  }, [outcome, gameActive, timeLeft]);
 
   const answered = !!outcome;
   const canSubmit = useMemo(() => {
@@ -208,8 +213,9 @@ export default function GuessRelations({ rivalScore = null }) {
                 style={{ alignItems: "end", marginTop: 12 }}
                 onSubmit={(e) => {
                   e.preventDefault();
+                  // Entrée : valide, puis Entrée à nouveau : question suivante.
                   if (canSubmit) handleSubmit();
-                  else if (answered && gameActive && timeLeft > 0) newChallenge(true);
+                  else if (answered && timeLeft > 0 && !loading) newChallenge(true);
                 }}
               >
                 <div>
@@ -224,7 +230,7 @@ export default function GuessRelations({ rivalScore = null }) {
                     value={guess}
                     onChange={(e) => setGuess(e.target.value)}
                     placeholder={t("guess.exampleNumber")}
-                    disabled={answered}
+                    readOnly={answered}
                   />
                 </div>
                 <div>
@@ -245,7 +251,7 @@ export default function GuessRelations({ rivalScore = null }) {
                     <PathView path={outcome.details.paths[0]} persons={outcome.details.persons} hops={outcome.details.hops} />
                   )}
                   {timeLeft > 0 && (
-                    <button ref={nextBtnRef} className="btn" style={{ marginTop: 8 }} onClick={newChallenge}>
+                    <button className="btn" style={{ marginTop: 8 }} onClick={() => newChallenge(true)}>
                       {t("guess.next")}
                     </button>
                   )}
