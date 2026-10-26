@@ -1,4 +1,4 @@
-from app.clues import HOLE, clues, mask, relation_sentence
+from app.clues import HOLE, best_snippet, clues, mask, relation_sentence
 
 
 def test_mask_full_name_is_one_hole():
@@ -28,5 +28,16 @@ def test_clues_one_per_hidden_link():
     answer = {"id": 1, "qid": "Q1", "name": "Zinédine Zidane"}
     persons = {"Q2": {"id": 2, "qid": "Q2", "name": "Karim Benzema"}}
     hops = {"Q1-Q2": {"relations": [], "text": [
-        {"source_id": 2, "target_id": 1, "in_lead": False, "mentions": 1, "snippet": "Benzema admire Zidane."}]}}
-    assert clues(hops, answer, persons) == [{"with": "Q2", "relation": None, "snippet": f"Benzema admire {HOLE}."}]
+        {"source_id": 2, "target_id": 1, "in_lead": False, "mentions": 1, "snippet": "Benzema a toujours dit admirer Zidane depuis son enfance."}]}}
+    assert clues(hops, answer, persons) == [{"with": "Q2", "relation": None, "snippet": f"Benzema a toujours dit admirer {HOLE} depuis son enfance."}]
+
+
+def test_snippet_filters_junk_and_unrelated():
+    answer = {"id": 1, "qid": "Q1", "name": "Fidel Castro"}
+    other = {"id": 2, "qid": "Q2", "name": "Gérard Depardieu"}
+    texts = [
+        {"in_lead": True, "mentions": 3, "snippet": "ef name=date> (1769-1821), les grandes dates de Fidel Castro et autres"},
+        {"in_lead": True, "mentions": 2, "snippet": "L'URSS a également ses têtes brûlées qui veulent changer le socialisme."},
+        {"in_lead": False, "mentions": 1, "snippet": "Il se dit l'ami de Fidel Castro qu'il a rencontré en 1992."},
+    ]
+    assert best_snippet(texts, answer, other) == f"Il se dit l'ami de {HOLE} qu'il a rencontré en 1992."
