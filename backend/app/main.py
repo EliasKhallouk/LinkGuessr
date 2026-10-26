@@ -35,7 +35,7 @@ LEVELS = {
     "extreme": {"top": 12_000, "hidden": (1_000, 30_000), "hidden_length": (3, 4)},
     "humain": {"top": 60_000, "hidden": (5_000, None), "hidden_length": (4, 6)},
 }
-CHOICES_TOP = 600  # les mauvaises propositions du choix multiple : parmi les 600 plus connus, même domaine
+CHOICES_TOP = 300  # les mauvaises propositions du choix multiple : parmi les 300 plus connus de l'époque
 LEVEL = f"^({'|'.join(LEVELS)})$"
 MIN_POOL = 200  # réservoir minimal, pour les petits domaines
 
@@ -249,13 +249,10 @@ def _valid_middles(before: int, after: int) -> set[int]:
 
 def _wrong_choices(answer: int, chain: list[int], valid: set[int], n: int, rng: random.Random,
                    era: str = "tous") -> list[int]:
-    """Mauvaises propositions plausibles : très connues à cette époque, du même domaine, mais pas des bonnes réponses."""
-    dom = state["domain"]
+    """Mauvaises propositions : très connues à cette époque (tous domaines : en facile, on doit pouvoir trancher),
+    mais jamais des bonnes réponses."""
     top = state["eras"][era]["order"][:CHOICES_TOP].tolist()
-    allowed = [i for i in top if i not in valid and i not in chain]
-    same = [i for i in allowed if dom[i] == dom[answer]]
-    picked = rng.sample(same, min(n, len(same)))
-    return picked + rng.sample([i for i in allowed if i not in picked], n - len(picked))
+    return rng.sample([i for i in top if i not in valid and i not in chain], n)
 
 
 def _pick_balanced(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int):
