@@ -18,7 +18,7 @@ from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS
 from .core import id_of, path_details, person_columns, pool, startup, state, summaries
 from .graph import MODES, PathResult
 from .policy import http_policy
-from .text import normalize
+from .text import normalize, whole_words
 
 # Niveaux de difficulté (calés sur les rangs de popularité, sur 765 000 personnes) :
 # - top : on tire les personnes parmi les N plus populaires (rang 200 : Ronaldinho, Cléopâtre ;
@@ -138,6 +138,8 @@ def person(qid: str):
                WHERE t.target_id = %s ORDER BY o.popularity DESC LIMIT 40""",
             (pid,),
         ).fetchall()
+    for r in cites + cited_by:
+        r["snippet"] = whole_words(r["snippet"])
     return {"person": p, "labels": labels, "facts": facts, "relations": relations,
             "cites": cites, "cited_by": cited_by}
 

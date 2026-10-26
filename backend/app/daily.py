@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field
 from .config import ADMIN_TOKEN
 from .core import QID, id_of, path_details, pool, startup, state, summaries
 from .policy import RateLimiter
-from .text import normalize
+from .text import normalize, whole_words
 from .graph import PathResult
 from .moderation import is_offensive
 
@@ -335,13 +335,16 @@ def _today_row() -> dict:
 def _public(row: dict, reveal: bool) -> dict:
     masked = row["path"][row["masked_index"]]
     hidden = lambda key: masked in key.split("-")  # noqa: E731
+    # Extraits enregistrés avant le découpage aux mots entiers : on les nettoie à l'envoi.
+    hops = {k: {**v, "text": [{**r, "snippet": whole_words(r.get("snippet"))} for r in v["text"]]}
+            for k, v in row["hops"].items()}
     return {
         "number": row["number"],
         "day": row["day"].isoformat(),
         "path": row["path"],
         "masked_index": row["masked_index"],
         "persons": row["persons"] if reveal else {q: p for q, p in row["persons"].items() if q != masked},
-        "hops": row["hops"] if reveal else {k: v for k, v in row["hops"].items() if not hidden(k)},
+        "hops": hops if reveal else {k: v for k, v in hops.items() if not hidden(k)},
         "max_tries": MAX_TRIES,
         **({"answer": row["answer"]} if reveal else {}),
     }

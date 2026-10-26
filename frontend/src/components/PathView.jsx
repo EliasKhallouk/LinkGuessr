@@ -4,10 +4,10 @@ import { useI18n } from "../i18n/I18nProvider";
 import PersonChip from "./PersonChip";
 
 // Phrase extraite d'un article Wikipédia (CC BY-SA 4.0) : on renvoie toujours vers l'article d'origine.
-// Extrait coupé en pleine phrase : on le termine au dernier mot complet et on marque les coupures.
+// Extrait coupé en pleine phrase (l'API le ramène déjà à des mots entiers) : on marque les coupures.
 function tidy(text) {
   let out = text.trim();
-  if (!/[.!?…»"')\]]$/.test(out)) out = `${out.replace(/\s+\S*$/, "")} …`;
+  if (!/[.!?…»"')\]]$/.test(out)) out = `${out.replace(/[\s,;:]+$/, "")} …`;
   if (/^[a-zà-ÿ,;:.)]/.test(out)) out = `… ${out.replace(/^[,;:.)\s]+/, "")}`;
   return out;
 }

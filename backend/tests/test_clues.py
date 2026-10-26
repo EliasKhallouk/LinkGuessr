@@ -1,4 +1,5 @@
 from app.clues import HOLE, best_snippet, clues, mask, relation_sentence
+from app.text import whole_words
 
 
 def test_mask_full_name_is_one_hole():
@@ -41,3 +42,14 @@ def test_snippet_filters_junk_and_unrelated():
         {"in_lead": False, "mentions": 1, "snippet": "Il se dit l'ami de Fidel Castro qu'il a rencontré en 1992."},
     ]
     assert best_snippet(texts, answer, other) == f"Il se dit l'ami de {HOLE} qu'il a rencontré en 1992."
+
+
+def test_whole_words_cut_inside_a_word():
+    assert whole_words("n, il rejoint le Paris Saint-Germain où il remporte le championnat avec Mbap") \
+        == "il rejoint le Paris Saint-Germain où il remporte le championnat avec"
+
+
+def test_whole_words_keeps_full_sentences():
+    text = "En 2017, il rejoint le Paris Saint-Germain."
+    assert whole_words(text) == text
+    assert whole_words("« Il est le meilleur », dit-il.") == "« Il est le meilleur », dit-il."

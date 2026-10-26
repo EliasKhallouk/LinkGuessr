@@ -9,6 +9,7 @@ from psycopg_pool import ConnectionPool
 
 from .config import DATABASE_URL, GRAPH_FILE
 from .graph import PersonGraph
+from .text import whole_words
 
 pool = ConnectionPool(DATABASE_URL, min_size=1, max_size=5, open=False,
                       kwargs={"options": "-c search_path=graph,public", "row_factory": dict_row})
@@ -78,6 +79,8 @@ def path_details(res) -> dict:
                  ON (r.source_id = p.a AND r.target_id = p.b) OR (r.source_id = p.b AND r.target_id = p.a)""",
             (a, b),
         ).fetchall()
+    for r in text:
+        r["snippet"] = whole_words(r["snippet"])
     people = summaries(ids)
     # Pour chaque lien du chemin : les phrases qui citent l'autre personne et les relations Wikidata.
     hops = {

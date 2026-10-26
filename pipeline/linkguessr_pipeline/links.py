@@ -107,17 +107,28 @@ def clean_wikitext(s: str) -> str:
 
 
 def _snippet(text: str, start: int, end: int) -> str:
-    """Phrase qui contient le lien (bornée à environ 300 caractères de chaque côté)."""
+    """Phrase qui contient le lien (bornée à environ 300 caractères de chaque côté).
+    Sans fin de phrase dans la fenêtre, on la coupe à un mot entier, jamais au milieu d'un mot
+    (sinon « … n, il rejoint le Paris Saint-Germain »)."""
     lo = max(0, start - 300)
     before = list(_SENTENCE_END.finditer(text, lo, start))
-    s = before[-1].end() if before else lo
-    after = _SENTENCE_END.search(text, end, min(len(text), end + 300))
-    e = after.start() + 1 if after else min(len(text), end + 300)
+    if before:
+        s = before[-1].end()
+    else:
+        space = text.find(" ", lo, start) if lo > 0 else -1
+        s = space + 1 if space >= 0 else lo
+    hi = min(len(text), end + 300)
+    after = _SENTENCE_END.search(text, end, hi)
+    if after:
+        e = after.start() + 1
+    else:
+        space = text.rfind(" ", end, hi) if hi < len(text) else -1
+        e = space if space >= 0 else hi
     out = clean_wikitext(text[s:e])
     # Fenêtre coupée au milieu d'un modèle ou d'une note : on retire le morceau orphelin.
     out = re.split(r"\{\{|<ref|\[\[", out)[0]
-    out = re.split(r"\}\}|</ref>|\]\]", out)[-1]
-    return out.strip()[:500]
+    out = re.split(r"\}\}|</ref>|\]\]", out)[-1].strip()
+    return out if len(out) <= 500 else out[:500].rsplit(" ", 1)[0]
 
 
 def _lead(text: str) -> str:
