@@ -13,6 +13,8 @@ import PersonChip from "./PersonChip";
 import { dailyGrid, SITE_URL } from "../lib/share";
 import PersonPicker from "./PersonPicker";
 import ShareButton from "./ShareButton";
+import TriesTiles from "./TriesTiles";
+import { confetti } from "../lib/confetti";
 
 function Countdown() {
   const { t } = useI18n();
@@ -39,6 +41,7 @@ export default function DailyChallenge() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState(null);
+  const [shake, setShake] = useState(false);
 
   // Partie terminée : on l'inscrit une fois dans l'historique local (séries, répartition).
   useEffect(() => {
@@ -56,6 +59,9 @@ export default function DailyChallenge() {
     try {
       track("daily", "start", { number: game.number });
       const next = await api.dailyGuess(deviceId(), guess.qid);
+      // Retours visuels seulement : secousse sur une erreur, confettis sur la bonne réponse.
+      if (next.wrong.length > game.wrong.length) setShake(true);
+      if (next.solved && !game.solved) confetti();
       setGame(next);
       setGuess(null);
       if (next.finished) track("daily", "finish", { number: next.number, solved: next.solved, tries: next.tries });
@@ -74,7 +80,11 @@ export default function DailyChallenge() {
     <section className="panel daily fade-in">
       <div className="panel-header">
         <span className="panel-title">{t("daily.title", { n: game.number })}</span>
-        {!game.finished && <span className="kpi">{t("daily.triesLeft", { n: left })}</span>}
+        <span className="tries-row">
+          <TriesTiles total={game.max_tries} wrong={game.wrong.length} solved={game.solved}
+            label={game.finished ? (game.solved ? t("daily.won", { n: game.tries }) : t("daily.lost")) : t("daily.triesLeft", { n: left })} />
+          {!game.finished && <span className="muted tries-left" aria-hidden="true">{t("daily.triesLeft", { n: left })}</span>}
+        </span>
       </div>
       <div className="panel-body">
         {!game.finished && <p style={{ marginTop: 0 }}>{t("daily.rules", { n: game.max_tries })}</p>}
@@ -82,7 +92,8 @@ export default function DailyChallenge() {
           hiddenIndex={game.finished ? null : game.masked_index} />
 
         {!game.finished && (
-          <form className="row" style={{ alignItems: "end" }} onSubmit={(e) => { e.preventDefault(); submit(); }}>
+          <form className={`row ${shake ? "shake" : ""}`} style={{ alignItems: "end" }} onAnimationEnd={(e) => { if (e.target === e.currentTarget) setShake(false); }}
+            onSubmit={(e) => { e.preventDefault(); submit(); }}>
             <PersonPicker id="daily-guess" label={t("who.question")} value={guess} onChange={setGuess} />
             <div><button type="submit" className="btn btn-primary" disabled={!guess || sending}>{t("guess.verify")}</button></div>
           </form>

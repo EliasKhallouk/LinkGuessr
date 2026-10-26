@@ -8,6 +8,8 @@ import PersonChip from "./PersonChip";
 import PersonPicker from "./PersonPicker";
 import { newRound, track } from "../lib/tracking";
 import Feedback from "./Feedback";
+import TriesTiles from "./TriesTiles";
+import { confetti } from "../lib/confetti";
 
 const GAME = "guess_who";
 const MAX_TRIES = 4; // après 4 erreurs, la réponse est révélée
@@ -25,6 +27,7 @@ export default function GuessWhoPath() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [topList, setTopList] = useState([]);
+  const [shake, setShake] = useState(false);
 
   useEffect(() => {
     api.domains().then(setDomains).catch(() => {});
@@ -58,6 +61,8 @@ export default function GuessWhoPath() {
     setTries(newTries);
     if (ok) setFound(true);
     else setLastWrong(guess);
+    if (ok) confetti();
+    else setShake(true);
     setGuess(null);
     if (ok || newTries >= MAX_TRIES) {
       track(GAME, "finish", {
@@ -90,11 +95,17 @@ export default function GuessWhoPath() {
             <p className="muted" style={{ margin: 0 }}>{t("guess.loadingPeople")}</p>
           ) : (
             <>
+              <div className="tries-row" style={{ marginBottom: 8 }}>
+                <TriesTiles total={MAX_TRIES} wrong={tries} solved={found}
+                  label={found ? t("guess.good") : t("daily.triesLeft", { n: MAX_TRIES - tries })} />
+                {!revealed && <span className="muted tries-left" aria-hidden="true">{t("daily.triesLeft", { n: MAX_TRIES - tries })}</span>}
+              </div>
               <PathView path={challenge.path} persons={persons} hops={challenge.hops}
                 hiddenIndex={revealed ? null : challenge.masked_index} />
 
               {!revealed && (
-                <form className="row" style={{ alignItems: "end" }} onSubmit={(e) => { e.preventDefault(); validate(); }}>
+                <form className={`row ${shake ? "shake" : ""}`} style={{ alignItems: "end" }} onAnimationEnd={(e) => { if (e.target === e.currentTarget) setShake(false); }}
+                  onSubmit={(e) => { e.preventDefault(); validate(); }}>
                   <PersonPicker id="who-guess" label={t("who.question")} value={guess} onChange={setGuess} />
                   <div><button type="submit" className="btn btn-primary" disabled={!guess}>{t("guess.verify")}</button></div>
                 </form>

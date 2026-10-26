@@ -10,6 +10,7 @@ import ShareButton from "./ShareButton";
 import { ShowMoreButton, useShowMore } from "./ShowMore";
 import { newRound, track } from "../lib/tracking";
 import Feedback from "./Feedback";
+import { confetti } from "../lib/confetti";
 
 const GAME = "relay";
 const HINT_AFTER = 2; // aide quand le joueur a fait 2 pas de plus que le plus court chemin
@@ -72,6 +73,7 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
     setSearch("");
     setHint(null);
     if (person.qid === target.qid) {
+      confetti();
       setNeighbors([]);
       const record = load("lg-relay-stats", { played: 0, optimal: 0 });
       save("lg-relay-stats", { played: record.played + 1,

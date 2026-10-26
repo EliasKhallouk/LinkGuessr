@@ -59,3 +59,36 @@
 .howto-num { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
   background: var(--accent-primary); color: var(--on-accent); font-weight: 800; }
 .btn-block { width: 100%; }
+
+/* ----- Boutons en relief (façon Duolingo) : on les enfonce au clic ----- */
+.btn { box-shadow: 0 4px 0 var(--accent-shade); transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease; }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--accent-shade); filter: brightness(1.05); }
+.btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--accent-shade); }
+.btn-share { box-shadow: 0 4px 0 var(--share-shade); }
+.btn-share:hover { box-shadow: 0 5px 0 var(--share-shade); }
+.btn-share:active { box-shadow: 0 0 0 var(--share-shade); }
+.btn-ghost, .btn-more { box-shadow: 0 3px 0 var(--card-shade); }
+.btn-ghost:hover, .btn-more:hover { box-shadow: 0 4px 0 var(--card-shade); filter: none; }
+.btn-ghost:active, .btn-more:active { box-shadow: 0 0 0 var(--card-shade); }
+.btn:disabled, .btn:disabled:hover, .btn:disabled:active { transform: none; box-shadow: none; filter: grayscale(0.7) opacity(0.5); }
+
+/* ----- Cases d'essais ----- */
+.tries-row { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.tries { display: inline-flex; gap: 6px; }
+.tile { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; border: 2px solid var(--border-hover);
+  font-size: 15px; font-weight: 800; line-height: 1; }
+.tile.is-wrong { background: var(--accent-danger); border-color: var(--accent-danger); color: var(--on-accent); animation: tileFlip 0.4s ease both; }
+.tile.is-win { background: var(--accent-success); border-color: var(--accent-success); color: var(--on-accent); animation: tileFlip 0.4s ease both; }
+.tries-left { font-size: 14px; }
+@keyframes tileFlip { from { transform: rotateX(90deg); } to { transform: none; } }
+
+/* ----- Erreur : le formulaire tremble ----- */
+.shake { animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+@keyframes shake {
+  20%, 80% { transform: translateX(-3px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-6px); }
+}
+
+/* ----- Confettis ----- */
+.confetti-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2000; }

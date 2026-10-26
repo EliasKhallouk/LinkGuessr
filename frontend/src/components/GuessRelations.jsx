@@ -9,6 +9,7 @@ import PersonChip from "./PersonChip";
 import ShareButton from "./ShareButton";
 import { newRound, track } from "../lib/tracking";
 import Feedback from "./Feedback";
+import { confetti } from "../lib/confetti";
 
 const GAME = "guess_count";
 const GAME_DURATION = 60; // secondes
@@ -152,6 +153,7 @@ export default function GuessRelations({ rivalScore = null }) {
     if (!gameActive && timeLeft === 0 && score > best) {
       save("lg-best-count", score);
       setBest(score);
+      confetti(); // nouveau record perso
     }
   }, [gameActive, timeLeft, score, best]);
 
