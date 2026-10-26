@@ -12,6 +12,7 @@ import PersonDrawer from "./components/PersonDrawer";
 import DailyPage from "./pages/DailyPage";
 import Duel from "./pages/Duel";
 import Admin from "./pages/Admin";
+import AdminDaily from "./pages/AdminDaily";
 import GamePage from "./pages/GamePage";
 import { GAMES } from "./games";
 import Lab from "./pages/Lab";
@@ -112,6 +113,7 @@ function App() {
         <Route path="/jour/:number" element={<DailyPage />} />
         <Route path="/defi" element={<Duel />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/defis" element={<AdminDaily />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/politique-de-confidentialite" element={<Privacy />} />
       </Routes>

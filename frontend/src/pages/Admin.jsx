@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { apiUrl } from "../config";
 
 const GAME_NAMES = { daily: "Défi du jour", guess_who: "Qui est caché ?", relay: "Relier", guess_count: "Nombre de liens", explore: "Explorer" };
@@ -36,6 +37,7 @@ export default function Admin() {
             </select>
             <button className="btn" type="submit">Afficher</button>
             <a className="btn" href="/umami" target="_blank" rel="noreferrer">Fréquentation (Umami)</a>
+            <Link className="btn" to="/admin/defis">Gérer les défis du jour</Link>
           </form>
           {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
         </div>

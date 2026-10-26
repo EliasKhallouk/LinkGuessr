@@ -156,3 +156,19 @@ body.drawer-open { overflow: hidden; }
 .home-intro { margin-bottom: 12px; }
 .home-intro h2 { margin: 0 0 6px; font-size: clamp(20px, 3vw, 28px); }
 .home-intro p { margin: 0; color: var(--text-secondary); max-width: 720px; line-height: 1.5; }
+
+/* ----- Gestion des défis du jour ----- */
+.admin-daily .page { max-width: 1200px; }
+.admin-daily { max-width: 1200px; }
+.admin-table td { vertical-align: top; }
+.admin-table tr.is-current td { background: rgba(0, 217, 255, 0.08); }
+.admin-table tr.is-past td { opacity: 0.6; }
+.admin-path { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.admin-person { display: inline-flex; align-items: center; gap: 4px; }
+.admin-person img { border-radius: 50%; object-fit: cover; }
+.admin-person.is-hidden strong { color: var(--accent-primary); }
+.admin-actions .btn { padding: 4px 10px; font-size: 13px; }
+.admin-candidates { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.admin-candidates li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.admin-candidates .btn { padding: 4px 10px; font-size: 13px; }
+.admin-editor { padding: 8px 0; }
