@@ -239,14 +239,14 @@ def _valid_middles(before: int, after: int) -> set[int]:
     return set(csr.neighbors_of(before).tolist()) & set(csr.neighbors_of(after).tolist())
 
 
-def _wrong_choices(answer: int, chain: list[int], valid: set[int], n: int) -> list[int]:
+def _wrong_choices(answer: int, chain: list[int], valid: set[int], n: int, rng: random.Random) -> list[int]:
     """Mauvaises propositions plausibles : très connues, du même domaine, mais pas des bonnes réponses."""
     pop, dom = state["graph"].popularity, state["domain"]
     top = np.argpartition(-pop, CHOICES_TOP)[:CHOICES_TOP].tolist()
     allowed = [i for i in top if i not in valid and i not in chain]
     same = [i for i in allowed if dom[i] == dom[answer]]
-    picked = random.sample(same, min(n, len(same)))
-    return picked + random.sample([i for i in allowed if i not in picked], n - len(picked))
+    picked = rng.sample(same, min(n, len(same)))
+    return picked + rng.sample([i for i in allowed if i not in picked], n - len(picked))
 
 
 def _pick_balanced(difficulty: str, domain: str | None, mode: str, min_length: int, max_length: int):
@@ -304,19 +304,44 @@ def random_path(
     """« Qui est caché ? » : un plus court chemin dont une personne intermédiaire est à deviner.
     Les indices (domaine, dates, initiales) sont donnés ; le nom reste dans `answer`, et les liens
     de la personne cachée (phrases qui la citent) dans `answer_hops`, à afficher une fois la réponse donnée."""
-    level = LEVELS[difficulty]
-    lo, hi = level["hidden_length"]
+    lo, hi = LEVELS[difficulty]["hidden_length"]
     ids, masked = _pick_hidden(difficulty, domain, min_length or lo, max_length or hi)
+    return _puzzle(ids, masked, difficulty, random.Random())
+
+
+@app.get("/random_path/replay")
+def random_path_replay(
+    chemin: str = Query(..., pattern=r"^Q\d+(-Q\d+){2,7}$"),
+    cache: int = Query(..., ge=1),
+    niveau: str = Query("moyen", pattern=LEVEL),
+):
+    """La même énigme qu'un ami a partagée (/defi?jeu=cache&chemin=Q1-Q2-Q3&cache=1&niveau=facile),
+    avec les mêmes propositions : le tirage est fixé par le lien."""
+    ids = [id_of(q) for q in chemin.split("-")]
+    if cache > len(ids) - 2:
+        raise HTTPException(400, "Position de la personne cachée invalide")
+    csr = state["graph"].csr["all"]
+    if any(b not in set(csr.neighbors_of(a).tolist()) for a, b in zip(ids, ids[1:])):
+        raise HTTPException(400, "Ce chemin n'existe pas (ou plus) dans les données")
+    return _puzzle(ids, cache, niveau, random.Random(f"{chemin}-{cache}-{niveau}"))
+
+
+def _puzzle(ids: list[int], masked: int, difficulty: str, rng: random.Random) -> dict:
+    """L'énigme : chemin, personne cachée, phrases à trou, indices et, en facile, choix multiple."""
+    level = LEVELS[difficulty]
     details = path_details(PathResult(len(ids) - 1, 1, [ids]))
     chain = details["paths"][0]
     answer = details["persons"][chain[masked]]
     hidden = {k: v for k, v in details["hops"].items() if answer["qid"] in k.split("-")}
     choices = None
     if level.get("choices"):
-        wrong = _wrong_choices(ids[masked], ids, _valid_middles(ids[masked - 1], ids[masked + 1]), level["choices"] - 1)
-        choices = list(summaries(wrong).values()) + [answer]
-        random.shuffle(choices)
+        valid = _valid_middles(ids[masked - 1], ids[masked + 1])
+        wrong = _wrong_choices(ids[masked], ids, valid, level["choices"] - 1, rng)
+        people = summaries(wrong)
+        choices = [people[i] for i in wrong] + [answer]
+        rng.shuffle(choices)
     return {
+        "difficulty": difficulty,
         "choices": choices,
         "clues": clues(hidden, answer, details["persons"]),
         "path": chain,
