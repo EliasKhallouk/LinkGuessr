@@ -20,9 +20,8 @@
     </script>
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+    <!-- Police Inter hébergée par le site (aucun appel à Google Fonts) : on précharge l'alphabet latin. -->
+    <link rel="preload" href="/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
     <title>LinkGuessr · Jeu Wikipédia : devine les liens entre personnalités</title>
     <!-- Mesure d'audience Umami, sans cookie, hébergée par nous (voir la page Confidentialité). -->
     <script defer src="/umami/lg.js" data-website-id="0cc0f88c-c1f5-4422-a55c-28a6fb5eb219" data-host-url="/umami"
