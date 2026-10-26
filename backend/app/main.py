@@ -21,14 +21,15 @@ from .text import normalize
 # Niveaux de difficulté (calés sur les rangs de popularité, sur 765 000 personnes) :
 # - top : on tire les personnes parmi les N plus populaires (rang 200 : Ronaldinho, Cléopâtre ;
 #   800 : Jennifer Lawrence ; 3 000 : Eddie Redmayne ; 12 000 : Kevin Mitnick ; 60 000 : quasi inconnus) ;
-# - hidden_top : « Qui est caché ? », la personne à deviner est parmi les N plus populaires (None : n'importe qui) ;
+# - hidden : « Qui est caché ? », rangs de popularité permis pour la personne à deviner (None : sans limite) ;
+#   dans les niveaux durs on écarte les stars, sinon les chemins passent toujours par Trump ou Napoléon ;
 # - hidden_length : longueur du chemin de « Qui est caché ? ».
 LEVELS = {
-    "facile": {"top": 200, "hidden_top": 500, "hidden_length": (2, 2)},
-    "moyen": {"top": 800, "hidden_top": 2_000, "hidden_length": (2, 3)},
-    "difficile": {"top": 3_000, "hidden_top": 8_000, "hidden_length": (2, 3)},
-    "extreme": {"top": 12_000, "hidden_top": 30_000, "hidden_length": (3, 4)},
-    "humain": {"top": 60_000, "hidden_top": None, "hidden_length": (4, 6)},
+    "facile": {"top": 200, "hidden": (1, 500), "hidden_length": (2, 2)},
+    "moyen": {"top": 800, "hidden": (1, 2_000), "hidden_length": (2, 3)},
+    "difficile": {"top": 3_000, "hidden": (200, 8_000), "hidden_length": (2, 3)},
+    "extreme": {"top": 12_000, "hidden": (1_000, 30_000), "hidden_length": (3, 4)},
+    "humain": {"top": 60_000, "hidden": (5_000, None), "hidden_length": (4, 6)},
 }
 LEVEL = f"^({'|'.join(LEVELS)})$"
 MIN_POOL = 200  # réservoir minimal, pour les petits domaines
@@ -217,11 +218,11 @@ def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, 
 
 def _pick_hidden(difficulty: str, domain: str | None, min_length: int, max_length: int) -> tuple[list[int], int]:
     """Un plus court chemin et la position de la personne à deviner, assez connue pour le niveau."""
-    hidden_top, rank = LEVELS[difficulty]["hidden_top"], state["pop_rank"]
-    for _ in range(20):
+    (lo, hi), rank = LEVELS[difficulty]["hidden"], state["pop_rank"]
+    for _ in range(30):
         _, _, res = _pick_pair(difficulty, domain, "all", min_length, max_length, limit=20)
         choices = [(p, i) for p in res.paths for i in range(1, len(p) - 1)
-                   if hidden_top is None or rank[p[i]] <= hidden_top]
+                   if rank[p[i]] >= lo and (hi is None or rank[p[i]] <= hi)]
         if choices:
             return random.choice(choices)
     raise HTTPException(404, "Aucun chemin trouvé pour ce niveau, réessayez")
