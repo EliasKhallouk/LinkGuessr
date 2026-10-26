@@ -114,6 +114,13 @@ export default function AdminDaily() {
     }
   };
 
+  // Monter / descendre : échange avec le jour voisin (s'il est modifiable et a un défi).
+  const neighbor = (index, step) => {
+    const other = data?.days[index + step];
+    return other && other.editable && other.path ? other.day : null;
+  };
+  const move = (day, other) => act(day, "/swap", { method: "POST", body: { a: day, b: other } });
+
   const toggleSelect = (day) => setSelected((s) => (s.includes(day) ? s.filter((d) => d !== day) : [...s, day].slice(-2)));
 
   return (
@@ -148,7 +155,7 @@ export default function AdminDaily() {
             <table className="table admin-table">
               <thead><tr><th></th><th>#</th><th>Jour</th><th>Profil</th><th>Défi</th><th>Joueurs</th><th>Actions</th></tr></thead>
               <tbody>
-                {data.days.map((d) => (
+                {data.days.map((d, index) => (
                   <Fragment key={d.day}>
                     <tr className={d.current ? "is-current" : !d.editable ? "is-past" : ""}>
                       <td>{d.editable && d.path && (
@@ -164,6 +171,16 @@ export default function AdminDaily() {
                       <td>
                         {d.editable ? (
                           <div className="toolbar admin-actions">
+                            {d.path && (
+                              <>
+                                <button className="btn btn-ghost" title="Avancer d'un jour" disabled={!neighbor(index, -1) || busy === d.day}
+                                  onClick={() => move(d.day, neighbor(index, -1))}>▲</button>
+                                <button className="btn btn-ghost" title="Reculer d'un jour" disabled={!neighbor(index, 1) || busy === d.day}
+                                  onClick={() => move(d.day, neighbor(index, 1))}>▼</button>
+                                <button className="btn btn-ghost" title="Inverser la gauche et la droite" disabled={busy === d.day}
+                                  onClick={() => act(d.day, `/${d.day}/flip`, { method: "POST" })}>⇄</button>
+                              </>
+                            )}
                             <button className="btn" disabled={busy === d.day} onClick={() => act(d.day, `/${d.day}/regenerate`, { method: "POST" })}>Régénérer</button>
                             <button className="btn" onClick={() => showCandidates(d.day)}>Propositions</button>
                             <button className="btn" onClick={() => setOpen((o) => ({ ...o, [d.day]: o[d.day] === "edit" ? null : "edit" }))}>Modifier</button>

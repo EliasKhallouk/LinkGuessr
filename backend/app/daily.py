@@ -602,6 +602,20 @@ def admin_delete(day: dt.date):
     return {"ok": True}
 
 
+@admin_router.post("/{day}/flip")
+def admin_flip(day: dt.date):
+    """Inverse la gauche et la droite du chemin (la personne cachée reste au milieu)."""
+    _editable(day)
+    with pool.connection() as conn:
+        row = conn.execute("SELECT path, masked_index FROM app.daily_challenge WHERE day = %s", (day,)).fetchone()
+        if row is None:
+            raise HTTPException(404, "Aucun défi ce jour-là")
+        path = row["path"][::-1]
+        conn.execute("UPDATE app.daily_challenge SET path = %s, masked_index = %s WHERE day = %s",
+                     (path, len(path) - 1 - row["masked_index"], day))
+    return {"ok": True}
+
+
 class SwapIn(BaseModel):
     a: dt.date
     b: dt.date
