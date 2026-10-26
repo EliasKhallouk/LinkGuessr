@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { commonsThumb } from "../api";
+import CommonsImg from "../components/CommonsImg";
 import { apiUrl } from "../config";
 import PersonPicker from "../components/PersonPicker";
 
@@ -30,7 +30,7 @@ function Person({ person, hidden }) {
   return (
     <span className={`admin-person ${hidden ? "is-hidden" : ""}`} title={`${person.name}${person.description ? ` — ${person.description}` : ""}`}>
       {person.image
-        ? <img src={commonsThumb(person.image, 56)} alt="" width={28} height={28} loading="lazy" />
+        ? <CommonsImg file={person.image} width={28} height={28} loading="lazy" />
         : <span className="person-avatar placeholder" style={{ width: 28, height: 28 }}>{person.name.charAt(0)}</span>}
       <span className="admin-person-name">{person.name}</span>
     </span>

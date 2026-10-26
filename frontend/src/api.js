@@ -62,12 +62,6 @@ export const api = {
   logEvent: (game, payload) => post("/events", { game, session: sessionId(), payload }).catch(() => {}),
 };
 
-// Miniature d'une image Wikimedia Commons (nom de fichier tel que stocké dans Wikidata).
-export function commonsThumb(file, width = 96) {
-  if (!file) return null;
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=${width}`;
-}
-
 export function wikiUrl(title) {
   return `https://fr.wikipedia.org/wiki/${encodeURIComponent(title || "")}`;
 }

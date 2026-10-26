@@ -1,5 +1,5 @@
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { commonsThumb } from "../api";
+import CommonsImg from "./CommonsImg";
 
 // Lien vers une fiche : ouvre le panneau latéral sans quitter la page (jeux, duels, défis) ;
 // sur une page /personne, mène à la page de l'autre personne.
@@ -24,11 +24,10 @@ export default function PersonChip({ person, showDescription = false, size = 40,
     );
   }
   if (!person) return null;
-  const thumb = commonsThumb(person.image, size * 2);
   return (
     <span className="person-chip">
-      {thumb ? (
-        <img className="person-avatar" src={thumb} alt="" width={size} height={size} loading="lazy" />
+      {person.image ? (
+        <CommonsImg className="person-avatar" file={person.image} width={size} height={size} loading="lazy" />
       ) : (
         <span className="person-avatar placeholder" style={{ width: size, height: size }}>
           {(person.name || "?").charAt(0)}

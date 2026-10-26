@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, commonsThumb, lifespan } from "../api";
+import { api, lifespan } from "../api";
+import CommonsImg from "./CommonsImg";
 import { useI18n } from "../i18n/I18nProvider";
 import { capitalize } from "../lib/format";
 import DifficultyPicker from "./DifficultyPicker";
@@ -30,11 +31,10 @@ const HELP = {
 };
 
 function Choice({ person, disabled, onPick }) {
-  const thumb = commonsThumb(person.image, 96);
   return (
     <button type="button" className="who-choice" disabled={disabled} onClick={() => onPick(person)}>
-      {thumb
-        ? <img className="person-avatar" src={thumb} alt="" width={44} height={44} />
+      {person.image
+        ? <CommonsImg className="person-avatar" file={person.image} width={44} height={44} />
         : <span className="person-avatar placeholder" style={{ width: 44, height: 44 }}>{person.name.charAt(0)}</span>}
       <span className="person-text">
         <strong>{person.name}</strong>

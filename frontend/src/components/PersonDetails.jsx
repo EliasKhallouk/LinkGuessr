@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, commonsThumb, lifespan, wikiUrl } from "../api";
+import { api, lifespan, wikiUrl } from "../api";
+import CommonsImg from "./CommonsImg";
 import ImageCredit from "./ImageCredit";
 import { Snippet } from "./PathView";
 import PersonChip from "./PersonChip";
@@ -81,7 +82,7 @@ export default function PersonDetails({ qid }) {
         <div className="panel-body person-header">
           {p.image && (
             <figure className="person-figure">
-              <img src={commonsThumb(p.image, 320)} alt={p.name} className="person-portrait" />
+              <CommonsImg file={p.image} width={250} alt={p.name} className="person-portrait" />
               <ImageCredit file={p.image} />
             </figure>
           )}

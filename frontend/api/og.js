@@ -1,6 +1,7 @@
 // Images d'aperçu (Open Graph) générées à la volée : /api/og?type=jour&n=12, duel, nombre, cache, personne.
 // Elles intriguent sans jamais révéler de réponse, et portent les crédits des sources.
 import { ImageResponse } from "@vercel/og";
+import { commonsDirect, commonsFilePath } from "../src/lib/commons.js";
 
 // Runtime Node.js (par défaut) : @vercel/og 1.x référence des modules refusés par le runtime « edge ».
 
@@ -23,11 +24,12 @@ async function json(path) {
 }
 
 // Photo Commons téléchargée ici (User-Agent identifiable, exigé par Wikimedia) puis intégrée en data URI.
-async function photo(file, width = 240) {
+// Miniature directe (une largeur standard : Wikimedia refuse les autres), Special:FilePath en repli.
+async function photo(file, width = 250) {
   if (!file) return null;
   try {
-    const r = await fetch(`https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=${width}`,
-      { headers: { "User-Agent": UA } });
+    let r = await fetch(commonsDirect(file, width), { headers: { "User-Agent": UA } });
+    if (!r.ok) r = await fetch(commonsFilePath(file, width), { headers: { "User-Agent": UA } });
     if (!r.ok) return null;
     const bytes = new Uint8Array(await r.arrayBuffer());
     let binary = "";
@@ -105,7 +107,7 @@ async function render(params) {
   }
   if (type === "personne") {
     const { person: p, closest } = await json(`/person/${encodeURIComponent(params.get("qid"))}/card`);
-    const src = await photo(p.image, 320);
+    const src = await photo(p.image, 330);
     return frame(p.name, p.description || "",
       h("div", { display: "flex", alignItems: "center", gap: 48, width: "100%" },
         avatar(src, null, 240),

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { api, commonsThumb, lifespan } from "../api";
+import { api, lifespan } from "../api";
+import CommonsImg from "./CommonsImg";
 
 // Champ de recherche d'une personne. `value` est un objet personne (ou null) ;
 // les suggestions affichent photo + description pour lever les homonymies.
@@ -112,7 +113,7 @@ export default function PersonPicker({ id, label, value, onChange, placeholder =
               onMouseDown={(e) => { e.preventDefault(); choose(p); }}
               onMouseEnter={() => setActive(i)}
             >
-              {p.image ? <img src={commonsThumb(p.image, 64)} alt="" width={32} height={32} loading="lazy" />
+              {p.image ? <CommonsImg file={p.image} width={32} height={32} loading="lazy" />
                 : <span className="person-avatar placeholder" style={{ width: 32, height: 32 }}>{p.name.charAt(0)}</span>}
               <span>
                 <strong>{p.name}</strong>
