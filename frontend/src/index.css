@@ -35,6 +35,9 @@
   --danger-faint: rgba(239, 68, 68, 0.06);
   --danger-border: rgba(239, 68, 68, 0.4);
   --overlay: rgba(5, 8, 20, 0.55);
+  --card-shade: rgba(0, 0, 0, 0.45);
+  --violet-soft: rgba(124, 58, 237, 0.18);
+  --violet-text: #C4B5FD;
   --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%239ca8c5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 
   /* Gradients */
@@ -97,6 +100,9 @@
   --danger-faint: rgba(239, 68, 68, 0.04);
   --danger-border: rgba(239, 68, 68, 0.45);
   --overlay: rgba(15, 23, 42, 0.35);
+  --card-shade: rgba(15, 23, 42, 0.12);
+  --violet-soft: rgba(124, 58, 237, 0.1);
+  --violet-text: #6D28D9;
   --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 
   /* Gradients */
@@ -464,93 +470,6 @@ body::before {
 .panel:nth-child(1) { animation-delay: 0.1s; }
 .panel:nth-child(2) { animation-delay: 0.2s; }
 .panel:nth-child(3) { animation-delay: 0.3s; }
-
-/* ===== PLAYFUL TABS ===== */
-.tabs { 
-  display: grid; 
-  grid-template-columns: minmax(0, 1fr);
-  gap: 16px; 
-}
-
-.tabs-list {
-  display: flex; 
-  gap: 10px; 
-  flex-wrap: wrap;
-  background: var(--panel-bg);
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 8px;
-  box-shadow: var(--shadow-sm);
-}
-
-.tab {
-  flex: 1; /* Make tabs equal width */
-  min-width: 0; /* Allow flex shrinking */
-  padding: 12px 20px;
-  color: var(--text-secondary);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  border: 0;
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.3px;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  position: relative;
-  overflow: hidden;
-  text-align: center; /* Center text in equal-width tabs */
-}
-
-/* Petits écrans : onglets en 2 × 2 pour que les libellés restent lisibles */
-@media (max-width: 767px) {
-  .tabs-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    padding: 6px;
-  }
-  .tab {
-    padding: 10px 12px;
-    font-size: 14px;
-    letter-spacing: 0;
-  }
-}
-
-.tab span {
-  position: relative;
-  z-index: 1;
-}
-
-.tab:hover {
-  background: var(--accent-soft);
-  color: var(--text-primary);
-}
-
-.tab.active {
-  background: var(--accent-primary);
-  color: var(--on-accent);
-}
-
-.tabs-panel { 
-  display: grid; 
-  grid-template-columns: minmax(0, 1fr);
-  gap: 16px; 
-}
-
-/* Enhanced tab transitions */
-.tabs-panel > * { 
-  animation: tabSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; 
-}
-
-@keyframes tabSlideIn {
-  from { 
-    opacity: 0; 
-    transform: translateY(20px) scale(0.95); 
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0) scale(1); 
-  }
-}
 
 /* ===== AD SLOT WITH MODERN STYLING ===== */
 .ad-slot .ad-inner {
@@ -936,7 +855,6 @@ select option {
 a:focus-visible,
 button:focus-visible,
 .btn:focus-visible,
-.tab:focus-visible,
 .chemin-link:focus-visible,
 .btn-ellipsis:focus-visible,
 .menu-link:focus-visible,

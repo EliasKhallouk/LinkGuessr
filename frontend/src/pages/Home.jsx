@@ -1,31 +1,18 @@
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import ConnectRelay from "../components/ConnectRelay";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import DailyChallenge from "../components/DailyChallenge";
-import Game from "../components/Game";
-import GuessRelations from "../components/GuessRelations";
-import GuessWhoPath from "../components/GuessWhoPath";
-import Leaderboard from "../components/Leaderboard";
+import GameIcon from "../components/GameIcon";
 import StatsBanner from "../components/StatsBanner";
-import Tabs from "../components/Tabs";
+import { GAMES, gamePath } from "../games";
 import { useI18n } from "../i18n/I18nProvider";
 
-// Ordre des onglets : l'explorateur d'abord (le défi du jour, juste au-dessus, est déjà un « Qui est caché ? »),
-// puis les jeux du plus accessible au plus exigeant.
-const TABS = [
-  { key: "explore", content: <Game /> },
-  { key: "guesswho", content: <GuessWhoPath /> },
-  { key: "relay", content: <ConnectRelay /> },
-  { key: "count", content: <><GuessRelations /><Leaderboard /></> },
-];
-
+// Accueil en « hub », façon NYT Games : le défi du jour en grand, puis une carte par jeu.
 export default function Home() {
   const { t } = useI18n();
-  const [tab, setTab] = useState(0);
-  // « Trouver un chemin depuis cette personne » (/?from=Q…) : on bascule sur l'explorateur.
+  // Anciens liens « Trouver un chemin depuis cette personne » (/?from=Q…) : direction l'explorateur.
   const [params] = useSearchParams();
   const from = params.get("from");
-  useEffect(() => { if (from) setTab(TABS.findIndex((x) => x.key === "explore")); }, [from]);
+  if (from) return <Navigate to={`${gamePath("explore")}?from=${encodeURIComponent(from)}`} replace />;
+
   return (
     <main className="grid grid-single">
       <div className="col-main">
@@ -33,13 +20,28 @@ export default function Home() {
           <h2>{t("home.title")}</h2>
           <p>{t("home.text")}</p>
         </header>
-        <StatsBanner />
         <DailyChallenge />
-        <Tabs
-          active={tab}
-          onChange={setTab}
-          tabs={TABS.map(({ key, content }) => ({ key, title: t(`tabs.${key}`), content }))}
-        />
+
+        <section aria-labelledby="games-title">
+          <h2 id="games-title" className="section-title">{t("hub.games")}</h2>
+          <ul className="game-grid">
+            {GAMES.map((g) => (
+              <li key={g.key}>
+                <Link to={g.path} className="game-card">
+                  <span className="game-card-icon"><GameIcon game={g.key} size={44} /></span>
+                  <span className="game-card-text">
+                    <span className="game-card-title">{t(`games.${g.key}.title`)}</span>
+                    <span className="game-card-pitch">{t(`games.${g.key}.pitch`)}</span>
+                  </span>
+                  <span className="game-card-tag">{t(`games.${g.key}.tag`)}</span>
+                  <span className="game-card-play" aria-hidden="true">{t("hub.play")} →</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <StatsBanner />
       </div>
     </main>
   );

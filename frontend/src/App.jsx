@@ -11,6 +11,8 @@ import PersonDrawer from "./components/PersonDrawer";
 import DailyPage from "./pages/DailyPage";
 import Duel from "./pages/Duel";
 import Admin from "./pages/Admin";
+import GamePage from "./pages/GamePage";
+import { GAMES } from "./games";
 import Lab from "./pages/Lab";
 import Person from "./pages/Person";
 
@@ -57,6 +59,9 @@ function App() {
               <div className="menu-section">
                 <div className="menu-title">{t("nav.navigation")}</div>
                 <NavLink to="/" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.home")}</NavLink>
+                {GAMES.map((g) => (
+                  <NavLink key={g.key} to={g.path} onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t(`games.${g.key}.title`)}</NavLink>
+                ))}
                 <NavLink to="/a-propos" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.about")}</NavLink>
                 <NavLink to="/contact" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.contact")}</NavLink>
                 <NavLink to="/lab" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>Lab</NavLink>
@@ -83,6 +88,7 @@ function App() {
       </header>
       <Routes>
         <Route path="/" element={<Home />} />
+        {GAMES.map((g) => <Route key={g.key} path={g.path} element={<GamePage game={g} />} />)}
         <Route path="/a-propos" element={<About />} />
         <Route path="/lab" element={<Lab />} />
         <Route path="/stats" element={<Navigate to="/lab" replace />} />

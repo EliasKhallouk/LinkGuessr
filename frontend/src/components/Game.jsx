@@ -43,7 +43,7 @@ export default function Game() {
   const [ppPeriod, setPpPeriod] = useState("7");
   const shownPairs = useShowMore(popularPairs, ppPeriod);
 
-  // Depuis une fiche personne : /?from=Q42 pré-remplit la première personne.
+  // Depuis une fiche personne : /explorer?from=Q42 pré-remplit la première personne.
   const [params] = useSearchParams();
   const from = params.get("from");
   useEffect(() => {

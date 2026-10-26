@@ -126,9 +126,6 @@ body.drawer-open { overflow: hidden; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .drawer, .drawer-backdrop { animation: none; } }
 
-/* Onglets inactifs : cachés mais toujours montés (la partie en cours est conservée). */
-.tabs-panel[hidden] { display: none !important; }
-
 /* Accueil sur une seule colonne (plus d'emplacement publicitaire). */
 .grid-single { grid-template-columns: minmax(0, 980px); }
 

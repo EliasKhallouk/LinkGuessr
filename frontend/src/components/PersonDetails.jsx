@@ -6,6 +6,7 @@ import { Snippet } from "./PathView";
 import PersonChip from "./PersonChip";
 import { ShowMoreButton, useShowMore } from "./ShowMore";
 import { useI18n } from "../i18n/I18nProvider";
+import { gamePath } from "../games";
 
 // Propriétés Wikidata affichées dans la fiche, dans cet ordre.
 const FACT_SECTIONS = [
@@ -84,7 +85,7 @@ export default function PersonDetails({ qid }) {
             </div>
             <div className="toolbar" style={{ marginTop: 8 }}>
               <a className="btn" href={wikiUrl(p.title)} target="_blank" rel="noreferrer">Wikipédia</a>
-              <Link className="btn" to={`/?from=${p.qid}`}>{t("person.findPath")}</Link>
+              <Link className="btn" to={`${gamePath("explore")}?from=${p.qid}`}>{t("person.findPath")}</Link>
             </div>
           </div>
         </div>
