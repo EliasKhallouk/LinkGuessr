@@ -53,7 +53,9 @@ export default function GuessRelations({ rivalScore = null }) {
     return () => clearInterval(id);
   }, [gameActive, timeLeft]);
 
-  const newChallenge = async () => {
+  // `focus` : place le curseur dans le champ. Par défaut seulement avec une souris : sur téléphone,
+  // ouvrir le clavier sans action du joueur masquerait la moitié de l'écran.
+  const newChallenge = async (focus = window.matchMedia?.("(pointer: fine)").matches) => {
     setError(null);
     setOutcome(null);
     setGuess("");
@@ -61,7 +63,7 @@ export default function GuessRelations({ rivalScore = null }) {
     try {
       setPair(await api.randomPair({ difficulty }));
       shownAt.current = performance.now();
-      requestAnimationFrame(() => guessInputRef.current?.focus());
+      if (focus) requestAnimationFrame(() => guessInputRef.current?.focus());
     } catch (e) {
       setError(e.message || t("guess.errorLoadPeople"));
     } finally {
@@ -125,7 +127,7 @@ export default function GuessRelations({ rivalScore = null }) {
     setLastSubmit(null);
     setSubmitError(null);
     setGameActive(true);
-    newChallenge();
+    newChallenge(true);
   };
 
   const saveScore = async () => {
@@ -207,7 +209,7 @@ export default function GuessRelations({ rivalScore = null }) {
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (canSubmit) handleSubmit();
-                  else if (answered && gameActive && timeLeft > 0) newChallenge();
+                  else if (answered && gameActive && timeLeft > 0) newChallenge(true);
                 }}
               >
                 <div>

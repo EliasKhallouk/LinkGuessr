@@ -166,7 +166,7 @@ export default function Game() {
             </select>
           </div>
           <div className="panel-body">
-            <table className="table">
+            <table className="table pairs-table">
               <tbody>
                 {shownPairs.visible.map((r, i) => (
                   <tr key={`${r.a_qid}-${r.b_qid}`}>

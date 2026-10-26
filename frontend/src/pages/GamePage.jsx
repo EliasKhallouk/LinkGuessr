@@ -28,7 +28,7 @@ export default function GamePage({ game }) {
   return (
     <main className="page game-page">
       <div className="game-bar">
-        <Link to="/" className="game-back">{t("hub.back")}</Link>
+        <Link to="/" className="game-back" aria-label={t("hub.back")}><span aria-hidden="true">←</span><span className="game-back-text" aria-hidden="true">{t("hub.back").replace(/^←\s*/, "")}</span></Link>
         <h2 className="game-bar-title">
           <span className="game-bar-icon"><GameIcon game={game.key} size={28} /></span>
           {t(`games.${game.key}.title`)}

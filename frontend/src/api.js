@@ -73,5 +73,6 @@ export function wikiUrl(title) {
 export function lifespan(p) {
   if (!p?.birth_year) return "";
   const fmt = (y) => (y < 0 ? `${-y} av. J.-C.` : `${y}`);
-  return p.death_year ? `${fmt(p.birth_year)} – ${fmt(p.death_year)}` : `né(e) en ${fmt(p.birth_year)}`;
+  const born = p.gender === "femme" ? "née" : p.gender === "homme" ? "né" : "né(e)"; // accord si le genre est connu
+  return p.death_year ? `${fmt(p.birth_year)} – ${fmt(p.death_year)}` : `${born} en ${fmt(p.birth_year)}`;
 }

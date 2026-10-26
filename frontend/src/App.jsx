@@ -33,6 +33,7 @@ function App() {
   const menuRef = useRef(null);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#F8FAFC" : "#0A0E1A");
     try { localStorage.setItem("theme", theme); } catch {}
   }, [theme]);
   // close menu on outside click

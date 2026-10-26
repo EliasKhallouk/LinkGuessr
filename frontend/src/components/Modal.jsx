@@ -10,7 +10,11 @@ export default function Modal({ open, onClose, title, children }) {
   useEffect(() => {
     const d = dialog.current;
     if (!d) return;
-    if (open && !d.open) d.showModal();
+    if (open && !d.open) {
+      d.showModal();
+      // Focus sur la boîte elle-même (pas sur la croix) : pas d'anneau de focus parasite à l'ouverture.
+      d.querySelector(".modal-box")?.focus();
+    }
     if (!open && d.open) d.close();
   }, [open]);
 
@@ -22,7 +26,7 @@ export default function Modal({ open, onClose, title, children }) {
       onClose={onClose}
       onClick={(e) => { if (e.target === dialog.current) onClose(); }}
     >
-      <div className="modal-box">
+      <div className="modal-box" tabIndex={-1}>
         <div className="modal-header">
           <h2 id="modal-title" className="modal-title">{title}</h2>
           <button type="button" className="modal-close" onClick={onClose} aria-label={t("common.close")}>✕</button>

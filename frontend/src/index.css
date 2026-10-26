@@ -198,6 +198,8 @@ body::before {
 .app-shell {
   min-height: 100%;
   display: grid;
+  /* minmax(0, 1fr) : un contenu large (tableau…) ne peut plus élargir la page */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
   position: relative;
 }

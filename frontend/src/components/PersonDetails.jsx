@@ -20,6 +20,23 @@ function years(f) {
   return ` (${f.start_year ?? "?"}–${f.end_year ?? ""})`;
 }
 
+// Une rubrique Wikidata (fonctions, distinctions…) : 10 éléments, puis « Voir plus ».
+function FactSection({ title, items, resetKey }) {
+  const shown = useShowMore(items, resetKey);
+  if (!items.length) return null;
+  return (
+    <section className="panel" style={{ marginTop: 12 }}>
+      <div className="panel-header"><span className="panel-title">{title}</span></div>
+      <div className="panel-body">
+        <ul className="fact-list">
+          {shown.visible.map((f, i) => <li key={`${f.value_qid}-${i}`}>{f.label}{years(f)}</li>)}
+        </ul>
+        <ShowMoreButton list={shown} />
+      </div>
+    </section>
+  );
+}
+
 // Contenu d'une fiche personne : affiché dans la page /personne/:qid et dans le panneau latéral des jeux.
 export default function PersonDetails({ qid }) {
   const { t } = useI18n();
@@ -130,20 +147,9 @@ export default function PersonDetails({ qid }) {
         </section>
       )}
 
-      {FACT_SECTIONS.map(([prop, key]) => {
-        const items = facts.filter((f) => f.prop === prop && f.label);
-        if (!items.length) return null;
-        return (
-          <section key={prop} className="panel" style={{ marginTop: 12 }}>
-            <div className="panel-header"><span className="panel-title">{t(key)}</span></div>
-            <div className="panel-body">
-              <ul className="fact-list">
-                {items.slice(0, 30).map((f, i) => <li key={`${f.value_qid}-${i}`}>{f.label}{years(f)}</li>)}
-              </ul>
-            </div>
-          </section>
-        );
-      })}
+      {FACT_SECTIONS.map(([prop, key]) => (
+        <FactSection key={prop} title={t(key)} items={facts.filter((f) => f.prop === prop && f.label).slice(0, 30)} resetKey={qid} />
+      ))}
 
       {cites.length > 0 && (
         <section className="panel" style={{ marginTop: 12 }}>

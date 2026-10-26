@@ -141,3 +141,142 @@
   .stat { padding: 14px; }
   .stat strong { font-size: 28px; letter-spacing: -0.5px; }
 }
+
+/* ===================================================================== */
+/* ===== MOBILE ======================================================== */
+/* ===================================================================== */
+
+/* Tactile : pas de flash gris au tap, pas de délai de double-tap. */
+a, button, select, input, label, .game-card { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+/* Le titre du jeu est déjà dans la barre de jeu : on ne le répète pas dans le premier panneau. */
+.game-bar + .panel > .panel-header > .panel-title { display: none; }
+.game-bar + .panel > .panel-header:not(:has(.toolbar)) { display: none; }
+
+/* Liste des voisins : « Voir plus » remplace le défilement interne (pénible au doigt). */
+.neighbor-list { max-height: none; overflow: visible; }
+
+/* Bouton désactivé : clairement inactif, sans le contour du bouton principal. */
+.btn:disabled { outline: none; }
+
+/* Barre de jeu : libellé du retour masqué sur petit écran (flèche seule, libellé lu par les lecteurs d'écran). */
+.game-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+
+/* Survol : uniquement avec une souris (sinon l'effet reste « collé » après un tap). */
+@media (hover: none) {
+  .btn:hover { transform: none; box-shadow: 0 4px 0 var(--accent-shade); filter: none; }
+  .btn-share:hover { box-shadow: 0 4px 0 var(--share-shade); }
+  .btn-ghost:hover, .btn-more:hover { box-shadow: 0 3px 0 var(--card-shade); }
+  .game-card:hover { transform: none; box-shadow: 0 4px 0 var(--card-shade); border-color: var(--border-color); }
+  .chemin-link:hover { color: var(--accent-text); background: var(--accent-soft); }
+  .game-back:hover, .modal-close:hover { background: transparent; }
+}
+.btn:disabled:hover { box-shadow: none; }
+
+/* Cibles tactiles ≥ 44 px (Apple HIG, WCAG 2.5.5) sur écran tactile. */
+@media (pointer: coarse) {
+  .btn { min-height: 44px; }
+  .btn-ellipsis, .icon-btn, .modal-close { min-width: 44px; min-height: 44px; }
+  .chemin-link { padding: 7px 10px; }
+  .snippet-more { display: inline-flex; align-items: center; min-height: 44px; }
+  .menu-link { padding: 12px; }
+}
+
+@media (max-width: 767px) {
+  /* Header compact : logo + actions sur une ligne, slogan masqué (il est repris dans l'introduction). */
+  .header { padding: 8px 16px; }
+  .tagline { display: none; }
+  .title { font-size: 24px; }
+
+  /* iOS zoome sur tout champ en dessous de 16 px : on reste à 16 px. */
+  input, select, textarea, select option { font-size: 16px; }
+
+  /* Pages : marges latérales de 16 px partout. */
+  .grid { padding: 16px; }
+  .page { padding: 16px; }
+
+  /* Introduction de l'accueil plus courte à l'œil. */
+  .home-intro h2 { font-size: 22px; line-height: 1.25; }
+  .home-intro p { font-size: 15px; }
+
+  /* Barre de jeu sur une ligne : ←  [icône Titre]  ? */
+  .game-bar { grid-template-columns: 44px minmax(0, 1fr) 44px; margin: 0 0 12px; }
+  .game-bar-title { grid-column: auto; grid-row: auto; justify-content: center; font-size: 19px; text-align: center; }
+  .game-back { justify-content: center; padding: 0; font-size: 22px; }
+  .game-back-text { display: none; }
+  .icon-btn { width: 44px; height: 44px; }
+
+  /* Panneaux : moins de marges internes, outils sur toute la largeur. */
+  .panel-header { padding: 14px 16px; }
+  .panel-body { padding: 16px; }
+  .panel-header .toolbar { width: 100%; }
+  .panel-header .toolbar > * { flex: 1 1 140px; }
+  .row .btn, .result-box .toolbar .btn, .success-box .toolbar .btn { width: 100%; }
+  .toolbar > .btn { flex: 1 1 auto; }
+
+  /* Fenêtres en panneau qui monte du bas, comme une appli. */
+  .modal { max-width: 100%; margin: auto 0 0; }
+  .modal-box { border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-bottom: 0;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); animation: sheetIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  .modal-body { max-height: calc(100dvh - 120px); }
+
+  /* Paires populaires : chaque ligne devient une carte (rang, deux personnes, nombre, bouton). */
+  .pairs-table, .pairs-table tbody { display: block; }
+  .pairs-table tr { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto;
+    grid-template-areas: "rank a count" "rank b try"; align-items: center; gap: 6px 10px;
+    padding: 12px 0; border-top: 1px solid var(--border-color); }
+  .pairs-table tr:first-child { border-top: 0; }
+  .pairs-table td { padding: 0; border: 0; text-align: left !important; width: auto !important; }
+  .pairs-table td:nth-child(1) { grid-area: rank; color: var(--text-muted); font-weight: 700; }
+  .pairs-table td:nth-child(2) { grid-area: a; }
+  .pairs-table td:nth-child(3) { grid-area: b; }
+  .pairs-table td:nth-child(4) { grid-area: count; justify-self: end; }
+  .pairs-table td:nth-child(5) { grid-area: try; justify-self: end; }
+}
+@keyframes sheetIn { from { transform: translateY(100%); } to { transform: none; } }
+
+@media (max-width: 380px) {
+  .stat strong { font-size: 24px; }
+  .game-card { padding: 14px; gap: 6px 12px; }
+  .game-card-icon { width: 52px; height: 52px; }
+}
+
+/* La boîte reçoit le focus à l'ouverture : pas de contour pour elle. */
+.modal-box:focus { outline: none; }
+/* Champs : le contour de focus suffit, sans l'anneau en plus. */
+input:focus-visible, select:focus-visible, textarea:focus-visible { box-shadow: none; }
+
+@media (max-width: 767px) {
+  /* Une liste déroulante tronquée est illisible : chacune prend sa ligne. */
+  .panel-header .toolbar > select { flex-basis: 100%; }
+}
+
+/* Cibles tactiles restantes : le logo (lien d'accueil) et la flèche de retour. */
+.title-link { display: inline-flex; align-items: center; min-height: 44px; }
+@media (max-width: 767px) {
+  .game-back { width: 44px; justify-self: stretch; }
+}
+
+/* Nombres + unité sur une seule ligne dans les tableaux (« 4 930 liens »). */
+.table td:last-child { white-space: nowrap; }
+/* Un peu d'air entre le chemin et le champ de réponse. */
+.path-view + form { margin-top: 16px; }
+
+/* Menu ⋯ : fond opaque (le texte de la page ne transparaît plus). */
+.popover { background: var(--bg-base); }
+@media (max-width: 767px) {
+  /* Sur mobile : panneau pleine largeur sous le header, qui défile s'il est plus haut que l'écran. */
+  .popover { position: fixed; top: 64px; left: 12px; right: 12px; min-width: 0;
+    max-height: calc(100dvh - 76px); overflow-y: auto; overscroll-behavior: contain; }
+  .menu-link { padding: 10px 12px; }
+}
+
+/* Noms très longs : ils passent à la ligne plutôt que d'être rognés par le panneau. */
+.chemin-link { max-width: 100%; overflow-wrap: anywhere; }
+@media (max-width: 767px) {
+  .pairs-table td { min-width: 0; }
+}
+
+/* Suggestions de noms : fond opaque, descriptions sur deux lignes au plus. */
+.ac-list { background: var(--bg-base); }
+.picker-item .person-desc { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
