@@ -74,6 +74,8 @@ export default function GuessWhoPath() {
   const revealed = found || tries >= MAX_TRIES;
   const hints = challenge?.hints;
   const persons = challenge && (revealed ? { ...challenge.persons, [challenge.answer.qid]: challenge.answer } : challenge.persons);
+  // Une fois la réponse donnée, on montre aussi pourquoi la personne cachée est reliée à ses voisins.
+  const hops = challenge && (revealed ? { ...challenge.hops, ...challenge.answer_hops } : challenge.hops);
 
   return (
     <>
@@ -100,7 +102,7 @@ export default function GuessWhoPath() {
                   label={found ? t("guess.good") : t("daily.triesLeft", { n: MAX_TRIES - tries })} />
                 {!revealed && <span className="muted tries-left" aria-hidden="true">{t("daily.triesLeft", { n: MAX_TRIES - tries })}</span>}
               </div>
-              <PathView path={challenge.path} persons={persons} hops={challenge.hops}
+              <PathView path={challenge.path} persons={persons} hops={hops}
                 hiddenIndex={revealed ? null : challenge.masked_index} />
 
               {!revealed && (

@@ -1,8 +1,8 @@
 import { useI18n } from "../i18n/I18nProvider";
 
-const LEVELS = ["facile", "moyen", "difficile"];
+export const LEVELS = ["facile", "moyen", "difficile", "extreme", "humain"];
 
-// Facile : parmi les 0,15 % les plus connus ; moyen : 1 % ; difficile : 5 % (cf. API DIFFICULTY_TOP).
+// Facile : les 200 personnes les plus connues (tout le monde peut réussir) … « Tu es humain ? » : 60 000 (cf. API LEVELS).
 export default function DifficultyPicker({ value, onChange }) {
   const { t } = useI18n();
   return (

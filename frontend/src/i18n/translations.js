@@ -219,9 +219,11 @@ export const translations = {
     },
     difficulty: {
       label: "Difficulté",
-      facile: "Facile (très connus)",
-      moyen: "Moyen",
-      difficile: "Difficile (moins connus)",
+      facile: "😌 Facile",
+      moyen: "🙂 Moyen",
+      difficile: "😬 Difficile",
+      extreme: "🔥 Extrême",
+      humain: "🤖 Tu es humain ?",
     },
     period: {
       "7": "7 jours",
@@ -568,9 +570,11 @@ export const translations = {
     },
     difficulty: {
       label: "Difficulty",
-      facile: "Easy (very famous)",
-      moyen: "Medium",
-      difficile: "Hard (less famous)",
+      facile: "😌 Easy",
+      moyen: "🙂 Medium",
+      difficile: "😬 Hard",
+      extreme: "🔥 Extreme",
+      humain: "🤖 Are you even human?",
     },
     period: {
       "7": "7 days",

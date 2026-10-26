@@ -14,6 +14,8 @@ import { confetti } from "../lib/confetti";
 
 const GAME = "relay";
 const HINT_AFTER = 2; // aide quand le joueur a fait 2 pas de plus que le plus court chemin
+// Longueur du plus court chemin selon le niveau : en facile, une seule personne entre les deux.
+const LENGTHS = { facile: [2, 2], moyen: [2, 3], difficile: [3, 4], extreme: [4, 5], humain: [5, 6] };
 
 // `fixedPair` ({ from, to }) : paire imposée par un duel ; `rivalSteps` : score à battre.
 export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
@@ -50,7 +52,7 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
     setHintsUsed(0);
     setSearch("");
     try {
-      const pair = fixedPair || await api.randomPair({ difficulty, min_length: 2, max_length: 4 });
+      const pair = fixedPair || await api.randomPair({ difficulty, min_length: LENGTHS[difficulty][0], max_length: LENGTHS[difficulty][1] });
       setTarget(pair.to);
       setHistory([pair.from]);
       setBest(null);

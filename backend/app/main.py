@@ -14,12 +14,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import admin, daily, game, seo
 from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS
 from .core import id_of, path_details, person_columns, pool, startup, state, summaries
-from .graph import MODES
+from .graph import MODES, PathResult
 from .policy import http_policy
 from .text import normalize
 
-# Part des plus populaires où l'on tire les personnes. Sur 765 000 personnes : ~1 150 / ~7 600 / ~38 000.
-DIFFICULTY_TOP = {"facile": 0.0015, "moyen": 0.01, "difficile": 0.05}
+# Niveaux de difficulté (calés sur les rangs de popularité, sur 765 000 personnes) :
+# - top : on tire les personnes parmi les N plus populaires (rang 200 : Ronaldinho, Cléopâtre ;
+#   800 : Jennifer Lawrence ; 3 000 : Eddie Redmayne ; 12 000 : Kevin Mitnick ; 60 000 : quasi inconnus) ;
+# - hidden_top : « Qui est caché ? », la personne à deviner est parmi les N plus populaires (None : n'importe qui) ;
+# - hidden_length : longueur du chemin de « Qui est caché ? ».
+LEVELS = {
+    "facile": {"top": 200, "hidden_top": 500, "hidden_length": (2, 2)},
+    "moyen": {"top": 800, "hidden_top": 2_000, "hidden_length": (2, 3)},
+    "difficile": {"top": 3_000, "hidden_top": 8_000, "hidden_length": (2, 3)},
+    "extreme": {"top": 12_000, "hidden_top": 30_000, "hidden_length": (3, 4)},
+    "humain": {"top": 60_000, "hidden_top": None, "hidden_length": (4, 6)},
+}
+LEVEL = f"^({'|'.join(LEVELS)})$"
 MIN_POOL = 200  # réservoir minimal, pour les petits domaines
 
 
@@ -178,14 +189,16 @@ def neighbors(qid: str, limit: int = Query(50, ge=1, le=500)):
 
 
 def _candidates(difficulty: str, domain: str | None) -> np.ndarray:
-    """Les personnes les plus connues (part DIFFICULTY_TOP du domaine), au moins MIN_POOL si possible."""
+    """Les personnes les plus connues (même part que LEVELS[…]["top"] sur tout le graphe, appliquée au domaine),
+    au moins MIN_POOL si possible."""
     pop = state["graph"].popularity
     pool_ids = np.arange(len(pop))
     if domain:
         if domain not in state["domain_names"]:
             raise HTTPException(400, f"Domaine inconnu. Domaines : {state['domain_names']}")
         pool_ids = pool_ids[state["domain"] == state["domain_names"].index(domain)]
-    k = min(len(pool_ids), max(MIN_POOL, int(len(pool_ids) * DIFFICULTY_TOP[difficulty])))
+    share = LEVELS[difficulty]["top"] / len(pop)
+    k = min(len(pool_ids), max(MIN_POOL, int(len(pool_ids) * share)))
     if k < 2:
         raise HTTPException(404, "Pas assez de personnes pour ces critères")
     return pool_ids[np.argpartition(-pop[pool_ids], k - 1)[:k]]
@@ -202,9 +215,21 @@ def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, 
     raise HTTPException(404, "Aucune paire trouvée, élargir les critères")
 
 
+def _pick_hidden(difficulty: str, domain: str | None, min_length: int, max_length: int) -> tuple[list[int], int]:
+    """Un plus court chemin et la position de la personne à deviner, assez connue pour le niveau."""
+    hidden_top, rank = LEVELS[difficulty]["hidden_top"], state["pop_rank"]
+    for _ in range(20):
+        _, _, res = _pick_pair(difficulty, domain, "all", min_length, max_length, limit=20)
+        choices = [(p, i) for p in res.paths for i in range(1, len(p) - 1)
+                   if hidden_top is None or rank[p[i]] <= hidden_top]
+        if choices:
+            return random.choice(choices)
+    raise HTTPException(404, "Aucun chemin trouvé pour ce niveau, réessayez")
+
+
 @app.get("/random_pair")
 def random_pair(
-    difficulty: str = Query("moyen", pattern="^(facile|moyen|difficile)$"),
+    difficulty: str = Query("moyen", pattern=LEVEL),
     domain: str | None = None,
     mode: str = Query("all", pattern=f"^({'|'.join(MODES)})$"),
     min_length: int = Query(2, ge=1, le=8),
@@ -219,24 +244,26 @@ def random_pair(
 
 @app.get("/random_path")
 def random_path(
-    difficulty: str = Query("moyen", pattern="^(facile|moyen|difficile)$"),
+    difficulty: str = Query("moyen", pattern=LEVEL),
     domain: str | None = None,
-    min_length: int = Query(2, ge=2, le=8),
-    max_length: int = Query(5, ge=2, le=12),
+    min_length: int | None = Query(None, ge=2, le=8),
+    max_length: int | None = Query(None, ge=2, le=12),
 ):
     """« Qui est caché ? » : un plus court chemin dont une personne intermédiaire est à deviner.
-    Les indices (domaine, dates, initiales) sont donnés ; le nom reste dans `answer`."""
-    _, _, res = _pick_pair(difficulty, domain, "all", min_length, max_length)
-    details = path_details(res)
+    Les indices (domaine, dates, initiales) sont donnés ; le nom reste dans `answer`, et les liens
+    de la personne cachée (phrases qui la citent) dans `answer_hops`, à afficher une fois la réponse donnée."""
+    lo, hi = LEVELS[difficulty]["hidden_length"]
+    ids, masked = _pick_hidden(difficulty, domain, min_length or lo, max_length or hi)
+    details = path_details(PathResult(len(ids) - 1, 1, [ids]))
     chain = details["paths"][0]
-    masked = random.randint(1, len(chain) - 2)
     answer = details["persons"][chain[masked]]
-    hops = {k: v for k, v in details["hops"].items() if chain[masked] not in k.split("-")}
+    hidden = {k: v for k, v in details["hops"].items() if answer["qid"] in k.split("-")}
     return {
         "path": chain,
         "masked_index": masked,
-        "persons": {q: p for q, p in details["persons"].items() if q in chain and q != answer["qid"]},
-        "hops": hops,
+        "persons": {q: p for q, p in details["persons"].items() if q != answer["qid"]},
+        "hops": {k: v for k, v in details["hops"].items() if k not in hidden},
+        "answer_hops": hidden,
         "answer": answer,
         "hints": {
             "domain": answer["primary_domain"],
