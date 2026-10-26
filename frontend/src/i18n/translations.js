@@ -63,6 +63,7 @@ export const translations = {
       about: "À propos",
       contact: "Contact",
       privacy: "Politique de confidentialité",
+      legal: "Mentions légales",
       navigation: "Navigation",
     },
     pages: {
@@ -434,6 +435,7 @@ export const translations = {
       choose: "Choose",
       contact: "Contact",
       privacy: "Privacy Policy",
+      legal: "Legal notice",
       navigation: "Navigation",
     },
     pages: {

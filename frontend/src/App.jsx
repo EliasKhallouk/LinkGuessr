@@ -6,6 +6,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Home from "./pages/Home";
 import Privacy from "./pages/Privacy";
+import LegalNotice from "./pages/LegalNotice";
 import LinkGuessrLogo from "./components/LinkGuessrLogo";
 import { dailyStats } from "./lib/dailyStats";
 import PersonDrawer from "./components/PersonDrawer";
@@ -83,6 +84,7 @@ function App() {
                   <NavLink to="/contact" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.contact")}</NavLink>
                   <NavLink to="/lab" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>Lab</NavLink>
                   <NavLink to="/politique-de-confidentialite" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.privacy")}</NavLink>
+                  <NavLink to="/mentions-legales" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "menu-link active" : "menu-link"}>{t("nav.legal")}</NavLink>
                 </div>
                 <hr className="menu-sep" />
                 <div className="control-group">
@@ -117,6 +119,7 @@ function App() {
         <Route path="/admin/defis" element={<AdminDaily />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/politique-de-confidentialite" element={<Privacy />} />
+        <Route path="/mentions-legales" element={<LegalNotice />} />
       </Routes>
       <PersonDrawer />
 
@@ -130,6 +133,8 @@ function App() {
           {t("footer.images")}{" "}
           <a href="https://commons.wikimedia.org" target="_blank" rel="noreferrer">Wikimedia Commons</a>.{" "}
           <Link to="/a-propos">{t("footer.more")}</Link>
+          {" · "}<Link to="/politique-de-confidentialite">{t("nav.privacy")}</Link>
+          {" · "}<Link to="/mentions-legales">{t("nav.legal")}</Link>
         </span>
       </footer>
     </div>
