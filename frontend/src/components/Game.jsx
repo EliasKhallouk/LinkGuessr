@@ -1,11 +1,13 @@
-import { lazy, Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
+import { EXPLORE_LIMIT, EXPLORE_MODES, explorerShare } from "../lib/share";
 import { trackUmami } from "../lib/tracking";
 import PathView from "./PathView";
 import PersonChip from "./PersonChip";
 import PersonPicker from "./PersonPicker";
+import ShareButton from "./ShareButton";
 import { ShowMoreButton, useShowMore } from "./ShowMore";
 
 // vis-network est lourd : chargé seulement quand un graphe est affiché.
@@ -45,11 +47,50 @@ export default function Game() {
   const shownPairs = useShowMore(popularPairs, ppPeriod);
 
   // Depuis une fiche personne : /explorer?from=Q42 pré-remplit la première personne.
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const from = params.get("from");
   useEffect(() => {
     if (from) api.person(from).then((d) => setP1(d.person)).catch(() => {});
   }, [from]);
+
+  // Chemin partagé : /explorer?de=Q1&a=Q2[&mode=strong], recalculé à l'ouverture. Sans `track` :
+  // la réponse vient du cache Vercel et l'ouverture ne compte pas dans les paires les plus explorées.
+  const [shared, setShared] = useState(null);  // "ok", "gone" (personne disparue) ou "nopath"
+  const formRef = useRef(null);
+  const opened = useRef(false);
+  const de = params.get("de");
+  const to = params.get("a");
+  const sharedMode = EXPLORE_MODES.includes(params.get("mode")) ? params.get("mode") : "all";
+  useEffect(() => {
+    if (!de || !to) return;
+    if (!opened.current) trackUmami("explore", "partage_ouvert");
+    opened.current = true;
+    if (!/^Q\d+$/.test(de) || !/^Q\d+$/.test(to)) { setShared("gone"); return; }
+    setMode(sharedMode);
+    setLoading(true);
+    api.path(de, to, { mode: sharedMode, limit: EXPLORE_LIMIT })
+      .then((data) => {
+        if (data.length === null) { setShared("nopath"); return; }
+        setP1(data.persons[de]);
+        setP2(data.persons[to]);
+        setResult({ ...data, mode: sharedMode });
+        setShown(0);
+        setShared("ok");
+      })
+      .catch((e) => (e.status === 404 || e.status === 400 ? setShared("gone") : setError(e.message)))
+      .finally(() => setLoading(false));
+  }, [de, to, sharedMode]);
+
+  // « À toi » : on repart d'une exploration vide (le lien partagé quitte l'adresse).
+  const restart = () => {
+    setShared(null);
+    setResult(null);
+    setError(null);
+    setP1(null);
+    setP2(null);
+    setParams({}, { replace: true });
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
   useEffect(() => {
     api.popularPairs(ppPeriod).then(setPopularPairs).catch(() => setPopularPairs([]));
@@ -60,9 +101,10 @@ export default function Game() {
     if (a.qid === b.qid) { setError(t("game.errorSame")); return; }
     setLoading(true);
     setError(null);
+    setShared(null);
     try {
-      const data = await api.path(a.qid, b.qid, { mode, limit: 6, track: true });
-      setResult(data);
+      const data = await api.path(a.qid, b.qid, { mode, limit: EXPLORE_LIMIT, track: true });
+      setResult({ ...data, mode });  // le type de liens du calcul, pour le lien partagé
       setShown(0);
       api.logEvent("explore", { from: a.qid, to: b.qid, length: data.length, n_paths: data.n_paths, mode });
       // Pas de partie à finir : Explorer se mesure en recherches par visite (docs/tracking.md).
@@ -97,6 +139,7 @@ export default function Game() {
   };
 
   const graph = result?.paths?.length > 1 ? graphOf(result) : null;
+  const ends = result?.paths?.[0] && [result.paths[0][0], result.paths[0][result.paths[0].length - 1]];
 
   return (
     <>
@@ -105,7 +148,7 @@ export default function Game() {
           <span className="panel-title">{t("game.titlePath")}</span>
         </div>
         <div className="panel-body">
-          <form className="form" style={{ gap: 16 }} onSubmit={(e) => { e.preventDefault(); explore(); }}>
+          <form ref={formRef} className="form" style={{ gap: 16 }} onSubmit={(e) => { e.preventDefault(); explore(); }}>
             <div className="row">
               <PersonPicker id="pick-1" label={t("game.person1")} value={p1} onChange={setP1} />
               <PersonPicker id="pick-2" label={t("game.person2")} value={p2} onChange={setP2} />
@@ -124,6 +167,15 @@ export default function Game() {
           </form>
 
           {error && <div className="error-box" style={{ marginTop: 12 }}><p style={{ margin: 0 }}>{error}</p></div>}
+
+          {(shared === "gone" || shared === "nopath") && (
+            <div className="error-box" style={{ marginTop: 12 }}>
+              <p style={{ margin: 0 }}>{t(shared === "gone" ? "game.sharedGone" : "game.sharedNoPath")}</p>
+              <div className="toolbar" style={{ marginTop: 8 }}>
+                <button type="button" className="btn btn-primary" onClick={restart}>{t("game.newExploration")}</button>
+              </div>
+            </div>
+          )}
 
           {result && result.length === null && (
             <p className="muted" style={{ marginTop: 12 }}>{t("game.noPath")}</p>
@@ -146,6 +198,14 @@ export default function Game() {
                 </div>
               )}
               <PathView path={result.paths[shown]} persons={result.persons} hops={result.hops} />
+              <div className="toolbar" style={{ marginTop: 8 }}>
+                <ShareButton
+                  text={t("game.shareText", { a: result.persons[ends[0]].name, b: result.persons[ends[1]].name, n: result.length })}
+                  {...explorerShare(ends[0], ends[1], result.mode)}
+                  sep=" "
+                  label={t("game.sharePath")}
+                />
+              </div>
               {graph && (
                 <div style={{ marginTop: 12 }}>
                   <Suspense fallback={<p className="muted">…</p>}>
@@ -153,6 +213,13 @@ export default function Game() {
                   </Suspense>
                 </div>
               )}
+            </div>
+          )}
+
+          {shared === "ok" && (
+            <div className="more-games" style={{ marginTop: 12 }}>
+              <button type="button" className="btn btn-primary" onClick={restart}>{t("game.sharedInvite")}</button>
+              <Link className="btn" to="/qui-est-cache">{t("game.sharedOther")}</Link>
             </div>
           )}
         </div>

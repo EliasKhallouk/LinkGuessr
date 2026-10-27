@@ -10,9 +10,10 @@ export function withUtm(url, { source, campaign }, medium) {
 
 const canWebShare = () => Boolean(navigator.share) && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
-export async function shareText(text, url, utm) {
+// `sep` : entre le texte et le lien (retour à la ligne, ou espace pour un lien en fin de phrase).
+export async function shareText(text, url, utm, sep = "\n") {
   const link = (medium) => (url && utm ? withUtm(url, utm, medium) : url);
-  const join = (u) => (u ? `${text}\n${u}` : text);
+  const join = (u) => (u ? `${text}${sep}${u}` : text);
   try {
     if (canWebShare()) {
       await navigator.share({ text: join(link("webshare")) });
@@ -51,4 +52,19 @@ export function relayGrid(steps, best) {
 const DUEL_CAMPAIGNS = { cache: "qui-est-cache", relais: "relier", nombre: "combien" };
 export function duelShare(params) {
   return { url: `${SITE_URL}/defi?${new URLSearchParams(params)}`, utm: { source: "duel", campaign: DUEL_CAMPAIGNS[params.jeu] } };
+}
+
+// Chemin partagé depuis Explorer : seulement les deux bouts (le chemin est recalculé à l'ouverture),
+// et le type de liens s'il n'est pas celui par défaut.
+export const EXPLORE_MODES = ["all", "strong", "wikidata"];
+export function explorerShare(de, a, mode = "all") {
+  const q = new URLSearchParams({ de, a, ...(mode !== "all" && { mode }) });
+  return { url: `${SITE_URL}/explorer?${q}`, utm: { source: "partage", campaign: "explorer" } };
+}
+
+// Requête /path d'un chemin partagé : la même partout (page, aperçu, image), donc une seule entrée
+// dans le cache Vercel par paire. Même ordre de paramètres que api.path().
+export const EXPLORE_LIMIT = 6;
+export function sharedPathQuery(de, a, mode) {
+  return `/path?${new URLSearchParams({ from: de, to: a, mode: EXPLORE_MODES.includes(mode) ? mode : "all", limit: EXPLORE_LIMIT })}`;
 }

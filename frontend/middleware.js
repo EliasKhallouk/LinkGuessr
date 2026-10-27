@@ -3,6 +3,7 @@
 // une description et une image d'aperçu propres à la page.
 // Runtime Node.js : le runtime « edge » n'est plus accepté pour les middlewares par Vercel.
 import { translations } from "./src/i18n/translations.js";
+import { sharedPathQuery } from "./src/lib/share.js";
 
 // Pages fixes : mêmes titres et descriptions que dans l'application (usePageMeta), en français.
 const FR = translations.fr;
@@ -38,8 +39,28 @@ async function api(path) {
   return r.json();
 }
 
+// Chemin partagé depuis Explorer (/explorer?de=Q1&a=Q2) : les deux noms et le nombre de liens, pas les
+// intermédiaires. Lu via /v1 (cache Vercel, même requête que la page) : un lien ouvert des centaines de fois
+// ne sollicite la VM qu'une fois par jour.
+async function explorerMeta(url) {
+  const [de, a, mode] = ["de", "a", "mode"].map((k) => url.searchParams.get(k));
+  const r = await fetch(`${url.origin}/v1${sharedPathQuery(de, a, mode)}`, { headers: { "User-Agent": UA } });
+  if (!r.ok) throw new Error(String(r.status));
+  const d = await r.json();
+  if (d.length === null) throw new Error("aucun chemin");
+  const n = `${d.length} ${d.length > 1 ? "liens" : "lien"}`;
+  return { title: `${d.persons[de].name} et ${d.persons[a].name} : ${n}. Tu devines lesquels ? · LinkGuessr`,
+    description: "Le plus court chemin entre deux personnalités de Wikipédia, lien par lien, avec les phrases qui les relient.",
+    image: `/api/og?${new URLSearchParams({ type: "explorer", de, a, ...(mode && { mode }) })}` };
+}
+
 async function metaFor(url) {
-  const page = STATIC[url.pathname.replace(/\/$/, "") || "/"];
+  const pathname = url.pathname.replace(/\/$/, "") || "/";
+  if (pathname === "/explorer" && url.searchParams.get("de") && url.searchParams.get("a")) {
+    const shared = await explorerMeta(url).catch(() => null);  // lien périmé : aperçu de la page Explorer
+    if (shared) return shared;
+  }
+  const page = STATIC[pathname];
   if (page) return { title: `${page.title} · LinkGuessr`, description: page.description, image: "/api/og" };
   const parts = url.pathname.split("/").filter(Boolean);
   if (parts[0] === "jour") {

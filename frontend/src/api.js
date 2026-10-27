@@ -6,7 +6,7 @@ async function get(path, params = {}) {
   const res = await fetch(apiUrl(qs.toString() ? `${path}?${qs}` : path));
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail || `Erreur ${res.status}`);
+    throw Object.assign(new Error(body.detail || `Erreur ${res.status}`), { status: res.status });
   }
   return res.json();
 }

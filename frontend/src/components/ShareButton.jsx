@@ -5,11 +5,11 @@ import { trackUmami } from "../lib/tracking";
 
 // Bouton Partager avec retour visuel (« Copié ! »). `utm` : { source, campaign } ajoutés au lien.
 // `onShared` sert à mesurer les partages.
-export default function ShareButton({ text, url, utm, onShared, label }) {
+export default function ShareButton({ text, url, utm, sep, onShared, label }) {
   const { t } = useI18n();
   const [status, setStatus] = useState(null);
   const click = async () => {
-    const result = await shareText(text, url, utm);
+    const result = await shareText(text, url, utm, sep);
     setStatus(result);
     const methode = { shared: "webshare", copied: "copie", cancelled: "annule", failed: "echec" }[result];
     if (utm) trackUmami(utm.campaign, "partage_clic", { methode });

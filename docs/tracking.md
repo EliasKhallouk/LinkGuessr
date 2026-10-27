@@ -15,7 +15,7 @@ Règles :
 
 | Paramètre | Valeurs | Sens |
 |---|---|---|
-| `utm_source` | `partage`, `duel` | Liens générés par le site : résultat partagé (défi du jour), invitation à un duel |
+| `utm_source` | `partage`, `duel` | Liens générés par le site : résultat partagé (défi du jour, chemin d'Explorer), invitation à un duel |
 | | `reddit`, `discord`, `instagram`, `tiktok`, `x`, `facebook`, `whatsapp`, `newsletter`, `presse` | Liens posés à la main par l'équipe |
 | `utm_medium` | `copie`, `webshare` | Liens du site : copié dans le presse-papiers, ou menu de partage natif (téléphone) |
 | | `post`, `commentaire`, `bio`, `message`, `email`, `article` | Liens posés à la main |
@@ -30,8 +30,9 @@ Liens générés par le site :
 | Duel Qui est caché ? | `https://linkguessr.com/defi?jeu=cache&…&utm_source=duel&utm_medium=copie&utm_campaign=qui-est-cache` |
 | Duel Relier | `https://linkguessr.com/defi?jeu=relais&paire=Q1-Q2&score=3&utm_source=duel&utm_medium=copie&utm_campaign=relier` |
 | Duel Combien ? | `https://linkguessr.com/defi?jeu=nombre&score=340&utm_source=duel&utm_medium=copie&utm_campaign=combien` |
+| Chemin d'Explorer | `https://linkguessr.com/explorer?de=Q21621995&a=Q7186&utm_source=partage&utm_medium=copie&utm_campaign=explorer` |
 
-Explorer n'a pas de lien de partage : `explorer` sert aux liens posés à la main.
+Formats détaillés de tous les liens, et liens de promotion prêts à copier : [liens.md](liens.md).
 
 Comportement :
 
@@ -52,15 +53,16 @@ Les noms sont fixes et le jeu est une propriété : un seul événement suffit p
 |---|---|---|
 | `partie_debut` | Première action d'une partie (première proposition, premier coup, début du chrono) | `jeu`, `source` |
 | `partie_fin` | Fin d'une partie | `jeu`, `source`, `resultat`, `essais` |
-| `partage_clic` | Clic sur « Partager » ou « Défier un ami » | `jeu`, `source`, `methode` |
+| `partage_clic` | Clic sur « Partager », « Défier un ami » ou « Partager ce chemin » | `jeu`, `source`, `methode` |
 | `duel_ouvert` | Arrivée sur un lien de duel (`/defi`) | `jeu`, `source` |
 | `exploration_recherche` | Chaque recherche de chemin dans Explorer | `jeu` (`explorer`), `source`, `resultat` |
+| `partage_ouvert` | Arrivée sur un chemin partagé d'Explorer (`/explorer?de=…&a=…`), même si le lien est périmé | `jeu` (`explorer`), `source` |
 
 Valeurs des propriétés :
 
 | Propriété | Valeurs |
 |---|---|
-| `jeu` | `qui-est-cache`, `relier`, `combien`, `defi-du-jour` ; `explorer` (seulement pour `exploration_recherche`) |
+| `jeu` | `qui-est-cache`, `relier`, `combien`, `defi-du-jour` ; `explorer` (pour `exploration_recherche`, `partage_clic` et `partage_ouvert`) |
 | `source` | `utm_source` de l'arrivée, ou `direct` |
 | `resultat` | `gagne` / `perdu` (Qui est caché ?, défi du jour) ; `gagne` (Relier, une partie se termine en atteignant la cible) ; `termine` (Combien ?, fin du chrono) ; `chemin` / `aucun` (`exploration_recherche` : chemin trouvé ou non) |
 | `essais` | Propositions (Qui est caché ?, défi du jour), coups (Relier), réponses données (Combien ?) |
@@ -68,7 +70,8 @@ Valeurs des propriétés :
 
 Explorer n'a pas de partie à finir : il n'envoie ni `partie_debut` ni `partie_fin`, ce qui fausserait les taux de
 fin de partie. Il se mesure en **recherches par visite** (`exploration_recherche`) et en **durée de visite** sur
-`/explorer`.
+`/explorer`. L'affichage d'un chemin partagé n'est pas une recherche : il envoie `partage_ouvert`, pas
+`exploration_recherche`.
 
 L'API reçoit en parallèle ses propres événements (`start`, `finish`, `share`, `duel_open`, `explore`) pour le
 tableau de bord `/admin`. Ils ne changent pas.
@@ -89,6 +92,7 @@ Ouvrir `https://linkguessr.com/umami`, puis le site **LinkGuessr** (domaine `lin
 - **Réussite et difficulté** : `partie_fin`, propriétés `resultat` et `essais`, filtrées sur un `jeu`.
 - **Viralité** : `partage_clic` (par `jeu` et `methode`), puis `duel_ouvert`, puis les visites
   `utm_source` = `duel`. Un **entonnoir** (Funnel) `partage_clic` → `duel_ouvert` → `partie_fin` donne la boucle complète.
+  Pour Explorer : `partage_clic` (`jeu` = `explorer`) → `partage_ouvert` → `exploration_recherche`.
 - **Attribution** : le rapport **Attribution** relie les événements (par exemple `partie_fin`) à la première source
   de la visite.
 

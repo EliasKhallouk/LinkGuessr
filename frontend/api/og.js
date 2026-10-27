@@ -2,6 +2,7 @@
 // Elles intriguent sans jamais révéler de réponse, et portent les crédits des sources.
 import { ImageResponse } from "@vercel/og";
 import { commonsDirect, commonsFilePath } from "../src/lib/commons.js";
+import { sharedPathQuery } from "../src/lib/share.js";
 
 // Runtime Node.js (par défaut) : @vercel/og 1.x référence des modules refusés par le runtime « edge ».
 
@@ -17,8 +18,9 @@ const h = (type, style, ...children) => ({
   props: { style: { display: "flex", ...style }, children: children.flat().filter((c) => c !== null && c !== false) },
 });
 
-async function json(path) {
-  const r = await fetch(`${API}${path}`, { headers: { "User-Agent": UA } });
+// `base` : l'API directe, ou /v1 du site (cache Vercel) pour les requêtes partagées avec la page.
+async function json(path, base = API) {
+  const r = await fetch(`${base}${path}`, { headers: { "User-Agent": UA } });
   if (!r.ok) throw new Error(`${path} : ${r.status}`);
   return r.json();
 }
@@ -40,14 +42,14 @@ async function photo(file, width = 250) {
   }
 }
 
-function avatar(src, label, size = 200) {
+function avatar(src, label, size = 200, showLabel = true) {
   const circle = { width: size, height: size, borderRadius: size, border: "6px solid #00d9ff", display: "flex",
     alignItems: "center", justifyContent: "center", overflow: "hidden", background: "#1a1f35" };
   return h("div", { display: "flex", flexDirection: "column", alignItems: "center", width: size + 80 },
     src
       ? { type: "img", props: { src, width: size, height: size, style: { ...circle, objectFit: "cover" } } }
       : h("div", { ...circle, fontSize: size / 2, color: "#9ca8c5" }, label === "?" ? "?" : (label || "?").charAt(0)),
-    label && label !== "?" ? h("div", { marginTop: 16, fontSize: 30, color: "#f0f4ff", textAlign: "center", maxWidth: size + 80 }, label) : null);
+    showLabel && label && label !== "?" ? h("div", { marginTop: 16, fontSize: 30, color: "#f0f4ff", textAlign: "center", maxWidth: size + 80 }, label) : null);
 }
 
 const mystery = (size = 200) => h("div", { display: "flex", flexDirection: "column", alignItems: "center", width: size + 80 },
@@ -68,8 +70,20 @@ function frame(title, subtitle, body) {
     h("div", { fontSize: 20, color: "#6b7694" }, "Données : Wikipédia (CC BY-SA 4.0), Wikidata (CC0) · Photos : Wikimedia Commons"));
 }
 
-async function render(params) {
+async function render(params, origin) {
   const type = params.get("type");
+  if (type === "explorer") {
+    // Chemin partagé : les deux bouts et le nombre de liens, jamais les intermédiaires.
+    const [de, a] = [params.get("de"), params.get("a")];
+    const d = await json(sharedPathQuery(de, a, params.get("mode")), `${origin}/v1`);
+    if (d.length === null) throw new Error("aucun chemin");
+    const [ca, cb] = [d.persons[de], d.persons[a]];
+    const [pa, pb] = await Promise.all([photo(ca.image), photo(cb.image)]);
+    const dots = h("div", { fontSize: 56, color: "#9ca8c5", marginTop: -40 }, "· · ·");
+    return frame(`${ca.name} et ${cb.name} : ${d.length} ${d.length > 1 ? "liens" : "lien"}`, "Tu devines lesquels ?",
+      h("div", { display: "flex", alignItems: "center", gap: 24 }, avatar(pa, ca.name, 220, false), arrow, dots, arrow,
+        avatar(pb, cb.name, 220, false)));
+  }
   if (type === "jour") {
     const d = await json(`/daily/archive/${encodeURIComponent(params.get("n"))}`);
     const [a, b] = [d.persons[d.path[0]], d.persons[d.path[d.path.length - 1]]];
@@ -120,13 +134,13 @@ async function render(params) {
 }
 
 export async function GET(request) {
-  const params = new URL(request.url).searchParams;
+  const { searchParams: params, origin } = new URL(request.url);
   let element;
   try {
-    element = await render(params);
+    element = await render(params, origin);
   } catch {
     params.delete("type");
-    element = await render(params);  // image générique si la donnée est introuvable
+    element = await render(params, origin);  // image générique si la donnée est introuvable
   }
   return new ImageResponse(element, {
     width: W, height: H,
