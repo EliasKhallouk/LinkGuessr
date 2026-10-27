@@ -100,7 +100,7 @@ export default function PersonDetails({ qid }) {
             </div>
             <div className="toolbar" style={{ marginTop: 8 }}>
               <a className="btn" href={wikiUrl(p.title)} target="_blank" rel="noreferrer">Wikipédia</a>
-              <Link className="btn" to={`${gamePath("explore")}?from=${p.qid}`}>{t("person.findPath")}</Link>
+              <Link className="btn" to={`${gamePath("explore")}?de=${p.qid}`}>{t("person.findPath")}</Link>
             </div>
           </div>
         </div>

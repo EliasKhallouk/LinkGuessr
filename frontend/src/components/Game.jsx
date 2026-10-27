@@ -46,20 +46,20 @@ export default function Game() {
   const [ppPeriod, setPpPeriod] = useState("7");
   const shownPairs = useShowMore(popularPairs, ppPeriod);
 
-  // Depuis une fiche personne : /explorer?from=Q42 pré-remplit la première personne.
+  // /explorer?de=Q42 pré-remplit la première personne (fiche personne) ; avec &a=Q…, c'est un chemin partagé
+  // (plus bas). ?from= : ancien nom du paramètre, encore accepté.
   const [params, setParams] = useSearchParams();
-  const from = params.get("from");
+  const de = params.get("de") || params.get("from");
+  const to = params.get("a");
   useEffect(() => {
-    if (from) api.person(from).then((d) => setP1(d.person)).catch(() => {});
-  }, [from]);
+    if (de && !to) api.person(de).then((d) => setP1(d.person)).catch(() => {});
+  }, [de, to]);
 
   // Chemin partagé : /explorer?de=Q1&a=Q2[&mode=strong], recalculé à l'ouverture. Sans `track` :
   // la réponse vient du cache Vercel et l'ouverture ne compte pas dans les paires les plus explorées.
   const [shared, setShared] = useState(null);  // "ok", "gone" (personne disparue) ou "nopath"
   const formRef = useRef(null);
   const opened = useRef(false);
-  const de = params.get("de");
-  const to = params.get("a");
   const sharedMode = EXPLORE_MODES.includes(params.get("mode")) ? params.get("mode") : "all";
   useEffect(() => {
     if (!de || !to) return;

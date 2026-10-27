@@ -13,7 +13,7 @@ export default function Home() {
   // Anciens liens « Trouver un chemin depuis cette personne » (/?from=Q…) : direction l'explorateur.
   const [params] = useSearchParams();
   const from = params.get("from");
-  if (from) return <Navigate to={`${gamePath("explore")}?from=${encodeURIComponent(from)}`} replace />;
+  if (from) return <Navigate to={`${gamePath("explore")}?de=${encodeURIComponent(from)}`} replace />;
 
   return (
     <main className="grid grid-single">

@@ -12,7 +12,7 @@ Convention des paramètres UTM et événements Umami : [tracking.md](tracking.md
 | `/qui-est-cache` | Jeu « Qui est caché ? » : deviner la personne masquée au milieu d'un chemin |
 | `/relier` | Jeu « Relier » : aller d'une personnalité à une autre, de lien en lien |
 | `/combien` | Jeu « Combien de liens ? » : estimer des distances en 60 secondes, avec classement |
-| `/explorer` | Explorer : le plus court chemin entre deux personnalités, lien par lien (`?from=Q…` pré-remplit la première personne) |
+| `/explorer` | Explorer : le plus court chemin entre deux personnalités, lien par lien (`?de=Q…` pré-remplit la première personne, `?de=Q…&a=Q…` ouvre un chemin partagé ; l'ancien `?from=Q…` reste accepté) |
 | `/jour/:n` | Défi du jour numéro `n` (archive, ou celui du jour) |
 | `/defi?jeu=…` | Arrivée d'un lien de duel (voir b.) |
 | `/personne/:qid` | Fiche d'une personnalité : liens, personnes les plus proches, photo et crédits |
