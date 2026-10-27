@@ -12,7 +12,7 @@ import { newRound, track } from "../lib/tracking";
 import Feedback from "./Feedback";
 import TriesTiles from "./TriesTiles";
 import { confetti } from "../lib/confetti";
-import { duelShare } from "../lib/share";
+import { duelShare, SITE_URL } from "../lib/share";
 import ShareButton from "./ShareButton";
 
 const GAME = "guess_who";
@@ -49,7 +49,8 @@ function grid(wrongCount, solved, maxTries) {
   return cells.concat(Array(Math.max(0, maxTries - cells.length)).fill("⬛")).join("");
 }
 
-// `puzzle` ({ chemin, cache, niveau }) : énigme partagée par un ami (page /defi) ;
+// `puzzle` ({ t, niveau, epoque } ou, anciens liens, { chemin, cache, niveau, epoque }) : énigme partagée
+// par un ami (page /defi) ;
 // `rival` ({ found, tries }) : son résultat, comparé au nôtre à la fin.
 export default function GuessWhoPath({ puzzle = null, rival = null }) {
   const { t } = useI18n();
@@ -155,10 +156,17 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
       found ? t("share.whoFound", { n: attempts }) : t("share.whoLost"),
     ].join("\n");
   };
-  const shareLink = () => duelShare({
-    jeu: "cache", chemin: challenge.path.join("-"), cache: challenge.masked_index, niveau: difficulty, epoque: era,
-    essais: attempts, trouve: found ? 1 : 0,
-  });
+  // Lien de duel chiffré par l'API (rien de l'énigme en clair). Demandé dès la fin de partie : le menu de
+  // partage du téléphone doit s'ouvrir directement au clic. Sans jeton (API indisponible) : lien vers le jeu.
+  const [token, setToken] = useState(null);
+  useEffect(() => {
+    setToken(null);
+    if (!revealed || !challenge) return;
+    api.duelToken({ chemin: challenge.path.join("-"), cache: challenge.masked_index, niveau: difficulty, epoque: era,
+      essais: attempts, trouve: Boolean(found) }).then((r) => setToken(r.t)).catch(() => {});
+  }, [revealed, challenge, difficulty, era, attempts, found]);
+  const shareLink = () => (token ? duelShare({ jeu: "qui", t: token })
+    : { url: `${SITE_URL}/qui-est-cache`, utm: { source: "partage", campaign: "qui-est-cache" } });
   // Comparaison avec l'ami : trouver bat ne pas trouver, puis moins d'essais.
   const versus = rival && revealed && (() => {
     const mine = found ? attempts : Infinity;

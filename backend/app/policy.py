@@ -52,6 +52,7 @@ class RateLimiter:
 # Routes coûteuses (calcul de graphe ou requêtes lourdes) : par IP et par minute.
 LIMITS = [
     ("/random_", RateLimiter(60, 60)),
+    ("/duel/", RateLimiter(60, 60)),
     ("/path", RateLimiter(120, 60)),
     ("/neighbors/", RateLimiter(120, 60)),
     ("/person/", RateLimiter(120, 60)),
@@ -72,6 +73,7 @@ CACHE = [
     ("/domains", DAY),
     ("/search", DAY),
     ("/path", DAY),
+    ("/duel/preview", DAY),  # un jeton donne toujours le même aperçu
     ("/stats", HOUR),
     ("/top", HOUR),
     ("/popular_pairs", "public, max-age=60, s-maxage=300"),

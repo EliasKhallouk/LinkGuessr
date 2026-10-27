@@ -10,9 +10,11 @@ import { usePageMeta } from "../lib/meta";
 import { track } from "../lib/tracking";
 
 // Page d'arrivée d'un lien de duel : /defi?jeu=relais&paire=Q1-Q2&score=3, /defi?jeu=nombre&score=340
-// ou /defi?jeu=cache&chemin=Q1-Q2-Q3&cache=1&niveau=facile&epoque=aujourdhui&essais=2&trouve=1
-// (même énigme « Qui est caché ? »).
-const GAMES = { relais: "relay", nombre: "guess_count", cache: "guess_who" };
+// ou /defi?jeu=qui&t=<jeton> (même énigme « Qui est caché ? », chiffrée par l'API : le lien ne dit rien
+// de la réponse). Anciens liens en clair, encore acceptés :
+// /defi?jeu=cache&chemin=Q1-Q2-Q3&cache=1&niveau=facile&epoque=aujourdhui&essais=2&trouve=1.
+const GAMES = { relais: "relay", nombre: "guess_count", qui: "guess_who", cache: "guess_who" };
+const HIDDEN = ["qui", "cache"];
 export default function Duel() {
   const { t } = useI18n();
   usePageMeta(t("meta.duel.title"), t("meta.duel.description"));
@@ -30,8 +32,21 @@ export default function Duel() {
   const puzzle = useMemo(() => ({ chemin, cache, niveau, epoque }), [chemin, cache, niveau, epoque]);
   const tries = Number(params.get("essais")) || 0;
   const found = params.get("trouve") === "1";
-  const rival = useMemo(() => ({ found, tries }), [found, tries]);
+  const plainRival = useMemo(() => ({ found, tries }), [found, tries]);
   const validPuzzle = /^Q\d+(-Q\d+){2,7}$/.test(chemin) && cache >= 1 && cache <= chemin.split("-").length - 2;
+
+  // Lien chiffré : niveau, époque et résultat de l'ami lus par l'API (sans la réponse).
+  const token = params.get("t") || "";
+  const [preview, setPreview] = useState(null);
+  const [invalid, setInvalid] = useState(null);
+  useEffect(() => {
+    if (game !== "qui") return;
+    api.duelPreview(token).then(setPreview)
+      .catch((e) => setInvalid(e.status === 503 ? e.message : t("duel.invalid")));
+  }, [game, token, t]);
+  const tokenPuzzle = useMemo(() => preview && { t: token, niveau: preview.niveau, epoque: preview.epoque },
+    [preview, token]);
+  const rival = game === "qui" ? preview?.rival : plainRival;
 
   // Ouverture d'un lien de duel : mesure de la viralité.
   useEffect(() => {
@@ -51,6 +66,21 @@ export default function Duel() {
   }, [game, pairParam]);
 
   if (!GAMES[game] || error || (game === "cache" && !validPuzzle)) return <Navigate to="/" replace />;
+  if (invalid) {
+    return (
+      <main className="page fade-in">
+        <section className="panel">
+          <div className="panel-body">
+            <div className="error-box"><p style={{ margin: 0 }}>{invalid}</p></div>
+            <div className="toolbar" style={{ marginTop: 12 }}>
+              <Link className="btn btn-primary" to="/qui-est-cache">{t("duel.newGame")}</Link>
+              <Link className="btn" to="/">{t("duel.otherGames")}</Link>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
   return (
     <main className="page fade-in">
       <section className="panel duel-banner">
@@ -59,11 +89,11 @@ export default function Duel() {
             <p style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
               {game === "relais"
                 ? (pair ? t("duel.relayIntro", { a: pair.from.name, b: pair.to.name, n: score }) : "…")
-                : game === "cache"
-                  ? (found ? t("duel.whoFound", { n: tries }) : t("duel.whoLost"))
+                : HIDDEN.includes(game)
+                  ? (!rival ? "…" : rival.found ? t("duel.whoFound", { n: rival.tries }) : t("duel.whoLost"))
                   : t("duel.countIntro", { n: score })}
             </p>
-            <p className="muted" style={{ margin: "4px 0 0" }}>{game === "cache" ? t("duel.whoCanYou") : t("duel.canYou")}</p>
+            <p className="muted" style={{ margin: "4px 0 0" }}>{HIDDEN.includes(game) ? t("duel.whoCanYou") : t("duel.canYou")}</p>
           </div>
           <Link className="btn btn-ghost" to="/">{t("duel.otherGames")}</Link>
         </div>
@@ -71,8 +101,9 @@ export default function Duel() {
       {game === "relais" && pair && <ConnectRelay fixedPair={pair} rivalSteps={score} />}
       {game === "nombre" && <GuessRelations rivalScore={score} />}
       {game === "cache" && <GuessWhoPath puzzle={puzzle} rival={rival} />}
+      {game === "qui" && tokenPuzzle && <GuessWhoPath puzzle={tokenPuzzle} rival={rival} />}
       {/* « Qui est caché ? » propose les autres jeux dans sa carte de fin de partie. */}
-      {game !== "cache" && <section className="panel" style={{ marginTop: 16 }}>
+      {!HIDDEN.includes(game) && <section className="panel" style={{ marginTop: 16 }}>
         <div className="panel-body toolbar" style={{ justifyContent: "space-between" }}>
           <span>{t("home.moreGames")}</span>
           <Link className="btn btn-primary" to="/">{t("home.discover")}</Link>

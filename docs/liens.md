@@ -34,7 +34,7 @@ d'adresse après l'arrivée.
 | Lien | Format | Paramètres | UTM |
 |---|---|---|---|
 | Défi du jour | `/jour/:n` | `n` : numéro du défi | `utm_source=partage`, `utm_campaign=defi-du-jour` |
-| Duel Qui est caché ? | `/defi?jeu=cache&…` | énigme, niveau, époque et résultat de l'ami | `utm_source=duel`, `utm_campaign=qui-est-cache` |
+| Duel Qui est caché ? | `/defi?jeu=qui&t=<jeton>` | `t` : énigme (chemin, position cachée, niveau, époque) et résultat de l'ami, chiffrés par l'API (AES-GCM). Les anciens liens `jeu=cache&chemin=…` restent acceptés | `utm_source=duel`, `utm_campaign=qui-est-cache` |
 | Duel Relier | `/defi?jeu=relais&paire=Q1-Q2&score=N` | `paire` : départ et cible ; `score` : coups de l'ami | `utm_source=duel`, `utm_campaign=relier` |
 | Duel Combien ? | `/defi?jeu=nombre&score=N` | `score` : points de l'ami | `utm_source=duel`, `utm_campaign=combien` |
 | Chemin d'Explorer | `/explorer?de=Q1&a=Q2[&mode=strong\|wikidata]` | `de`, `a` : les deux bouts (chemin recalculé à l'ouverture) ; `mode` seulement s'il n'est pas « tous les liens » | `utm_source=partage`, `utm_campaign=explorer` |
@@ -43,14 +43,16 @@ Exemples complets :
 
 ```
 https://linkguessr.com/jour/12?utm_source=partage&utm_medium=webshare&utm_campaign=defi-du-jour
-https://linkguessr.com/defi?jeu=cache&…&utm_source=duel&utm_medium=copie&utm_campaign=qui-est-cache
+https://linkguessr.com/defi?jeu=qui&t=3q2-7Xk…(≈ 60 à 100 caractères)&utm_source=duel&utm_medium=copie&utm_campaign=qui-est-cache
 https://linkguessr.com/defi?jeu=relais&paire=Q21621995-Q7186&score=4&utm_source=duel&utm_medium=copie&utm_campaign=relier
 https://linkguessr.com/defi?jeu=nombre&score=340&utm_source=duel&utm_medium=webshare&utm_campaign=combien
 https://linkguessr.com/explorer?de=Q21621995&a=Q7186&utm_source=partage&utm_medium=copie&utm_campaign=explorer
 ```
 
-Aucun de ces liens ne contient de réponse en clair. Les deux bouts d'un chemin ne sont pas secrets ; le score
-de l'ami, lui, est affiché à l'ouverture.
+Aucun de ces liens ne contient de réponse en clair : le défi du jour ne porte que son numéro, Relier et
+Combien les deux bouts et le score de l'ami (pas le plus court chemin ni les bonnes réponses), et le duel
+« Qui est caché ? » un jeton illisible sans la clé de l'API. Un jeton modifié est refusé (message et bouton
+« Nouvelle partie »).
 
 ## c. Liens de promotion à poser à la main
 

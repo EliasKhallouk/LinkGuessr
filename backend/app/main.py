@@ -11,10 +11,12 @@ import numpy as np
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import admin, daily, game, seo
+from pydantic import BaseModel, Field
+
+from . import admin, daily, duel, game, seo
 from .clues import clues
 from .eras import ERAS, load_eras
-from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS
+from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS, DUEL_KEY
 from .core import id_of, path_details, person_columns, pool, startup, state, summaries
 from .graph import MODES, PathResult
 from .policy import http_policy
@@ -355,21 +357,84 @@ def random_path(
     return _puzzle(ids, masked, difficulty, random.Random(), epoque)
 
 
-@app.get("/random_path/replay")
-def random_path_replay(
-    chemin: str = Query(..., pattern=r"^Q\d+(-Q\d+){2,7}$"),
-    cache: int = Query(..., ge=1),
-    niveau: str = Query("moyen", pattern=LEVEL),
-    epoque: str = Query("tous", pattern=f"^({'|'.join(ERAS)})$"),
-):
-    """La même énigme qu'un ami a partagée (/defi?jeu=cache&chemin=Q1-Q2-Q3&cache=1&niveau=facile),
-    avec les mêmes propositions : le tirage est fixé par le lien."""
-    ids = [id_of(q) for q in chemin.split("-")]
-    if cache > len(ids) - 2:
+CHAIN = r"^Q\d+(-Q\d+){2,7}$"
+ERA = f"^({'|'.join(ERAS)})$"
+DUEL_SECRET = duel.load_key(DUEL_KEY)
+
+
+def _chain_ids(chain: list[str], masked: int) -> list[int]:
+    """Identifiants d'un chemin partagé, après vérification qu'il existe toujours dans les données."""
+    ids = [id_of(q) for q in chain]
+    if not 1 <= masked <= len(ids) - 2:
         raise HTTPException(400, "Position de la personne cachée invalide")
     csr = state["graph"].csr["all"]
     if any(b not in set(csr.neighbors_of(a).tolist()) for a, b in zip(ids, ids[1:])):
         raise HTTPException(400, "Ce chemin n'existe pas (ou plus) dans les données")
+    return ids
+
+
+def _duel(t: str) -> dict:
+    """Énigme d'un jeton de duel (voir duel.py), niveau et époque en clair."""
+    if DUEL_SECRET is None:
+        raise HTTPException(503, "Les liens de duel sont momentanément indisponibles")
+    try:
+        d = duel.decode(DUEL_SECRET, t)
+        d["niveau"], d["epoque"] = list(LEVELS)[d["level"]], ERAS[d["era"]]
+    except (duel.InvalidToken, IndexError):
+        raise HTTPException(400, "Ce lien de défi est invalide ou a été modifié")
+    if not 3 <= len(d["chain"]) <= 8:
+        raise HTTPException(400, "Ce lien de défi est invalide ou a été modifié")
+    return d
+
+
+class DuelIn(BaseModel):
+    chemin: str = Field(..., pattern=CHAIN)
+    cache: int
+    niveau: str = Field(..., pattern=LEVEL)
+    epoque: str = Field(..., pattern=ERA)
+    essais: int = Field(..., ge=0, le=20)
+    trouve: bool
+
+
+@app.post("/duel/token")
+def duel_token(body: DuelIn):
+    """Jeton du lien de duel d'une énigme finie : le lien ne contient ainsi ni le chemin ni la réponse."""
+    if DUEL_SECRET is None:
+        raise HTTPException(503, "Les liens de duel sont momentanément indisponibles")
+    chain = body.chemin.split("-")
+    _chain_ids(chain, body.cache)
+    return {"t": duel.encode(DUEL_SECRET, chain, body.cache, list(LEVELS).index(body.niveau), ERAS.index(body.epoque),
+                             body.essais, body.trouve)}
+
+
+@app.get("/duel/preview")
+def duel_preview(t: str = Query(..., max_length=200)):
+    """Ce qu'un lien de duel peut montrer avant de jouer (bandeau, aperçu, image) : les deux bouts du chemin,
+    sa longueur, la position cachée et le résultat de l'ami. Jamais la personne cachée ni les intermédiaires."""
+    d = _duel(t)
+    ids = _chain_ids(d["chain"], d["masked"])
+    people = summaries([ids[0], ids[-1]])
+    ends = [{k: people[i][k] for k in ("qid", "name", "image")} for i in (ids[0], ids[-1])]
+    return {"ends": ends, "length": len(ids), "cache": d["masked"], "niveau": d["niveau"], "epoque": d["epoque"],
+            "rival": {"found": d["found"], "tries": d["tries"]}}
+
+
+@app.get("/random_path/replay")
+def random_path_replay(
+    t: str | None = Query(None, max_length=200),
+    chemin: str | None = Query(None, pattern=CHAIN),
+    cache: int | None = Query(None, ge=1),
+    niveau: str = Query("moyen", pattern=LEVEL),
+    epoque: str = Query("tous", pattern=ERA),
+):
+    """La même énigme qu'un ami a partagée, avec les mêmes propositions : le tirage est fixé par le lien.
+    Jeton chiffré (/defi?jeu=qui&t=…), ou anciens liens en clair (/defi?jeu=cache&chemin=Q1-Q2-Q3&cache=1)."""
+    if t:
+        d = _duel(t)
+        chemin, cache, niveau, epoque = "-".join(d["chain"]), d["masked"], d["niveau"], d["epoque"]
+    elif not chemin or cache is None:
+        raise HTTPException(400, "Lien de défi incomplet")
+    ids = _chain_ids(chemin.split("-"), cache)
     return _puzzle(ids, cache, niveau, random.Random(f"{chemin}-{cache}-{niveau}-{epoque}"), epoque)
 
 

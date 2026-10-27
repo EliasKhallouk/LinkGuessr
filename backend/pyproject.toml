@@ -9,6 +9,7 @@ dependencies = [
     "numpy>=2.0",
     "psycopg[binary]>=3.2",
     "psycopg-pool>=3.2",
+    "cryptography>=43",
 ]
 
 [dependency-groups]

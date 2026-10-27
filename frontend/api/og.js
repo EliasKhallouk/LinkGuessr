@@ -1,4 +1,4 @@
-// Images d'aperçu (Open Graph) générées à la volée : /api/og?type=jour&n=12, duel, nombre, cache, personne.
+// Images d'aperçu (Open Graph) générées à la volée : /api/og?type=jour&n=12, duel, nombre, qui, cache, personne, explorer.
 // Elles intriguent sans jamais révéler de réponse, et portent les crédits des sources.
 import { ImageResponse } from "@vercel/og";
 import { commonsDirect, commonsFilePath } from "../src/lib/commons.js";
@@ -99,6 +99,17 @@ async function render(params, origin) {
     return frame("Défi : relie-les pas à pas", `Quelqu'un l'a fait en ${n} coup(s). Tu fais mieux ?`,
       h("div", { display: "flex", alignItems: "center", gap: 24 }, avatar(pa, ca.person.name), arrow,
         h("div", { fontSize: 64, color: "#f472b6" }, "· · ·"), arrow, avatar(pb, cb.person.name)));
+  }
+  if (type === "qui") {
+    // Lien de duel chiffré : l'aperçu de l'API donne les deux bouts et la position cachée, rien d'autre.
+    const d = await json(`/duel/preview?${new URLSearchParams({ t: params.get("t") || "" })}`, `${origin}/v1`);
+    const [a, b] = d.ends;
+    const [pa, pb] = await Promise.all([photo(a.image), photo(b.image)]);
+    const dots = h("div", { fontSize: 56, color: "#9ca8c5", marginTop: -40 }, "· · ·");
+    return frame("Qui est caché ?", "Une personne relie les deux. Tu trouves qui ?",
+      h("div", { display: "flex", alignItems: "center", gap: 24 }, avatar(pa, a.name), arrow,
+        d.cache > 1 ? [dots, arrow] : [], mystery(), arrow, d.cache < d.length - 2 ? [dots, arrow] : [],
+        avatar(pb, b.name)));
   }
   if (type === "cache") {
     // Les deux bouts du chemin et la personne cachée ; « · · · » pour les personnes intermédiaires.

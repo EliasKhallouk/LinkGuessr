@@ -74,6 +74,17 @@ async function metaFor(url) {
   if (parts[0] === "defi") {
     const game = url.searchParams.get("jeu");
     const score = Number(url.searchParams.get("score")) || "?";
+    if (game === "qui") {
+      // Lien chiffré : l'API ne renvoie que les deux bouts et le résultat de l'ami (via /v1, cache Vercel).
+      const t = url.searchParams.get("t") || "";
+      const r = await fetch(`${url.origin}/v1/duel/preview?${new URLSearchParams({ t })}`, { headers: { "User-Agent": UA } });
+      if (!r.ok) throw new Error(String(r.status));
+      const { ends: [a, b], rival } = await r.json();
+      return { title: `Qui est caché entre ${a.name} et ${b.name} ? · LinkGuessr`,
+        description: rival.found ? `Ton ami l'a trouvé en ${rival.tries} ${rival.tries > 1 ? "essais" : "essai"}. Et toi, tu trouves ?`
+          : "Ton ami n'a pas trouvé. Tu vas faire mieux ?",
+        image: `/api/og?${new URLSearchParams({ type: "qui", t })}` };
+    }
     if (game === "cache") {
       // Seulement les deux bouts du chemin : la personne cachée ne doit pas apparaître dans l'aperçu.
       const ends = (url.searchParams.get("chemin") || "").split("-");

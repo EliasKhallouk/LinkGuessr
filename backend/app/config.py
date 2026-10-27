@@ -9,3 +9,5 @@ CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "http://localh
 CORS_ORIGIN_REGEX = os.environ.get("CORS_ORIGIN_REGEX") or None
 # Jeton de la page /admin (vide = tableau de bord désactivé).
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
+# Clé AES des liens de duel « Qui est caché ? » (python -m app.duel en génère une ; vide = liens désactivés).
+DUEL_KEY = os.environ.get("DUEL_KEY", "")

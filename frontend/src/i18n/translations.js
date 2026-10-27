@@ -371,6 +371,8 @@ export const translations = {
       whoCanYou: "Et toi, tu trouves ?",
       whoWorse: "Ton ami a fait mieux. Revanche ?",
       otherGames: "Autres jeux →",
+      invalid: "Ce lien de défi est invalide ou a été modifié, ou l'énigme n'existe plus dans nos données.",
+      newGame: "Nouvelle partie",
     },
     feedback: {
       question: "Ça t'a plu ?",
@@ -761,6 +763,8 @@ export const translations = {
       whoCanYou: "Can you?",
       whoWorse: "Your friend did better. Rematch?",
       otherGames: "Other games →",
+      invalid: "This challenge link is invalid or has been altered, or the puzzle no longer exists in our data.",
+      newGame: "New game",
     },
     feedback: {
       question: "Did you enjoy it?",

@@ -55,7 +55,7 @@ python -m app.daily show|generate|set …        # sur la VM : défis du jour
 | Relier | `/relier` | `components/ConnectRelay.jsx` | `main.py` (`/neighbors`, `/random_pair`) |
 | Combien ? | `/combien` | `components/GuessRelations.jsx`, `Leaderboard.jsx` | `game.py` |
 | Défi du jour | `/`, `/jour/:n` | `components/DailyChallenge.jsx`, `pages/DailyPage.jsx` | `daily.py` |
-| Duels | `/defi?jeu=…` | `pages/Duel.jsx`, `lib/share.js` | — |
+| Duels | `/defi?jeu=…` | `pages/Duel.jsx`, `lib/share.js` | `duel.py` (jetons chiffrés, clé `DUEL_KEY`), `main.py` (`/duel/*`) |
 
 Transverse : `frontend/src/games.jsx` (liste des jeux), `i18n/translations.js` (textes), `lib/tracking.js`
 (mesure), `middleware.js` (aperçus), `vercel.json` (relais, redirections), `backend/app/admin.py`

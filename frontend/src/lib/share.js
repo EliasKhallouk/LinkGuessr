@@ -49,7 +49,7 @@ export function relayGrid(steps, best) {
 }
 
 // Lien de duel et sa campagne (nom du jeu dans l'URL du site), à passer à <ShareButton {...duelShare(…)} />.
-const DUEL_CAMPAIGNS = { cache: "qui-est-cache", relais: "relier", nombre: "combien" };
+const DUEL_CAMPAIGNS = { qui: "qui-est-cache", relais: "relier", nombre: "combien" };
 export function duelShare(params) {
   return { url: `${SITE_URL}/defi?${new URLSearchParams(params)}`, utm: { source: "duel", campaign: DUEL_CAMPAIGNS[params.jeu] } };
 }

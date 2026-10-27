@@ -29,7 +29,7 @@ Liens générés par le site :
 | Lien | Exemple |
 |---|---|
 | Défi du jour | `https://linkguessr.com/jour/12?utm_source=partage&utm_medium=webshare&utm_campaign=defi-du-jour` |
-| Duel Qui est caché ? | `https://linkguessr.com/defi?jeu=cache&…&utm_source=duel&utm_medium=copie&utm_campaign=qui-est-cache` |
+| Duel Qui est caché ? | `https://linkguessr.com/defi?jeu=qui&t=<jeton chiffré>&utm_source=duel&utm_medium=copie&utm_campaign=qui-est-cache` |
 | Duel Relier | `https://linkguessr.com/defi?jeu=relais&paire=Q1-Q2&score=3&utm_source=duel&utm_medium=copie&utm_campaign=relier` |
 | Duel Combien ? | `https://linkguessr.com/defi?jeu=nombre&score=340&utm_source=duel&utm_medium=copie&utm_campaign=combien` |
 | Chemin d'Explorer | `https://linkguessr.com/explorer?de=Q21621995&a=Q7186&utm_source=partage&utm_medium=copie&utm_campaign=explorer` |
