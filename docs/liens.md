@@ -36,7 +36,7 @@ d'adresse après l'arrivée.
 | Défi du jour | `/jour/:n` | `n` : numéro du défi | `utm_source=partage`, `utm_campaign=defi-du-jour` |
 | Duel Qui est caché ? | `/defi?jeu=qui&t=<jeton>` | `t` : énigme (chemin, position cachée, niveau, époque) et résultat de l'ami, chiffrés par l'API (AES-GCM). Les anciens liens `jeu=cache&chemin=…` restent acceptés | `utm_source=duel`, `utm_campaign=qui-est-cache` |
 | Duel Relier | `/defi?jeu=relais&paire=Q1-Q2&score=N` | `paire` : départ et cible ; `score` : coups de l'ami | `utm_source=duel`, `utm_campaign=relier` |
-| Duel Combien ? | `/defi?jeu=nombre&score=N` | `score` : points de l'ami | `utm_source=duel`, `utm_campaign=combien` |
+| Duel Combien ? | `/defi?jeu=nombre&score=N&niveau=…&graine=…` | `score` : points de l'ami ; `niveau` : son niveau ; `graine` : la série de paires de sa partie (base 36, 6 caractères au plus), pour jouer exactement les mêmes paires dans le même ordre. Anciens liens sans graine : paires au hasard | `utm_source=duel`, `utm_campaign=combien` |
 | Chemin d'Explorer | `/explorer?de=Q1&a=Q2[&mode=strong\|wikidata]` | `de`, `a` : les deux bouts (chemin recalculé à l'ouverture) ; `mode` seulement s'il n'est pas « tous les liens » | `utm_source=partage`, `utm_campaign=explorer` |
 
 Exemples complets :
@@ -45,7 +45,7 @@ Exemples complets :
 https://linkguessr.com/jour/12?utm_source=partage&utm_medium=webshare&utm_campaign=defi-du-jour
 https://linkguessr.com/defi?jeu=qui&t=3q2-7Xk…(≈ 60 à 100 caractères)&utm_source=duel&utm_medium=copie&utm_campaign=qui-est-cache
 https://linkguessr.com/defi?jeu=relais&paire=Q21621995-Q7186&score=4&utm_source=duel&utm_medium=copie&utm_campaign=relier
-https://linkguessr.com/defi?jeu=nombre&score=340&utm_source=duel&utm_medium=webshare&utm_campaign=combien
+https://linkguessr.com/defi?jeu=nombre&score=340&niveau=moyen&graine=k3x9za&utm_source=duel&utm_medium=webshare&utm_campaign=combien
 https://linkguessr.com/explorer?de=Q21621995&a=Q7186&utm_source=partage&utm_medium=copie&utm_campaign=explorer
 ```
 

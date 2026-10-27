@@ -9,7 +9,8 @@ import { useI18n } from "../i18n/I18nProvider";
 import { usePageMeta } from "../lib/meta";
 import { track } from "../lib/tracking";
 
-// Page d'arrivée d'un lien de duel : /defi?jeu=relais&paire=Q1-Q2&score=3, /defi?jeu=nombre&score=340
+// Page d'arrivée d'un lien de duel : /defi?jeu=relais&paire=Q1-Q2&score=3,
+// /defi?jeu=nombre&score=340&niveau=moyen&graine=k3x9za (mêmes paires que l'ami, dans le même ordre)
 // ou /defi?jeu=qui&t=<jeton> (même énigme « Qui est caché ? », chiffrée par l'API : le lien ne dit rien
 // de la réponse). Anciens liens en clair, encore acceptés :
 // /defi?jeu=cache&chemin=Q1-Q2-Q3&cache=1&niveau=facile&epoque=aujourdhui&essais=2&trouve=1.
@@ -32,6 +33,8 @@ export default function Duel() {
   const puzzle = useMemo(() => ({ chemin, cache, niveau, epoque }), [chemin, cache, niveau, epoque]);
   const tries = Number(params.get("essais")) || 0;
   const found = params.get("trouve") === "1";
+  // Combien : graine en base 36 (anciens liens sans graine : paires au hasard).
+  const graine = /^[0-9a-z]{1,6}$/.test(params.get("graine") || "") ? parseInt(params.get("graine"), 36) : null;
   const plainRival = useMemo(() => ({ found, tries }), [found, tries]);
   const validPuzzle = /^Q\d+(-Q\d+){2,7}$/.test(chemin) && cache >= 1 && cache <= chemin.split("-").length - 2;
 
@@ -99,7 +102,7 @@ export default function Duel() {
         </div>
       </section>
       {game === "relais" && pair && <ConnectRelay fixedPair={pair} rivalSteps={score} />}
-      {game === "nombre" && <GuessRelations rivalScore={score} />}
+      {game === "nombre" && <GuessRelations rivalScore={score} seed={graine} level={graine != null ? niveau : null} />}
       {game === "cache" && <GuessWhoPath puzzle={puzzle} rival={rival} />}
       {game === "qui" && tokenPuzzle && <GuessWhoPath puzzle={tokenPuzzle} rival={rival} />}
       {/* « Qui est caché ? » propose les autres jeux dans sa carte de fin de partie. */}

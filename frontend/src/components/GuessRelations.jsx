@@ -26,10 +26,15 @@ function pointsFor(diff, streak) {
   return 0;
 }
 
-// `rivalScore` : score à battre quand on arrive par un lien de duel.
-export default function GuessRelations({ rivalScore = null }) {
+// Graine d'une série de paires : chaque partie chronométrée a la sienne, transmise par le lien de duel
+// (en base 36, 6 caractères au plus) pour que l'ami joue les mêmes paires dans le même ordre.
+export const newSeed = () => Math.floor(Math.random() * 2 ** 31);
+
+// `rivalScore` : score à battre quand on arrive par un lien de duel ; `seed` et `level` : la série et le
+// niveau de l'ami (anciens liens sans graine : paires au hasard).
+export default function GuessRelations({ rivalScore = null, seed = null, level = null }) {
   const { t } = useI18n();
-  const [difficulty, setDifficulty] = useState("moyen");
+  const [difficulty, setDifficulty] = useState(level || "moyen");
   const [pair, setPair] = useState(null);          // { from, to, length, n_paths }
   const [guess, setGuess] = useState("");
   const [outcome, setOutcome] = useState(null);    // { actual, correct, details }
@@ -48,7 +53,9 @@ export default function GuessRelations({ rivalScore = null }) {
   const [submitError, setSubmitError] = useState(null);
   const [popup, setPopup] = useState(null);
   const guessInputRef = useRef(null);
-  const prefetched = useRef(null);   // { difficulty, promise } : la paire suivante, chargée d'avance
+  const prefetched = useRef(null);   // { key, promise } : la paire suivante, chargée d'avance
+  const series = useRef(null);       // { seed, next } pendant une partie chronométrée
+  const [gameSeed, setGameSeed] = useState(null);  // graine de la dernière partie, pour le lien de duel
 
   useEffect(() => {
     if (!gameActive) return;
@@ -58,15 +65,21 @@ export default function GuessRelations({ rivalScore = null }) {
   }, [gameActive, timeLeft]);
 
   // La paire suivante est demandée dès qu'une question s'affiche, pour enchaîner sans attendre.
+  // Pendant une partie, la paire n° i de la série (même graine, même ordre pour l'ami) ; sinon au hasard.
   const fetchPair = () => {
-    const ask = () => api.randomPair({
+    const s = series.current;
+    const i = s ? s.next++ : null;
+    const keyOf = (n) => (s ? `${difficulty}:${s.seed}:${n}` : difficulty);
+    const ask = (n) => api.randomPair({
       difficulty, mode: MODE, balanced: true, min_length: LENGTHS[difficulty][0], max_length: LENGTHS[difficulty][1],
+      ...(s && { seed: s.seed, index: n }),
     });
-    const ready = prefetched.current?.difficulty === difficulty && prefetched.current.promise;
-    const promise = ask();
+    const ready = prefetched.current?.key === keyOf(i) && prefetched.current.promise;
+    const next = s ? i + 1 : null;
+    const promise = ask(next);
     promise.catch(() => {});
-    prefetched.current = { difficulty, promise };
-    return ready || ask();
+    prefetched.current = { key: keyOf(next), promise };
+    return ready || ask(i);
   };
 
   // `focus` : place le curseur dans le champ. Par défaut seulement avec une souris : sur téléphone,
@@ -140,6 +153,8 @@ export default function GuessRelations({ rivalScore = null }) {
   };
 
   const startGame = () => {
+    series.current = { seed: seed ?? newSeed(), next: 0 };
+    setGameSeed(series.current.seed);
     newRound(GAME);
     track(GAME, "start", { duel: rivalScore != null });
     setScore(0);
@@ -199,8 +214,9 @@ export default function GuessRelations({ rivalScore = null }) {
               </>
             ) : (
               <>
-                <DifficultyPicker value={difficulty} onChange={setDifficulty} />
-                <button className="btn" onClick={newChallenge} disabled={loading}>{t("guess.newChallenge")}</button>
+                {/* Duel avec graine : le niveau de l'ami, sinon ce ne seraient plus les mêmes paires. */}
+                {seed == null && <DifficultyPicker value={difficulty} onChange={setDifficulty} />}
+                <button className="btn" onClick={() => { series.current = null; newChallenge(); }} disabled={loading}>{t("guess.newChallenge")}</button>
                 <button className="btn btn-primary" onClick={startGame} disabled={loading}>
                   {t("guess.startGame", { seconds: GAME_DURATION })}
                 </button>
@@ -313,7 +329,7 @@ export default function GuessRelations({ rivalScore = null }) {
                         `LinkGuessr · ${t("tabs.count")} 🔗`,
                         `⭐ ${score} pts · ${totalCorrect}/${totalAnswered} ${t("share.exact")} · ${GAME_DURATION} s`,
                       ].join("\n")}
-                      {...duelShare({ jeu: "nombre", score })}
+                      {...duelShare({ jeu: "nombre", score, niveau: difficulty, graine: gameSeed.toString(36) })}
                       label={t("share.challenge")}
                       onShared={() => track(GAME, "share", { score })}
                     />
