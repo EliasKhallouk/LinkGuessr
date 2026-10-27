@@ -16,11 +16,13 @@ Règles :
 | Paramètre | Valeurs | Sens |
 |---|---|---|
 | `utm_source` | `partage`, `duel` | Liens générés par le site : résultat partagé (défi du jour, chemin d'Explorer), invitation à un duel |
-| | `reddit`, `discord`, `instagram`, `tiktok`, `x`, `facebook`, `whatsapp`, `newsletter`, `presse` | Liens posés à la main par l'équipe |
+| | `linkedin`, `ecole`, `reddit`, `discord`, `instagram`, `tiktok`, `x`, `facebook`, `whatsapp`, `email`, `newsletter`, `presse` | Liens posés à la main par l'équipe |
 | `utm_medium` | `copie`, `webshare` | Liens du site : copié dans le presse-papiers, ou menu de partage natif (téléphone) |
-| | `post`, `commentaire`, `bio`, `message`, `email`, `article` | Liens posés à la main |
+| | `post`, `commentaire`, `bio`, `message`, `email`, `signature`, `article` | Liens posés à la main |
 | `utm_campaign` | `qui-est-cache`, `relier`, `combien`, `explorer`, `defi-du-jour` | Le jeu mis en avant (même nom que sa page) |
-| | `lancement`, ou un nom court daté (`halloween-2026`) | Opérations ponctuelles |
+| | `lancement`, `permanent` (lien posé pour durer : signature, bio), ou un nom court (`video-mbappe-curie`, `halloween-2026`) | Opérations |
+
+Liens de promotion prêts à copier et règle pour en créer un : [liens.md](liens.md).
 
 Liens générés par le site :
 

@@ -40,7 +40,8 @@ python -m app.daily show|generate|set …        # sur la VM : défis du jour
 - Crédits et licences : textes Wikipédia CC BY-SA 4.0, données Wikidata CC0, images Wikimedia Commons avec
   auteur et licence lus en direct (`ImageCredit.jsx`, `lib/commons.js`). Toujours citer la source.
 - Pas de publicité, pas de comptes, pas de cookie. Mesure d'audience : Umami auto-hébergé + événements
-  anonymes vers `/events` (tableau `/admin`). Aucune donnée personnelle. Convention : `docs/tracking.md`.
+  anonymes vers `/events` (tableau `/admin`). Aucune donnée personnelle. Convention : `docs/tracking.md` ;
+  toutes les adresses, liens générés et liens de promotion : `docs/liens.md`.
 - VM à 1 cœur : ménager le CPU (cache Vercel devant l'API, limites de débit dans `policy.py`, calcul lourd
   fait sur le PC, compilations en `nice`).
 - Commentaires courts en français ; commits en français, un sujet par commit.
