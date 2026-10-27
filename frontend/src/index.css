@@ -332,6 +332,11 @@ body::before {
   box-shadow: var(--shadow-lg);
   padding: 12px;
   z-index: 200;
+  /* Fenêtre basse : le menu défile au lieu de sortir de l'écran (l'en-tête, collé en haut, ne défile pas). */
+  max-height: calc(100vh - 80px);
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .menu-section { display: grid; gap: 8px; }

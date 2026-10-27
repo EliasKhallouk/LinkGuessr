@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0A0E1A" />
+    <meta name="theme-color" content="#F8FAFC" />
+    <!-- Thème clair par défaut ; le thème choisi est appliqué avant le premier affichage (pas de flash). -->
+    <script>try { var t = localStorage.getItem("theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}</script>
     <meta name="google-site-verification" content="JCYXjp5hYUkq0gybg6ls7Zdli54NF5qD8W_bbfXleoY" />
     <meta name="description" content="Jeux gratuits sur Wikipédia : devine qui relie deux personnalités, défi du jour, combien de liens les séparent. 765 000 personnalités de Wikipédia en français, reliées par leurs articles." />
     <meta property="og:title" content="LinkGuessr · Le jeu des liens entre personnalités de Wikipédia" />

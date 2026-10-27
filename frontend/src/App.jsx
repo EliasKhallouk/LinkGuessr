@@ -22,7 +22,7 @@ import Person from "./pages/Person";
 function App() {
   const { t, lang, setLang } = useI18n();
   const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem("theme") || "dark"; } catch { return "dark"; }
+    try { return localStorage.getItem("theme") || "light"; } catch { return "light"; }
   });
   const [menuOpen, setMenuOpen] = useState(false);
   // Série de défis du jour réussis d'affilée (historique local), affichée façon Duolingo.

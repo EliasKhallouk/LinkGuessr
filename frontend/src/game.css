@@ -270,7 +270,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { box-shadow: 
 @media (max-width: 767px) {
   /* Sur mobile : panneau pleine largeur sous le header, qui défile s'il est plus haut que l'écran. */
   .popover { position: fixed; top: 64px; left: 12px; right: 12px; min-width: 0;
-    max-height: calc(100dvh - 76px); overflow-y: auto; overscroll-behavior: contain; }
+    max-height: calc(100vh - 76px); max-height: calc(100dvh - 76px); }
   .menu-link { padding: 10px 12px; }
 }
 
