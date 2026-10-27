@@ -1,0 +1,31 @@
+-- Retire exactement les scores provisoires de seed_leaderboard.sql (les vrais scores ne sont pas touchés).
+DELETE FROM app.score s USING (VALUES
+  ('Chloe', 2290, '2026-10-17T20:42:37.602179+02:00'::timestamptz),
+  ('Nolan', 1190, '2026-10-17T21:17:42.794465+02:00'::timestamptz),
+  ('Theo', 560, '2026-10-17T23:33:56.703052+02:00'::timestamptz),
+  ('Ethan_', 3660, '2026-10-18T20:57:37.581381+02:00'::timestamptz),
+  ('manon', 980, '2026-10-18T21:44:45.823220+02:00'::timestamptz),
+  ('Clara', 930, '2026-10-19T17:50:50.959463+02:00'::timestamptz),
+  ('Zoe', 3600, '2026-10-19T21:58:00.096645+02:00'::timestamptz),
+  ('Lou', 1150, '2026-10-19T22:56:44.529238+02:00'::timestamptz),
+  ('Maelys', 1130, '2026-10-21T12:54:45.386761+02:00'::timestamptz),
+  ('Camille', 2530, '2026-10-21T19:00:02.157122+02:00'::timestamptz),
+  ('Ilyes', 1820, '2026-10-21T21:23:06.204038+02:00'::timestamptz),
+  ('Nathan', 20170, '2026-10-21T21:25:42.322570+02:00'::timestamptz),
+  ('Mathis', 1020, '2026-10-22T18:25:16.364545+02:00'::timestamptz),
+  ('Theo', 1190, '2026-10-23T21:09:30.927262+02:00'::timestamptz),
+  ('Adam', 4010, '2026-10-23T21:16:54.440366+02:00'::timestamptz),
+  ('Ethan_', 2090, '2026-10-23T21:51:48.908858+02:00'::timestamptz),
+  ('Mathis', 16300, '2026-10-23T23:32:40.080027+02:00'::timestamptz),
+  ('Rayan', 14300, '2026-10-24T17:27:53.763336+02:00'::timestamptz),
+  ('Sacha', 14320, '2026-10-24T21:32:49.866305+02:00'::timestamptz),
+  ('Timeo', 4550, '2026-10-24T21:59:31.377420+02:00'::timestamptz),
+  ('Nathan', 550, '2026-10-24T22:30:45.974614+02:00'::timestamptz),
+  ('lina_', 6360, '2026-10-24T23:46:08.572316+02:00'::timestamptz),
+  ('Ines', 1140, '2026-10-25T13:39:50.208448+01:00'::timestamptz),
+  ('Maelys', 1950, '2026-10-25T21:18:18.479668+01:00'::timestamptz),
+  ('Adam', 3950, '2026-10-25T21:51:01.603472+01:00'::timestamptz),
+  ('Louna', 3720, '2026-10-25T22:58:02.871789+01:00'::timestamptz),
+  ('Enzo', 4810, '2026-10-25T23:30:51.927413+01:00'::timestamptz)
+) AS v(name, score, created_at)
+WHERE s.game = 'guess_count' AND s.name = v.name AND s.score = v.score AND s.created_at = v.created_at;
