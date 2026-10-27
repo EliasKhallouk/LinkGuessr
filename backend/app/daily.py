@@ -359,15 +359,17 @@ def daily(response: Response):
 
 @router.get("/daily/archive/{number}")
 def daily_archive(number: int, response: Response):
-    """Un défi passé, réponse comprise (les liens partagés restent consultables après minuit).
-    Le défi du jour et les suivants ne sont jamais révélés ici."""
+    """Un défi passé, réponse comprise (les liens partagés restent consultables après minuit), ou celui
+    du jour sans la réponse. Les défis à venir (heure de Paris) sont refusés : rien n'en est montré."""
+    if number > number_of(today()):
+        raise HTTPException(403, "Ce défi n'est pas encore disponible")
     with pool.connection() as conn:
         row = conn.execute("SELECT * FROM app.daily_challenge WHERE number = %s", (number,)).fetchone()
-    if row is None:
+    if row is None or row["day"] > today():
         raise HTTPException(404, "Défi inconnu")
-    if row["day"] >= today():
+    if row["day"] == today():
         response.headers["Cache-Control"] = "public, max-age=60, s-maxage=300"
-        return {**_public(row, reveal=False), "current": row["day"] == today()}
+        return {**_public(row, reveal=False), "current": True}
     response.headers["Cache-Control"] = "public, max-age=3600, s-maxage=86400"
     return {**_public(row, reveal=True), "current": False}
 
