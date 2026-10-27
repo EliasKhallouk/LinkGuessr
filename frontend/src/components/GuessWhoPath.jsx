@@ -12,7 +12,7 @@ import { newRound, track } from "../lib/tracking";
 import Feedback from "./Feedback";
 import TriesTiles from "./TriesTiles";
 import { confetti } from "../lib/confetti";
-import { duelUrl } from "../lib/share";
+import { duelShare } from "../lib/share";
 import ShareButton from "./ShareButton";
 
 const GAME = "guess_who";
@@ -155,7 +155,7 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
       found ? t("share.whoFound", { n: attempts }) : t("share.whoLost"),
     ].join("\n");
   };
-  const shareUrl = () => duelUrl({
+  const shareLink = () => duelShare({
     jeu: "cache", chemin: challenge.path.join("-"), cache: challenge.masked_index, niveau: difficulty, epoque: era,
     essais: attempts, trouve: found ? 1 : 0,
   });
@@ -264,7 +264,7 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
                     </div>
                   )}
                   <div className="toolbar" style={{ marginTop: 8 }}>
-                    <ShareButton text={shareText()} url={shareUrl()} label={t("share.challenge")}
+                    <ShareButton text={shareText()} {...shareLink()} label={t("share.challenge")}
                       onShared={() => track(GAME, "share", { found: Boolean(found), tries: attempts, difficulty })} />
                     {!puzzle && <button className="btn" onClick={fetchChallenge}>{t("guess.next")}</button>}
                   </div>

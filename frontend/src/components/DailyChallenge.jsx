@@ -87,7 +87,8 @@ export default function DailyChallenge() {
         `${game.persons[game.path[0]].name} → ? → ${game.persons[game.path[2]].name}`,
         `${dailyGrid(game.wrong.length, game.solved, game.max_tries)} · ${t("share.hints", { n: Math.min(game.wrong.length, 3) })}`,
       ].join("\n")}
-      url={`${SITE_URL}/jour/${game.number}?src=partage`}
+      url={`${SITE_URL}/jour/${game.number}`}
+      utm={{ source: "partage", campaign: "defi-du-jour" }}
       onShared={() => track("daily", "share", { number: game.number })}
     />
   );

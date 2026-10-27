@@ -3,7 +3,7 @@ import { api } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
 import DifficultyPicker from "./DifficultyPicker";
 import PathView from "./PathView";
-import { duelUrl } from "../lib/share";
+import { duelShare } from "../lib/share";
 import { load, save } from "../lib/storage";
 import PersonChip from "./PersonChip";
 import ShareButton from "./ShareButton";
@@ -313,7 +313,7 @@ export default function GuessRelations({ rivalScore = null }) {
                         `LinkGuessr · ${t("tabs.count")} 🔗`,
                         `⭐ ${score} pts · ${totalCorrect}/${totalAnswered} ${t("share.exact")} · ${GAME_DURATION} s`,
                       ].join("\n")}
-                      url={duelUrl({ jeu: "nombre", score })}
+                      {...duelShare({ jeu: "nombre", score })}
                       label={t("share.challenge")}
                       onShared={() => track(GAME, "share", { score })}
                     />

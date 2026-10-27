@@ -1,16 +1,27 @@
-// Partage d'un résultat : menu natif (téléphone) sinon presse-papiers. Retourne "shared", "copied" ou "failed".
+// Partage d'un résultat : menu natif (téléphone) sinon presse-papiers.
+// Retourne "shared", "copied", "cancelled" ou "failed".
 export const SITE_URL = "https://linkguessr.com";
 
-export async function shareText(text, url) {
-  const full = url ? `${text}\n${url}` : text;
+// Paramètres de campagne des liens partagés (docs/tracking.md) : utm_medium dépend de la méthode.
+export function withUtm(url, { source, campaign }, medium) {
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}utm_source=${source}&utm_medium=${medium}&utm_campaign=${campaign}`;
+}
+
+const canWebShare = () => Boolean(navigator.share) && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+export async function shareText(text, url, utm) {
+  const link = (medium) => (url && utm ? withUtm(url, utm, medium) : url);
+  const join = (u) => (u ? `${text}\n${u}` : text);
   try {
-    if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-      await navigator.share({ text: full });
+    if (canWebShare()) {
+      await navigator.share({ text: join(link("webshare")) });
       return "shared";
     }
   } catch (e) {
     if (e?.name === "AbortError") return "cancelled";
   }
+  const full = join(link("copie"));
   try {
     await navigator.clipboard.writeText(full);
     return "copied";
@@ -36,7 +47,8 @@ export function relayGrid(steps, best) {
   return Array.from({ length: steps }, (_, i) => (best && i < best ? "🟩" : "🟨")).join("");
 }
 
-// Les liens partagés portent leur source (?src=), pour mesurer ce que rapporte le partage.
-export function duelUrl(params) {
-  return `${SITE_URL}/defi?${new URLSearchParams({ ...params, src: "duel" })}`;
+// Lien de duel et sa campagne (nom du jeu dans l'URL du site), à passer à <ShareButton {...duelShare(…)} />.
+const DUEL_CAMPAIGNS = { cache: "qui-est-cache", relais: "relier", nombre: "combien" };
+export function duelShare(params) {
+  return { url: `${SITE_URL}/defi?${new URLSearchParams(params)}`, utm: { source: "duel", campaign: DUEL_CAMPAIGNS[params.jeu] } };
 }

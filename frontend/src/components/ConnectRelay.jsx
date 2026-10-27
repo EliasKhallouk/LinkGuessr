@@ -3,7 +3,7 @@ import { api } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
 import DifficultyPicker from "./DifficultyPicker";
 import PathView from "./PathView";
-import { duelUrl, relayGrid } from "../lib/share";
+import { duelShare, relayGrid } from "../lib/share";
 import { load, save } from "../lib/storage";
 import PersonChip from "./PersonChip";
 import ShareButton from "./ShareButton";
@@ -170,7 +170,7 @@ export default function ConnectRelay({ fixedPair = null, rivalSteps = null }) {
                       `${history[0].name} → ${target.name}`,
                       `${relayGrid(steps, best?.length)} · ${t("share.steps", { n: steps })}${best?.length ? ` (${t("share.optimal", { n: best.length })})` : ""}`,
                     ].join("\n")}
-                    url={duelUrl({ jeu: "relais", paire: `${history[0].qid}-${target.qid}`, score: steps })}
+                    {...duelShare({ jeu: "relais", paire: `${history[0].qid}-${target.qid}`, score: steps })}
                     label={t("share.challenge")}
                     onShared={() => track(GAME, "share", { steps, best: best?.length ?? null })}
                   />
