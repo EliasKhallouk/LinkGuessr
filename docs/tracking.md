@@ -50,20 +50,25 @@ Les noms sont fixes et le jeu est une propriété : un seul événement suffit p
 
 | Événement | Quand | Propriétés |
 |---|---|---|
-| `partie_debut` | Première action d'une partie (première proposition, premier coup, début du chrono, première recherche d'Explorer) | `jeu`, `source` |
+| `partie_debut` | Première action d'une partie (première proposition, premier coup, début du chrono) | `jeu`, `source` |
 | `partie_fin` | Fin d'une partie | `jeu`, `source`, `resultat`, `essais` |
 | `partage_clic` | Clic sur « Partager » ou « Défier un ami » | `jeu`, `source`, `methode` |
 | `duel_ouvert` | Arrivée sur un lien de duel (`/defi`) | `jeu`, `source` |
+| `exploration_recherche` | Chaque recherche de chemin dans Explorer | `jeu` (`explorer`), `source`, `resultat` |
 
 Valeurs des propriétés :
 
 | Propriété | Valeurs |
 |---|---|
-| `jeu` | `qui-est-cache`, `relier`, `combien`, `explorer`, `defi-du-jour` |
+| `jeu` | `qui-est-cache`, `relier`, `combien`, `defi-du-jour` ; `explorer` (seulement pour `exploration_recherche`) |
 | `source` | `utm_source` de l'arrivée, ou `direct` |
-| `resultat` | `gagne` / `perdu` (Qui est caché ?, défi du jour) ; `gagne` (Relier, une partie se termine en atteignant la cible) ; `termine` (Combien ?, fin du chrono) ; `chemin` / `aucun` (Explorer) |
-| `essais` | Propositions (Qui est caché ?, défi du jour), coups (Relier), réponses données (Combien ?), recherches faites depuis l'arrivée sur la page (Explorer, une `partie_fin` par recherche) |
+| `resultat` | `gagne` / `perdu` (Qui est caché ?, défi du jour) ; `gagne` (Relier, une partie se termine en atteignant la cible) ; `termine` (Combien ?, fin du chrono) ; `chemin` / `aucun` (`exploration_recherche` : chemin trouvé ou non) |
+| `essais` | Propositions (Qui est caché ?, défi du jour), coups (Relier), réponses données (Combien ?) |
 | `methode` | `webshare`, `copie`, `annule` (menu natif fermé), `echec` (copie impossible) |
+
+Explorer n'a pas de partie à finir : il n'envoie ni `partie_debut` ni `partie_fin`, ce qui fausserait les taux de
+fin de partie. Il se mesure en **recherches par visite** (`exploration_recherche`) et en **durée de visite** sur
+`/explorer`.
 
 L'API reçoit en parallèle ses propres événements (`start`, `finish`, `share`, `duel_open`, `explore`) pour le
 tableau de bord `/admin`. Ils ne changent pas.
@@ -78,6 +83,9 @@ Ouvrir `https://linkguessr.com/umami`, puis le site **LinkGuessr** (domaine `lin
   (le jeu) et `utm_medium` (copie ou menu natif).
 - **Activité par jeu** : onglet **Événements**, choisir `partie_debut` ou `partie_fin`, puis **Propriétés** →
   `jeu`. Taux de fin d'un jeu : `partie_fin` divisé par `partie_debut` pour la même valeur de `jeu`.
+- **Explorer** : recherches par visite = nombre d'`exploration_recherche` divisé par le nombre de visites qui
+  passent par `/explorer` (Événements → `exploration_recherche` → **Propriétés** → `resultat` pour la part sans chemin).
+  Durée de visite : vue d'ensemble filtrée sur l'URL `/explorer` (durée moyenne de visite).
 - **Réussite et difficulté** : `partie_fin`, propriétés `resultat` et `essais`, filtrées sur un `jeu`.
 - **Viralité** : `partage_clic` (par `jeu` et `methode`), puis `duel_ouvert`, puis les visites
   `utm_source` = `duel`. Un **entonnoir** (Funnel) `partage_clic` → `duel_ouvert` → `partie_fin` donne la boucle complète.

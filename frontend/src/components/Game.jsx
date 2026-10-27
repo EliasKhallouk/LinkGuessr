@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
@@ -37,8 +37,6 @@ export default function Game() {
   const [p2, setP2] = useState(null);
   const [mode, setMode] = useState("all");
   const [result, setResult] = useState(null);
-  // Recherches de la visite : la première ouvre la « partie », chacune la termine (Umami).
-  const searches = useRef(0);
   const [shown, setShown] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -67,8 +65,8 @@ export default function Game() {
       setResult(data);
       setShown(0);
       api.logEvent("explore", { from: a.qid, to: b.qid, length: data.length, n_paths: data.n_paths, mode });
-      if (searches.current++ === 0) trackUmami("explore", "partie_debut");
-      trackUmami("explore", "partie_fin", { resultat: data.length != null ? "chemin" : "aucun", essais: searches.current });
+      // Pas de partie à finir : Explorer se mesure en recherches par visite (docs/tracking.md).
+      trackUmami("explore", "exploration_recherche", { resultat: data.length != null ? "chemin" : "aucun" });
     } catch (e) {
       setError(e.message || t("game.errorUnknown"));
     } finally {
