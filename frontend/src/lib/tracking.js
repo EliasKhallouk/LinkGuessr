@@ -1,16 +1,43 @@
 // Mesure d'audience sans cookie : événements de jeu envoyés à notre API (tableau de bord /admin)
-// et à Umami (fréquentation). Aucune donnée personnelle ; la source d'arrivée (?src=) est rattachée.
+// et à Umami (fréquentation). Aucune donnée personnelle ; la source d'arrivée (utm_source) est rattachée.
+// Convention des paramètres et liste des événements : docs/tracking.md.
 import { api } from "../api";
 import { load, save } from "./storage";
 
 const SRC_KEY = "lg-src";
 
-// Source d'arrivée : premier ?src= vu pendant la session (ex. ?src=insta, ?src=discord).
+// Source d'arrivée : premier utm_source vu pendant la session (ex. reddit, partage, duel).
+// ?src= : ancienne convention, encore présente dans les liens déjà partagés.
 export function captureSource() {
   try {
-    const src = new URLSearchParams(window.location.search).get("src");
+    const params = new URLSearchParams(window.location.search);
+    const src = params.get("utm_source") || params.get("src");
     if (src && !sessionStorage.getItem(SRC_KEY)) sessionStorage.setItem(SRC_KEY, src.slice(0, 40));
   } catch { /* stockage indisponible : pas de source */ }
+  cleanUrlAfterPageview();
+}
+
+// Retire utm_* (et l'ancien src) de la barre d'adresse, pour qu'une adresse copiée et renvoyée à un ami
+// ne compte pas une seconde fois pour la même source. History.prototype : Umami intercepte
+// history.replaceState et compterait sinon une nouvelle page vue.
+function cleanUrl() {
+  const url = new URL(window.location.href);
+  const keys = [...url.searchParams.keys()].filter((k) => k.startsWith("utm_") || k === "src");
+  if (!keys.length) return;
+  keys.forEach((k) => url.searchParams.delete(k));
+  History.prototype.replaceState.call(window.history, window.history.state, "", url);
+}
+
+// On attend qu'Umami ait envoyé la première page vue (data-before-send dans index.html : la charge
+// utile, URL comprise, est alors figée). Umami bloqué ou désactivé : on nettoie quand même, 3 s après le chargement.
+function cleanUrlAfterPageview() {
+  window.lgBeforeSend = (type, payload) => {
+    if (type === "event" && !payload?.name) setTimeout(cleanUrl, 0);
+    return payload;
+  };
+  const fallback = () => setTimeout(cleanUrl, 3000);
+  if (document.readyState === "complete") fallback();
+  else window.addEventListener("load", fallback, { once: true });
 }
 
 export function source() {
