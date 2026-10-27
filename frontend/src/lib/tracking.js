@@ -51,6 +51,25 @@ export function source() {
 // Une fois par partie : évite de compter deux « start » si le joueur clique deux fois.
 const started = new Set();
 
+// Événements Umami : noms fixes, le jeu en propriété (mêmes valeurs que utm_campaign). Voir docs/tracking.md.
+export const CAMPAIGNS = { explore: "explorer", guess_who: "qui-est-cache", relay: "relier", guess_count: "combien",
+  daily: "defi-du-jour" };
+const UMAMI_EVENTS = { start: "partie_debut", finish: "partie_fin", duel_open: "duel_ouvert" };
+
+// Résultat et nombre d'essais d'une fin de partie, à partir des données envoyées à l'API.
+function outcome(game, data) {
+  if (game === "relay") return { resultat: "gagne", essais: data.steps };
+  if (game === "guess_count") return { resultat: "termine", essais: data.answered };
+  return { resultat: (data.found ?? data.solved) ? "gagne" : "perdu", essais: data.tries };
+}
+
+// Seulement des valeurs de la liste de docs/tracking.md : ni identifiant, ni personne jouée.
+export function trackUmami(game, name, data = {}) {
+  try {
+    window.umami?.track(name, { jeu: CAMPAIGNS[game] || game, source: source() || "direct", ...data });
+  } catch { /* Umami bloqué ou absent : sans importance */ }
+}
+
 export function track(game, event, data = {}) {
   const payload = { event, src: source(), ...data };
   if (event === "start") {
@@ -59,9 +78,8 @@ export function track(game, event, data = {}) {
     started.add(key);
   }
   api.logEvent(game, payload);
-  try {
-    window.umami?.track(`${game}_${event}`, { src: payload.src || "(direct)" });
-  } catch { /* Umami bloqué ou absent : sans importance */ }
+  // Partages : envoyés à Umami par ShareButton (partage_clic), avec la méthode.
+  if (UMAMI_EVENTS[event]) trackUmami(game, UMAMI_EVENTS[event], event === "finish" ? outcome(game, data) : {});
 }
 
 export function newRound(game) {
