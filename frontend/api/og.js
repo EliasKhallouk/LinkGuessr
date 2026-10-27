@@ -6,7 +6,7 @@ import { commonsDirect, commonsFilePath } from "../src/lib/commons.js";
 // Runtime Node.js (par défaut) : @vercel/og 1.x référence des modules refusés par le runtime « edge ».
 
 const API = "https://linkguessr.duckdns.org";
-const UA = "LinkGuessr/1.0 (https://link-guessr.vercel.app)";
+const UA = "LinkGuessr/1.0 (https://linkguessr.com)";
 const W = 1200;
 const H = 630;
 
@@ -61,7 +61,7 @@ function frame(title, subtitle, body) {
     padding: "44px 56px", fontFamily: "sans-serif", color: "#f0f4ff" },
     h("div", { display: "flex", justifyContent: "space-between", alignItems: "center" },
       h("div", { fontSize: 34, fontWeight: 700, color: "#00d9ff" }, "LinkGuessr"),
-      h("div", { fontSize: 26, color: "#9ca8c5" }, "link-guessr.vercel.app")),
+      h("div", { fontSize: 26, color: "#9ca8c5" }, "linkguessr.com")),
     h("div", { fontSize: 56, fontWeight: 800, marginTop: 24 }, title),
     subtitle ? h("div", { fontSize: 32, color: "#9ca8c5", marginTop: 8 }, subtitle) : null,
     h("div", { display: "flex", flex: 1, alignItems: "center", justifyContent: "center" }, body),

@@ -30,6 +30,17 @@
   ],
   "redirects": [
     {
+      "source": "/:path((?!v1/|umami|api/).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "link-guessr.vercel.app"
+        }
+      ],
+      "destination": "https://linkguessr.com/:path",
+      "permanent": true
+    },
+    {
       "source": "/umami/",
       "destination": "/umami",
       "permanent": false

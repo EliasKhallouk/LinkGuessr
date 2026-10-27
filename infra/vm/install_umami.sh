@@ -11,7 +11,7 @@ APP_USER=umami
 DIR=/srv/umami
 PORT=3001
 SITE=/etc/nginx/sites-available/linkguessr
-WEBSITE_DOMAIN=link-guessr.vercel.app
+WEBSITE_DOMAIN=linkguessr.com
 
 [ "$(id -u)" -eq 0 ] || { echo "À lancer avec sudo"; exit 1; }
 cd /tmp

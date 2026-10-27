@@ -1,6 +1,6 @@
 """Sitemap pour les moteurs de recherche : les pages fixes et une page par personne reliée au réseau.
 
-Servi sous link-guessr.vercel.app/sitemap.xml (relais Vercel), découpé en fichiers de 25 000 adresses.
+Servi sous linkguessr.com/sitemap.xml (relais Vercel), découpé en fichiers de 25 000 adresses.
 """
 import math
 
@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Response
 from .core import pool, state
 
 router = APIRouter()
-SITE = "https://link-guessr.vercel.app"
+SITE = "https://linkguessr.com"
 PER_FILE = 25_000  # ~2,5 Mo : sous la limite de taille des réponses des fonctions Vercel
 STATIC_PAGES = ["/", "/explorer", "/qui-est-cache", "/relier", "/combien", "/lab", "/a-propos", "/contact",
                 "/politique-de-confidentialite", "/mentions-legales"]

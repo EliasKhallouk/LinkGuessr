@@ -1,5 +1,5 @@
 // Partage d'un résultat : menu natif (téléphone) sinon presse-papiers. Retourne "shared", "copied" ou "failed".
-export const SITE_URL = "https://link-guessr.vercel.app";
+export const SITE_URL = "https://linkguessr.com";
 
 export async function shareText(text, url) {
   const full = url ? `${text}\n${url}` : text;

@@ -6,4 +6,4 @@ Disallow: /v1/
 Disallow: /api/
 Disallow: /umami/
 
-Sitemap: https://link-guessr.vercel.app/sitemap.xml
+Sitemap: https://linkguessr.com/sitemap.xml

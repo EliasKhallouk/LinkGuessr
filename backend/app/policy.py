@@ -1,6 +1,6 @@
 """Politique HTTP commune : identification du client, limitation de débit et cache CDN.
 
-Le site appelle l'API via Vercel (link-guessr.vercel.app/v1/…) : Vercel garde en cache les
+Le site appelle l'API via Vercel (linkguessr.com/v1/…) : Vercel garde en cache les
 réponses qui portent un `s-maxage`, ce qui protège la VM (1 cœur) en cas d'affluence.
 """
 import hmac

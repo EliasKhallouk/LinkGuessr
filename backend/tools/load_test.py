@@ -5,7 +5,7 @@ les latences (p50/p95/p99) et les erreurs, tout en relevant le CPU et la RAM de 
 Écrit un rapport Markdown.
 
   # Depuis le PC, à travers Vercel (cache CDN compris) :
-  python tools/load_test.py --base https://link-guessr.vercel.app/v1 --vm-ssh ek-hub
+  python tools/load_test.py --base https://linkguessr.com/v1 --vm-ssh ek-hub
   # Sur la VM, directement sur l'API (capacité brute, sans cache, quotas levés par le jeton) :
   ADMIN_TOKEN=… python3 tools/load_test.py --base http://127.0.0.1:8000 --local-cpu
 """
@@ -117,7 +117,7 @@ def pct(values, q):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--base", required=True, help="adresse de l'API, ex. https://link-guessr.vercel.app/v1")
+    parser.add_argument("--base", required=True, help="adresse de l'API, ex. https://linkguessr.com/v1")
     parser.add_argument("--levels", default="5,20,50", help="niveaux de concurrence")
     parser.add_argument("--seconds", type=int, default=20, help="durée de chaque niveau")
     parser.add_argument("--vm-ssh", help="hôte ssh de la VM pour relever son CPU (ex. ek-hub)")

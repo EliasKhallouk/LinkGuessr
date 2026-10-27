@@ -26,7 +26,9 @@ export const config = {
 };
 
 const API = "https://linkguessr.duckdns.org";
-const UA = "LinkGuessr/1.0 (https://link-guessr.vercel.app)";
+const SITE = "https://linkguessr.com";
+const OLD_HOST = "link-guessr.vercel.app";
+const UA = `LinkGuessr/1.0 (${SITE})`;
 
 const escape = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
@@ -94,6 +96,9 @@ async function metaFor(url) {
 
 export default async function middleware(request) {
   const url = new URL(request.url);
+  // Ancienne adresse : même redirection que vercel.json (chemin et paramètres conservés), au cas où
+  // le middleware passerait avant elle.
+  if (url.hostname === OLD_HOST) return Response.redirect(`${SITE}${url.pathname}${url.search}`, 308);
   const page = await fetch(new URL("/index.html", url));
   let html = await page.text();
   try {
