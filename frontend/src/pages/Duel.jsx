@@ -7,14 +7,16 @@ import GuessWhoPath, { ERAS } from "../components/GuessWhoPath";
 import { LEVELS } from "../components/DifficultyPicker";
 import { useI18n } from "../i18n/I18nProvider";
 import { usePageMeta } from "../lib/meta";
+import { parseSeed } from "../lib/share";
 import { track } from "../lib/tracking";
 
 // Page d'arrivée d'un lien de duel : /defi?jeu=relais&paire=Q1-Q2&score=3,
-// /defi?jeu=nombre&score=340&niveau=moyen&graine=k3x9za (mêmes paires que l'ami, dans le même ordre)
+// /defi?jeu=nombre&score=340&niveau=moyen&graine=k3x9za (mêmes paires que l'ami, dans le même ordre),
+// /defi?jeu=serie&score=2750&niveau=moyen&epoque=tous&graine=k3x9za (les 10 mêmes énigmes « Qui est caché ? »)
 // ou /defi?jeu=qui&t=<jeton> (même énigme « Qui est caché ? », chiffrée par l'API : le lien ne dit rien
 // de la réponse). Anciens liens en clair, encore acceptés :
 // /defi?jeu=cache&chemin=Q1-Q2-Q3&cache=1&niveau=facile&epoque=aujourdhui&essais=2&trouve=1.
-const GAMES = { relais: "relay", nombre: "guess_count", qui: "guess_who", cache: "guess_who" };
+const GAMES = { relais: "relay", nombre: "guess_count", qui: "guess_who", cache: "guess_who", serie: "guess_who" };
 const HIDDEN = ["qui", "cache"];
 export default function Duel() {
   const { t } = useI18n();
@@ -34,8 +36,11 @@ export default function Duel() {
   const tries = Number(params.get("essais")) || 0;
   const found = params.get("trouve") === "1";
   // Combien : graine en base 36 (anciens liens sans graine : paires au hasard).
-  const graine = /^[0-9a-z]{1,6}$/.test(params.get("graine") || "") ? parseInt(params.get("graine"), 36) : null;
+  const graine = parseSeed(params.get("graine"));
   const plainRival = useMemo(() => ({ found, tries }), [found, tries]);
+  const domaine = (params.get("domaine") || "").slice(0, 60);
+  const series = useMemo(() => (graine == null ? null : { seed: graine, niveau, epoque, domaine, score }),
+    [graine, niveau, epoque, domaine, score]);
   const validPuzzle = /^Q\d+(-Q\d+){2,7}$/.test(chemin) && cache >= 1 && cache <= chemin.split("-").length - 2;
 
   // Lien chiffré : niveau, époque et résultat de l'ami lus par l'API (sans la réponse).
@@ -68,7 +73,7 @@ export default function Duel() {
       .catch(() => setError(true));
   }, [game, pairParam]);
 
-  if (!GAMES[game] || error || (game === "cache" && !validPuzzle)) return <Navigate to="/" replace />;
+  if (!GAMES[game] || error || (game === "cache" && !validPuzzle) || (game === "serie" && !series)) return <Navigate to="/" replace />;
   if (invalid) {
     return (
       <main className="page fade-in">
@@ -92,6 +97,7 @@ export default function Duel() {
             <p style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
               {game === "relais"
                 ? (pair ? t("duel.relayIntro", { a: pair.from.name, b: pair.to.name, n: score }) : "…")
+                : game === "serie" ? t("duel.serieIntro", { n: score ?? 0 })
                 : HIDDEN.includes(game)
                   ? (!rival ? "…" : rival.found ? t("duel.whoFound", { n: rival.tries }) : t("duel.whoLost"))
                   : t("duel.countIntro", { n: score })}
@@ -105,8 +111,9 @@ export default function Duel() {
       {game === "nombre" && <GuessRelations rivalScore={score} seed={graine} level={graine != null ? niveau : null} />}
       {game === "cache" && <GuessWhoPath puzzle={puzzle} rival={rival} />}
       {game === "qui" && tokenPuzzle && <GuessWhoPath puzzle={tokenPuzzle} rival={rival} />}
+      {game === "serie" && <GuessWhoPath series={series} />}
       {/* « Qui est caché ? » propose les autres jeux dans sa carte de fin de partie. */}
-      {!HIDDEN.includes(game) && <section className="panel" style={{ marginTop: 16 }}>
+      {!HIDDEN.includes(game) && game !== "serie" && <section className="panel" style={{ marginTop: 16 }}>
         <div className="panel-body toolbar" style={{ justifyContent: "space-between" }}>
           <span>{t("home.moreGames")}</span>
           <Link className="btn btn-primary" to="/">{t("home.discover")}</Link>

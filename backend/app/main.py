@@ -230,7 +230,8 @@ def _pick_pair(difficulty: str, domain: str | None, mode: str, min_length: int, 
     raise HTTPException(404, "Aucune paire trouvée, élargir les critères")
 
 
-def _pick_around(difficulty: str, domain: str | None, era: str, length: int) -> tuple[list[int], int]:
+def _pick_around(difficulty: str, domain: str | None, era: str, length: int,
+                 rng: np.random.Generator | None = None) -> tuple[list[int], int]:
     """Énigme construite autour de la personne cachée (pas de recherche de chemins, donc rapide et sans échec) :
     1. on tire la personne à deviner M parmi les rangs permis par le niveau, dans l'époque ;
     2. on tire sa position k sur un chemin de `length` liens, puis on s'éloigne de M pas à pas, k fois d'un côté
@@ -243,7 +244,7 @@ def _pick_around(difficulty: str, domain: str | None, era: str, length: int) -> 
     lo, hi = level["hidden"]
     middles = state["eras"][era]["order"][lo - 1:hi]
     domain_id = state["domain_names"].index(domain) if domain in state["domain_names"] else None
-    full, rng = state["graph"].csr["all"], np.random.default_rng()
+    full, rng = state["graph"].csr["all"], rng or np.random.default_rng()
 
     def visible(v: int) -> bool:
         return rank[v] <= level["top"] and (domain_id is None or state["domain"][v] == domain_id)
@@ -353,18 +354,28 @@ def random_path_check(before: str, after: str, guess: str):
 
 @app.get("/random_path")
 def random_path(
+    response: Response,
     difficulty: str = Query("moyen", pattern=LEVEL),
     domain: str | None = None,
     epoque: str = Query("tous", pattern=f"^({'|'.join(ERAS)})$"),
     min_length: int | None = Query(None, ge=2, le=8),
     max_length: int | None = Query(None, ge=2, le=12),
+    seed: int | None = Query(None, ge=0, le=2**31 - 1),
+    index: int = Query(0, ge=0, le=100),
 ):
     """« Qui est caché ? » : un chemin dont une personne intermédiaire est à deviner (voir _pick_around).
     Les indices (domaine, dates, initiales) sont donnés ; le nom reste dans `answer`, et les liens
-    de la personne cachée (phrases qui la citent) dans `answer_hops`, à afficher une fois la réponse donnée."""
+    de la personne cachée (phrases qui la citent) dans `answer_hops`, à afficher une fois la réponse donnée.
+    seed : partie de 10 énigmes rejouable par un ami (duel) ; l'énigme n° `index` est la même pour tous,
+    à données égales, donc mise en cache."""
     lo, hi = min_length or LEVELS[difficulty]["hidden_length"][0], max_length or LEVELS[difficulty]["hidden_length"][1]
-    ids, masked = _pick_around(difficulty, domain, epoque, random.randint(lo, max(lo, hi)))
-    return _puzzle(ids, masked, difficulty, random.Random(), epoque)
+    if seed is None:
+        ids, masked = _pick_around(difficulty, domain, epoque, random.randint(lo, max(lo, hi)))
+        return _puzzle(ids, masked, difficulty, random.Random(), epoque)
+    rng = np.random.default_rng([seed, index])
+    ids, masked = _pick_around(difficulty, domain, epoque, int(rng.integers(lo, max(lo, hi) + 1)), rng=rng)
+    response.headers["Cache-Control"] = DAY
+    return _puzzle(ids, masked, difficulty, random.Random(f"{seed}-{index}"), epoque)
 
 
 CHAIN = r"^Q\d+(-Q\d+){2,7}$"

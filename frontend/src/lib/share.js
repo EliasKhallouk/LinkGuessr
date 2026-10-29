@@ -49,7 +49,12 @@ export function relayGrid(steps, best) {
 }
 
 // Lien de duel et sa campagne (nom du jeu dans l'URL du site), à passer à <ShareButton {...duelShare(…)} />.
-const DUEL_CAMPAIGNS = { qui: "qui-est-cache", relais: "relier", nombre: "combien" };
+const DUEL_CAMPAIGNS = { qui: "qui-est-cache", serie: "qui-est-cache", relais: "relier", nombre: "combien" };
+
+// Graine d'une série (partie de « Combien ? », 10 énigmes de « Qui est caché ? ») : transmise par le lien de
+// duel en base 36 (6 caractères au plus) pour que l'ami joue la même série, dans le même ordre.
+export const newSeed = () => Math.floor(Math.random() * 2 ** 31);
+export const parseSeed = (g) => (/^[0-9a-z]{1,6}$/.test(g || "") ? parseInt(g, 36) : null);
 export function duelShare(params) {
   return { url: `${SITE_URL}/defi?${new URLSearchParams(params)}`, utm: { source: "duel", campaign: DUEL_CAMPAIGNS[params.jeu] } };
 }

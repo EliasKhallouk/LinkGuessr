@@ -3,7 +3,7 @@ import { api } from "../api";
 import { useI18n } from "../i18n/I18nProvider";
 import DifficultyPicker from "./DifficultyPicker";
 import PathView from "./PathView";
-import { duelShare } from "../lib/share";
+import { duelShare, newSeed } from "../lib/share";
 import { load, save } from "../lib/storage";
 import PersonChip from "./PersonChip";
 import ShareButton from "./ShareButton";
@@ -25,10 +25,6 @@ function pointsFor(diff, streak) {
   if (diff === 2) return 30;
   return 0;
 }
-
-// Graine d'une série de paires : chaque partie chronométrée a la sienne, transmise par le lien de duel
-// (en base 36, 6 caractères au plus) pour que l'ami joue les mêmes paires dans le même ordre.
-export const newSeed = () => Math.floor(Math.random() * 2 ** 31);
 
 // `rivalScore` : score à battre quand on arrive par un lien de duel ; `seed` et `level` : la série et le
 // niveau de l'ami (anciens liens sans graine : paires au hasard).

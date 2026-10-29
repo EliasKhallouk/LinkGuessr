@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, lifespan } from "../api";
 import Avatar from "./Avatar";
@@ -12,7 +12,7 @@ import { newRound, track, trackUmami } from "../lib/tracking";
 import Feedback from "./Feedback";
 import TriesTiles from "./TriesTiles";
 import { confetti } from "../lib/confetti";
-import { duelShare, SITE_URL } from "../lib/share";
+import { duelShare, newSeed, SITE_URL } from "../lib/share";
 import ShareButton from "./ShareButton";
 
 const GAME = "guess_who";
@@ -62,11 +62,12 @@ function grid(wrongCount, solved, maxTries) {
 // `puzzle` ({ t, niveau, epoque } ou, anciens liens, { chemin, cache, niveau, epoque }) : énigme partagée
 // par un ami (page /defi) ;
 // `rival` ({ found, tries }) : son résultat, comparé au nôtre à la fin.
-export default function GuessWhoPath({ puzzle = null, rival = null }) {
+// `series` ({ seed, niveau, epoque, domaine, score }) : partie de 10 énigmes d'un ami, rejouée à l'identique.
+export default function GuessWhoPath({ puzzle = null, rival = null, series = null }) {
   const { t } = useI18n();
-  const [difficulty, setDifficulty] = useState(puzzle?.niveau || "facile");
-  const [era, setEra] = useState(puzzle?.epoque || "aujourdhui");
-  const [domain, setDomain] = useState("");
+  const [difficulty, setDifficulty] = useState(puzzle?.niveau || series?.niveau || "facile");
+  const [era, setEra] = useState(puzzle?.epoque || series?.epoque || "aujourdhui");
+  const [domain, setDomain] = useState(series?.domaine || "");
   const [domains, setDomains] = useState([]);
   const [challenge, setChallenge] = useState(null);
   const [guess, setGuess] = useState(null);
@@ -78,11 +79,17 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
   const [error, setError] = useState(null);
   const [topList, setTopList] = useState([]);
   const [shake, setShake] = useState(false);
-  const [run, setRun] = useState(null);           // mode partie : { level, results: [{ found, attempts, points }] }
+  const [run, setRun] = useState(series && { level: series.niveau, seed: series.seed, results: [] });
+  // Mode partie : { level, seed, results: [{ found, attempts, points }] }. La graine et le rang de l'énigme
+  // en cours sont aussi gardés ici, hors de l'état, pour que le chargement d'une énigme n'en dépende pas.
+  const runRef = useRef(series && { seed: series.seed, index: 0 });
+  useEffect(() => {
+    if (series) trackUmami(GAME, "serie_debut", { niveau: series.niveau });
+  }, [series]);
 
   // Énigme d'un ami : ni filtres ni classement, pour que la fin de partie reste visible.
   useEffect(() => {
-    if (puzzle) return;
+    if (puzzle || series) return;
     api.domains().then(setDomains).catch(() => {});
     api.top("degree", { limit: 10 }).then(setTopList).catch(() => {});
   }, [puzzle]);
@@ -96,7 +103,8 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
     setFound(null);
     setWrong([]);
     try {
-      setChallenge(await (puzzle ? api.replayHidden(puzzle) : api.randomPath({ difficulty, domain, epoque: era })));
+      setChallenge(await (puzzle ? api.replayHidden(puzzle) : api.randomPath({ difficulty, domain, epoque: era,
+        ...(runRef.current && { seed: runRef.current.seed, index: runRef.current.index }) })));
     } catch (e) {
       setError(e.message || t("guess.errorLoadPeople"));
     } finally {
@@ -141,6 +149,7 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
     if ((ok || newTries >= maxTries) && run) {
       const result = { found: ok, attempts: wrong.length + 1, points: pointsFor(difficulty, ok, wrong.length + 1) };
       const results = [...run.results, result];
+      runRef.current = { ...runRef.current, index: results.length };  // énigme suivante de la série
       setRun({ ...run, results });
       if (results.length === RUN_LENGTH) {
         const score = results.reduce((s, r) => s + r.points, 0);
@@ -190,11 +199,14 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
   const shareLink = () => (token ? duelShare({ jeu: "qui", t: token })
     : { url: `${SITE_URL}/qui-est-cache`, utm: { source: "partage", campaign: "qui-est-cache" } });
   const startRun = () => {
-    setRun({ level: difficulty, results: [] });
+    const seed = newSeed();
+    runRef.current = { seed, index: 0 };
+    setRun({ level: difficulty, seed, results: [] });
     trackUmami(GAME, "serie_debut", { niveau: difficulty });
     fetchChallenge();
   };
   const quitRun = () => {
+    runRef.current = null;
     setRun(null);
     fetchChallenge();
   };
@@ -339,9 +351,17 @@ export default function GuessWhoPath({ puzzle = null, rival = null }) {
                         ⭐ <strong>{runScore.toLocaleString("fr-FR")}</strong> pts ·{" "}
                         {t("who.run.found", { n: run.results.filter((r) => r.found).length, total: RUN_LENGTH })}
                       </p>
+                      {series?.score != null && run.seed === series.seed && (
+                        <p style={{ margin: "8px 0 0", fontWeight: 600 }}>
+                          {runScore > series.score ? t("duel.beaten") : runScore === series.score ? t("duel.tie")
+                            : t("duel.lostScore", { n: series.score.toLocaleString("fr-FR") })}
+                        </p>
+                      )}
                       <div className="toolbar" style={{ marginTop: 8 }}>
-                        <ShareButton text={runShareText()} url={`${SITE_URL}/qui-est-cache`}
-                          utm={{ source: "partage", campaign: "qui-est-cache" }} label={t("who.run.share")} />
+                        {/* Lien de duel : la graine fait rejouer les 10 mêmes énigmes, dans le même ordre. */}
+                        <ShareButton text={runShareText()} label={t("share.challenge")} {...duelShare({
+                          jeu: "serie", niveau: run.level, epoque: era, ...(domain && { domaine: domain }),
+                          graine: run.seed.toString(36), score: runScore })} />
                         <button className="btn btn-primary" onClick={startRun}>{t("who.run.again")}</button>
                         <button className="btn" onClick={quitRun}>{t("who.run.free")}</button>
                       </div>

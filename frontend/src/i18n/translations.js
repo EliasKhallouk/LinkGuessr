@@ -375,6 +375,7 @@ export const translations = {
     duel: {
       relayIntro: { one: "Quelqu'un a relié {a} à {b} en {n} coup.", other: "Quelqu'un a relié {a} à {b} en {n} coups." },
       countIntro: "Quelqu'un a fait {n} points en 60 secondes.",
+      serieIntro: "Quelqu'un a fait {n} points sur ces 10 énigmes « Qui est caché ? ».",
       canYou: "Tu fais mieux ?",
       beaten: "🏆 Tu as battu ton adversaire !",
       tie: "🤝 Égalité !",
@@ -781,6 +782,7 @@ export const translations = {
     duel: {
       relayIntro: { one: "Someone connected {a} to {b} in {n} step.", other: "Someone connected {a} to {b} in {n} steps." },
       countIntro: "Someone scored {n} points in 60 seconds.",
+      serieIntro: "Someone scored {n} points on these 10 “Who's hidden?” puzzles.",
       canYou: "Can you do better?",
       beaten: "🏆 You beat your opponent!",
       tie: "🤝 It's a tie!",

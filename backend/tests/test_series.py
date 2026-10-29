@@ -18,3 +18,18 @@ def test_meme_graine_meme_serie(monkeypatch):
 
     assert series(12345) == series(12345)
     assert series(12345) != series(54321)
+
+
+def test_meme_graine_memes_enigmes(monkeypatch):
+    """Partie de 10 énigmes rejouée par un ami : même graine et même rang, même chemin et même personne cachée."""
+    n = 400
+    a, b, kinds = random_graph(n, 1600, 3)
+    monkeypatch.setitem(state, "graph", PersonGraph(n, a, b, kinds, np.random.default_rng(3).random(n)))
+    monkeypatch.setitem(state, "eras", {"tous": {"order": np.arange(n), "rank": np.arange(n) + 1}})
+    monkeypatch.setitem(state, "domain_names", [])
+
+    def series(seed):
+        return [main._pick_around("difficile", None, "tous", 3, rng=np.random.default_rng([seed, i])) for i in range(5)]
+
+    assert series(42) == series(42)
+    assert series(42) != series(43)

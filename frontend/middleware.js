@@ -74,6 +74,11 @@ async function metaFor(url) {
   if (parts[0] === "defi") {
     const game = url.searchParams.get("jeu");
     const score = Number(url.searchParams.get("score")) || "?";
+    if (game === "serie") {
+      return { title: `Défi : bats ${score} points sur 10 énigmes « Qui est caché ? » · LinkGuessr`,
+        description: "Les 10 mêmes énigmes que ton ami : trouve la personne cachée entre deux personnalités.",
+        image: `/api/og?type=serie&score=${score}` };
+    }
     if (game === "qui") {
       // Lien chiffré : l'API ne renvoie que les deux bouts et le résultat de l'ami (via /v1, cache Vercel).
       const t = url.searchParams.get("t") || "";

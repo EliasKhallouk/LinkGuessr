@@ -123,6 +123,13 @@ async function render(params, origin) {
         masked > 1 ? [dots, arrow] : [], mystery(), arrow, masked < chain.length - 2 ? [dots, arrow] : [],
         avatar(pb, cb.person.name)));
   }
+  if (type === "serie") {
+    const n = Number(params.get("score")) || 0;
+    return frame("Qui est caché ? · 10 énigmes", "Les mêmes énigmes que ton ami, dans le même ordre",
+      h("div", { display: "flex", flexDirection: "column", alignItems: "center" },
+        h("div", { fontSize: 140, fontWeight: 800, color: "#00d9ff" }, `${n.toLocaleString("fr-FR")} pts`),
+        h("div", { fontSize: 40 }, "Tu fais mieux ?")));
+  }
   if (type === "nombre") {
     const n = Number(params.get("score")) || 0;
     return frame("Combien de liens entre deux personnalités ?", "60 secondes pour estimer un maximum de distances",
