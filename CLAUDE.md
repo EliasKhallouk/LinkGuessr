@@ -55,6 +55,7 @@ python -m app.daily show|generate|set …        # sur la VM : défis du jour
 | Relier | `/relier` | `components/ConnectRelay.jsx` | `main.py` (`/neighbors`, `/random_pair`) |
 | Combien ? | `/combien` | `components/GuessRelations.jsx`, `Leaderboard.jsx` | `game.py` |
 | Défi du jour | `/`, `/jour/:n` | `components/DailyChallenge.jsx`, `pages/DailyPage.jsx` | `daily.py` |
+| Salons en direct | `/salon`, `/salon/:code` | `pages/Salon.jsx` (WebSocket vers la VM, `LIVE_URL`) | `live.py` (salons en mémoire, Nginx : `linkguessr-live.conf`) |
 | Duels | `/defi?jeu=…` | `pages/Duel.jsx`, `lib/share.js` | `duel.py` (jetons chiffrés, clé `DUEL_KEY`), `main.py` (`/duel/*`) |
 
 Transverse : `frontend/src/games.jsx` (liste des jeux), `i18n/translations.js` (textes), `lib/tracking.js`

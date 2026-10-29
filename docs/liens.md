@@ -13,6 +13,8 @@ Convention des paramètres UTM et événements Umami : [tracking.md](tracking.md
 | `/relier` | Jeu « Relier » : aller d'une personnalité à une autre, de lien en lien |
 | `/combien` | Jeu « Combien de liens ? » : estimer des distances en 60 secondes, avec classement |
 | `/explorer` | Explorer : le plus court chemin entre deux personnalités, lien par lien (`?de=Q…` pré-remplit la première personne, `?de=Q…&a=Q…` ouvre un chemin partagé ; l'ancien `?from=Q…` reste accepté) |
+| `/salon` | Salons en direct : créer un salon ou en rejoindre un par son code |
+| `/salon/:code` | Un salon (code de 4 caractères) : pseudo, attente, 10 manches de « Qui est caché ? » en QCM, podium |
 | `/jour/:n` | Défi du jour numéro `n` (archive, ou celui du jour) |
 | `/defi?jeu=…` | Arrivée d'un lien de duel (voir b.) |
 | `/personne/:qid` | Fiche d'une personnalité : liens, personnes les plus proches, photo et crédits |
@@ -38,6 +40,7 @@ d'adresse après l'arrivée.
 | Duel partie Qui est caché ? | `/defi?jeu=serie&niveau=…&epoque=…&graine=…&score=N[&domaine=…]` | les 10 mêmes énigmes que l'ami, dans le même ordre : `graine` (base 36), niveau, époque et domaine de sa partie ; `score` : ses points | `utm_source=duel`, `utm_campaign=qui-est-cache` |
 | Duel Relier | `/defi?jeu=relais&paire=Q1-Q2&score=N` | `paire` : départ et cible ; `score` : coups de l'ami | `utm_source=duel`, `utm_campaign=relier` |
 | Duel Combien ? | `/defi?jeu=nombre&score=N&niveau=…&graine=…` | `score` : points de l'ami ; `niveau` : son niveau ; `graine` : la série de paires de sa partie (base 36, 6 caractères au plus), pour jouer exactement les mêmes paires dans le même ordre. Anciens liens sans graine : paires au hasard | `utm_source=duel`, `utm_campaign=combien` |
+| Invitation à un salon | `/salon/:code` | `code` : 4 caractères (sans 0, O, 1, I) ; le salon vit en mémoire et se ferme 2 min après le départ du dernier joueur | `utm_source=partage`, `utm_campaign=salon` |
 | Chemin d'Explorer | `/explorer?de=Q1&a=Q2[&mode=strong\|wikidata]` | `de`, `a` : les deux bouts (chemin recalculé à l'ouverture) ; `mode` seulement s'il n'est pas « tous les liens » | `utm_source=partage`, `utm_campaign=explorer` |
 
 Exemples complets :

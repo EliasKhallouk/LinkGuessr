@@ -19,7 +19,7 @@ Règles :
 | | `linkedin`, `ecole`, `reddit`, `discord`, `instagram`, `tiktok`, `x`, `facebook`, `whatsapp`, `email`, `newsletter`, `presse` | Liens posés à la main par l'équipe |
 | `utm_medium` | `copie`, `webshare` | Liens du site : copié dans le presse-papiers, ou menu de partage natif (téléphone) |
 | | `post`, `commentaire`, `bio`, `message`, `email`, `signature`, `article` | Liens posés à la main |
-| `utm_campaign` | `qui-est-cache`, `relier`, `combien`, `explorer`, `defi-du-jour` | Le jeu mis en avant (même nom que sa page) |
+| `utm_campaign` | `qui-est-cache`, `relier`, `combien`, `explorer`, `defi-du-jour`, `salon` | Le jeu mis en avant (même nom que sa page) |
 | | `lancement`, `permanent` (lien posé pour durer : signature, bio), ou un nom court (`video-mbappe-curie`, `halloween-2026`) | Opérations |
 
 Liens de promotion prêts à copier et règle pour en créer un : [liens.md](liens.md).
@@ -59,6 +59,9 @@ Les noms sont fixes et le jeu est une propriété : un seul événement suffit p
 | `duel_ouvert` | Arrivée sur un lien de duel (`/defi`) | `jeu`, `source` |
 | `serie_debut` | Début d'une partie de 10 énigmes de « Qui est caché ? » | `jeu` (`qui-est-cache`), `source`, `niveau` |
 | `serie_fin` | Fin de ces 10 énigmes (pas d'événement si le joueur abandonne) | `jeu`, `source`, `niveau`, `score`, `trouvees` (0 à 10) |
+| `salon_cree` | Création d'un salon en direct | `jeu` (`salon`), `source`, `niveau` |
+| `salon_partie_debut` | L'hôte lance une partie (ou une revanche) | `jeu`, `source`, `niveau`, `joueurs` |
+| `salon_partie_fin` | Fin d'une partie, envoyé par chaque joueur | `jeu`, `source`, `joueurs`, `rang` |
 | `exploration_recherche` | Chaque recherche de chemin dans Explorer | `jeu` (`explorer`), `source`, `resultat` |
 | `partage_ouvert` | Arrivée sur un chemin partagé d'Explorer (`/explorer?de=…&a=…`), même si le lien est périmé | `jeu` (`explorer`), `source` |
 
