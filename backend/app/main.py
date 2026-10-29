@@ -30,10 +30,10 @@ from .text import normalize, whole_words
 #   dans les niveaux durs on écarte les stars, qu'on reconnaît trop vite ;
 # - hidden_length, hidden_mode : longueur du chemin de « Qui est caché ? » et type de liens (forts en
 #   facile et moyen : les liens sont évidents, « Zidane → ? → Benzema ») ;
-# - choices : en facile, on répond en choisissant parmi 4 personnes.
+# - choices : en facile et moyen, on répond en choisissant parmi 4 personnes.
 LEVELS = {
     "facile": {"top": 200, "hidden": (1, 300), "hidden_length": (2, 2), "hidden_mode": "strong", "choices": 4},
-    "moyen": {"top": 800, "hidden": (1, 2_000), "hidden_length": (2, 3), "hidden_mode": "strong"},
+    "moyen": {"top": 800, "hidden": (1, 2_000), "hidden_length": (2, 3), "hidden_mode": "strong", "choices": 4},
     "difficile": {"top": 3_000, "hidden": (200, 8_000), "hidden_length": (2, 3)},
     "extreme": {"top": 12_000, "hidden": (1_000, 30_000), "hidden_length": (3, 4)},
     "humain": {"top": 60_000, "hidden": (5_000, None), "hidden_length": (4, 6)},

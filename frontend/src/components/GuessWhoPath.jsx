@@ -21,10 +21,10 @@ export const ERAS = ["aujourdhui", "tous", "histoire"];
 
 // Aides selon le niveau : chaque indice apparaît après ce nombre d'erreurs (0 : dès le départ, absent : jamais).
 // clues : phrases à trou qui relient la personne cachée à ses voisins.
-// L'API choisit aussi des énigmes plus simples en facile (liens forts, personne très connue, choix parmi 4).
+// L'API choisit aussi des énigmes plus simples en facile (liens forts, personne très connue) ; facile et moyen : choix parmi 4.
 const HELP = {
   facile: { tries: 2, clues: 0, domain: 0, life: 0 },  // 2 essais pour 4 propositions : sinon on gagne presque à coup sûr
-  moyen: { tries: 4, clues: 0, domain: 0, life: 1, initials: 2 },
+  moyen: { tries: 2 },  // choix parmi 4, sans aucun indice
   difficile: { tries: 4, domain: 1, clues: 2, initials: 3 },
   extreme: { tries: 4, domain: 1, life: 2, initials: 3 },
   humain: { tries: 3 },
