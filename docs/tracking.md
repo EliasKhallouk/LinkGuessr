@@ -57,6 +57,8 @@ Les noms sont fixes et le jeu est une propriété : un seul événement suffit p
 | `partie_fin` | Fin d'une partie | `jeu`, `source`, `resultat`, `essais` |
 | `partage_clic` | Clic sur « Partager », « Défier un ami » ou « Partager ce chemin » | `jeu`, `source`, `methode` |
 | `duel_ouvert` | Arrivée sur un lien de duel (`/defi`) | `jeu`, `source` |
+| `serie_debut` | Début d'une partie de 10 énigmes de « Qui est caché ? » | `jeu` (`qui-est-cache`), `source`, `niveau` |
+| `serie_fin` | Fin de ces 10 énigmes (pas d'événement si le joueur abandonne) | `jeu`, `source`, `niveau`, `score`, `trouvees` (0 à 10) |
 | `exploration_recherche` | Chaque recherche de chemin dans Explorer | `jeu` (`explorer`), `source`, `resultat` |
 | `partage_ouvert` | Arrivée sur un chemin partagé d'Explorer (`/explorer?de=…&a=…`), même si le lien est périmé | `jeu` (`explorer`), `source` |
 
