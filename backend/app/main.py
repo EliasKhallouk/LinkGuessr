@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel, Field
 
-from . import admin, daily, duel, game, seo
+from . import admin, daily, duel, game, live, seo
 from .clues import clues
 from .eras import ERAS, load_eras
 from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS, DUEL_KEY
@@ -61,6 +61,7 @@ app.include_router(daily.router)
 app.include_router(daily.admin_router)
 app.include_router(admin.router)
 app.include_router(seo.router)
+app.include_router(live.router)
 
 
 @app.get("/health")
@@ -372,10 +373,17 @@ def random_path(
     if seed is None:
         ids, masked = _pick_around(difficulty, domain, epoque, random.randint(lo, max(lo, hi)))
         return _puzzle(ids, masked, difficulty, random.Random(), epoque)
-    rng = np.random.default_rng([seed, index])
-    ids, masked = _pick_around(difficulty, domain, epoque, int(rng.integers(lo, max(lo, hi) + 1)), rng=rng)
     response.headers["Cache-Control"] = DAY
-    return _puzzle(ids, masked, difficulty, random.Random(f"{seed}-{index}"), epoque)
+    return seeded_puzzle(difficulty, epoque, seed, index, domain=domain, lengths=(lo, hi))
+
+
+def seeded_puzzle(difficulty: str, era: str, seed: int, index: int, domain: str | None = None,
+                  lengths: tuple[int, int] | None = None, n_choices: int | None = None) -> dict:
+    """L'énigme n° `index` d'une série : la même pour tous à données égales (duels, salons en direct)."""
+    lo, hi = lengths or LEVELS[difficulty]["hidden_length"]
+    rng = np.random.default_rng([seed, index])
+    ids, masked = _pick_around(difficulty, domain, era, int(rng.integers(lo, max(lo, hi) + 1)), rng=rng)
+    return _puzzle(ids, masked, difficulty, random.Random(f"{seed}-{index}"), era, n_choices=n_choices)
 
 
 CHAIN = r"^Q\d+(-Q\d+){2,7}$"
@@ -459,17 +467,20 @@ def random_path_replay(
     return _puzzle(ids, cache, niveau, random.Random(f"{chemin}-{cache}-{niveau}-{epoque}"), epoque)
 
 
-def _puzzle(ids: list[int], masked: int, difficulty: str, rng: random.Random, era: str = "tous") -> dict:
-    """L'énigme : chemin, personne cachée, phrases à trou, indices et, en facile, choix multiple."""
+def _puzzle(ids: list[int], masked: int, difficulty: str, rng: random.Random, era: str = "tous",
+            n_choices: int | None = None) -> dict:
+    """L'énigme : chemin, personne cachée, phrases à trou, indices et, en facile et moyen (ou si n_choices),
+    choix multiple."""
     level = LEVELS[difficulty]
+    n_choices = n_choices or level.get("choices")
     details = path_details(PathResult(len(ids) - 1, 1, [ids]))
     chain = details["paths"][0]
     answer = details["persons"][chain[masked]]
     hidden = {k: v for k, v in details["hops"].items() if answer["qid"] in k.split("-")}
     choices = None
-    if level.get("choices"):
+    if n_choices:
         valid = _valid_middles(ids[masked - 1], ids[masked + 1])
-        wrong = _wrong_choices(ids[masked], ids, valid, level["choices"] - 1, rng, era)
+        wrong = _wrong_choices(ids[masked], ids, valid, n_choices - 1, rng, era)
         people = summaries(wrong)
         choices = [people[i] for i in wrong] + [answer]
         rng.shuffle(choices)
