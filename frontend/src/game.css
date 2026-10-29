@@ -18,6 +18,18 @@
   background: var(--accent-soft); color: var(--accent-text); }
 .game-grid li:nth-child(4n + 2) .game-card-icon,
 .game-grid li:nth-child(4n + 3) .game-card-icon { background: var(--violet-soft); color: var(--violet-text); }
+/* Nombre impair de jeux : le dernier prend toute la largeur. */
+@media (min-width: 601px) { .game-grid li:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+
+/* ----- Salons en direct ----- */
+.live-timer { height: 8px; border-radius: 999px; background: var(--border-color); overflow: hidden; margin-bottom: 12px; }
+.live-timer span { display: block; height: 100%; background: var(--accent-primary); transition: width 0.2s linear; }
+.live-players { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.live-players li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 10px; border-radius: 10px;
+  background: var(--panel-hover); }
+.who-choice.live-chosen { border-color: var(--accent-primary); }
+.who-choice.live-right { border-color: var(--success-border); background: var(--success-soft); }
+.who-choice.live-wrong { border-color: var(--danger); }
 .game-card-text { display: flex; flex-direction: column; gap: 4px; }
 .game-card-title { font-size: 18px; font-weight: 800; line-height: 1.25; }
 .game-card-pitch { font-size: 14px; line-height: 1.45; color: var(--text-secondary); }

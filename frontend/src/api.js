@@ -49,6 +49,7 @@ export const api = {
   // Énigme d'un ami : jeton chiffré (t), ou anciens liens en clair.
   replayHidden: ({ t, chemin, cache, niveau, epoque }) => get("/random_path/replay", t ? { t } : { chemin, cache, niveau, epoque }),
   duelToken: (body) => post("/duel/token", body),
+  createRoom: (body) => post("/live/rooms", body),
   duelPreview: (t) => get("/duel/preview", { t }),
   top: (by = "popularity", opts = {}) => get("/top", { by, ...opts }).then((d) => d.results),
   popularPairs: (period = "7", limit = 10) => get("/popular_pairs", { period, limit }).then((d) => d.results),

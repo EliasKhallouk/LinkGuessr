@@ -32,6 +32,16 @@ const PATHS = {
       <circle cx="78" cy="28" r="4" fill="currentColor" stroke="none" />
     </>
   ),
+  // Trois joueurs reliés autour d'un éclair (direct)
+  live: (
+    <>
+      <path d="M26 30 L50 50 L74 30 M50 50 L50 78" />
+      <circle cx="26" cy="30" r="9" fill="currentColor" stroke="none" />
+      <circle cx="74" cy="30" r="9" fill="currentColor" stroke="none" />
+      <circle cx="50" cy="80" r="9" fill="currentColor" stroke="none" />
+      <path d="M54 38 L44 52 L56 52 L46 66" strokeWidth="5" />
+    </>
+  ),
   // Chronomètre
   count: (
     <>

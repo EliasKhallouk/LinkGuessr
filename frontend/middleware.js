@@ -13,6 +13,7 @@ const STATIC = {
   "/qui-est-cache": { title: FR.games.guesswho.title, description: FR.games.guesswho.pitch },
   "/relier": { title: FR.games.relay.title, description: FR.games.relay.pitch },
   "/combien": { title: FR.games.count.title, description: FR.games.count.pitch },
+  "/salon": { title: FR.games.live.title, description: FR.games.live.pitch },
   "/lab": FR.meta.lab,
   "/a-propos": FR.meta.about,
   "/contact": FR.meta.contact,
@@ -22,7 +23,7 @@ const STATIC = {
 
 export const config = {
   runtime: "nodejs",
-  matcher: ["/jour/:number", "/defi", "/personne/:qid", "/", "/explorer", "/qui-est-cache", "/relier", "/combien",
+  matcher: ["/jour/:number", "/defi", "/personne/:qid", "/", "/explorer", "/qui-est-cache", "/relier", "/combien", "/salon", "/salon/:code",
     "/lab", "/a-propos", "/contact", "/politique-de-confidentialite", "/mentions-legales"],
 };
 
@@ -59,6 +60,11 @@ async function metaFor(url) {
   if (pathname === "/explorer" && url.searchParams.get("de") && url.searchParams.get("a")) {
     const shared = await explorerMeta(url).catch(() => null);  // lien périmé : aperçu de la page Explorer
     if (shared) return shared;
+  }
+  // Invitation à un salon : même aperçu que la page des salons, avec le code.
+  if (pathname.startsWith("/salon/")) {
+    return { title: `Rejoins mon salon LinkGuessr (code ${pathname.slice(7, 11).toUpperCase().replace(/[^A-Z0-9]/g, "")}) · LinkGuessr`,
+      description: FR.games.live.pitch, image: "/api/og" };
   }
   const page = STATIC[pathname];
   if (page) return { title: `${page.title} · LinkGuessr`, description: page.description, image: "/api/og" };

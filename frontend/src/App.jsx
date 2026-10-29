@@ -115,6 +115,7 @@ function App() {
         <Route path="/personne/:qid" element={<Person />} />
         <Route path="/jour/:number" element={<DailyPage />} />
         <Route path="/defi" element={<Duel />} />
+        <Route path="/salon/:code" element={<GamePage game={GAMES.find((g) => g.key === "live")} />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/defis" element={<AdminDaily />} />
         <Route path="/contact" element={<Contact />} />

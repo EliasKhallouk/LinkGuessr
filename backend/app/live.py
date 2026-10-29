@@ -266,8 +266,10 @@ async def live(ws: WebSocket, code: str):
             pseudo, n = f"{base[:13]} {n}", n + 1
         player = Player(pid=secrets.token_hex(4), token=token, pseudo=pseudo)
         room.players[token] = player
-    elif player.ws is not None:  # même joueur dans un autre onglet : l'ancien est remplacé
+    elif player.ws is not None:  # même joueur dans un autre onglet : l'ancien est prévenu et remplacé
         try:
+            await player.ws.send_json({"t": "error", "fatal": True,
+                                       "message": "Tu as ouvert ce salon dans un autre onglet : la partie continue là-bas."})
             await player.ws.close()
         except Exception:
             pass

@@ -3,6 +3,7 @@ import Game from "./components/Game";
 import GuessRelations from "./components/GuessRelations";
 import GuessWhoPath from "./components/GuessWhoPath";
 import Leaderboard from "./components/Leaderboard";
+import Salon from "./pages/Salon";
 
 // Les jeux de l'accueil, dans l'ordre des cartes. Textes : games.<key>.* dans les traductions.
 export const GAMES = [
@@ -10,6 +11,7 @@ export const GAMES = [
   { key: "guesswho", path: "/qui-est-cache", element: <GuessWhoPath /> },
   { key: "relay", path: "/relier", element: <ConnectRelay /> },
   { key: "count", path: "/combien", element: <><GuessRelations /><Leaderboard /></> },
+  { key: "live", path: "/salon", element: <Salon /> },
 ];
 
 export const gamePath = (key) => GAMES.find((g) => g.key === key)?.path ?? "/";

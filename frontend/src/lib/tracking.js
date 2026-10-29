@@ -53,7 +53,7 @@ const started = new Set();
 
 // Événements Umami : noms fixes, le jeu en propriété (mêmes valeurs que utm_campaign). Voir docs/tracking.md.
 export const CAMPAIGNS = { explore: "explorer", guess_who: "qui-est-cache", relay: "relier", guess_count: "combien",
-  daily: "defi-du-jour" };
+  daily: "defi-du-jour", live: "salon" };
 const UMAMI_EVENTS = { start: "partie_debut", finish: "partie_fin", duel_open: "duel_ouvert" };
 
 // Résultat et nombre d'essais d'une fin de partie, à partir des données envoyées à l'API.
