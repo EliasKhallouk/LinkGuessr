@@ -95,6 +95,7 @@ function Room({ code }) {
   const [fatal, setFatal] = useState(null);
   const [lost, setLost] = useState(false);
   const [, tick] = useState(0);
+  const [slow, setSlow] = useState(false);
   const ws = useRef(null);
   const receivedAt = useRef(0);
   const retries = useRef(0);
@@ -127,6 +128,13 @@ function Room({ code }) {
       if (retries.current < 6) setTimeout(() => ws.current === socket && connect(), 1000 * 2 ** retries.current++);
     };
   }, [code]);
+
+  // Toujours pas de salon après 8 s : sans doute un bloqueur (la connexion part vers linkguessr.duckdns.org).
+  useEffect(() => {
+    if (!joined || room) return undefined;
+    const id = setTimeout(() => setSlow(true), 8000);
+    return () => clearTimeout(id);
+  }, [joined, room]);
 
   useEffect(() => {
     if (!joined) return undefined;
@@ -192,7 +200,20 @@ function Room({ code }) {
     );
   }
 
-  if (!room) return <section className="panel"><div className="panel-body muted">{t("live.connecting")}</div></section>;
+  if (!room) {
+    return (
+      <section className="panel"><div className="panel-body">
+        {lost || slow ? (
+          <>
+            <div className="error-box"><p style={{ margin: 0 }}>{t("live.unreachable")}</p></div>
+            <div className="toolbar" style={{ marginTop: 12 }}>
+              <button className="btn btn-primary" onClick={() => window.location.reload()}>{t("live.retry")}</button>
+            </div>
+          </>
+        ) : <p className="muted" style={{ margin: 0 }}>{t("live.connecting")}</p>}
+      </div></section>
+    );
+  }
 
   const isHost = room.host === me;
   const host = room.players.find((p) => p.pid === room.host);
