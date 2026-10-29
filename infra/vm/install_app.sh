@@ -97,6 +97,25 @@ Persistent=true
 WantedBy=timers.target
 EOF
 
+echo "== 6. Nginx : WebSockets des salons en direct (/live/<code>)"
+# Le site s'y connecte directement : Vercel ne relaie pas les WebSockets. Les pings d'uvicorn (20 s)
+# gardent la connexion ouverte sous le délai de lecture.
+cat > /etc/nginx/snippets/linkguessr-live.conf <<'EOF'
+location ~ ^/live/[A-Za-z0-9]+$ {
+    proxy_pass http://127.0.0.1:8000;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 120s;
+}
+EOF
+SITE=/etc/nginx/sites-available/linkguessr
+grep -q "linkguessr-live.conf" "$SITE" || sed -i '0,/^\s*location \/ {/s//    include snippets\/linkguessr-live.conf;\n\n    location \/ {/' "$SITE"
+nginx -t && systemctl reload nginx
+
 systemctl daemon-reload
 systemctl enable linkguessr-api >/dev/null
 systemctl enable --now linkguessr-daily.timer >/dev/null
