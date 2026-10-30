@@ -114,6 +114,9 @@ location ~ ^/live/[A-Za-z0-9]+$ {
 EOF
 SITE=/etc/nginx/sites-available/linkguessr
 grep -q "linkguessr-live.conf" "$SITE" || sed -i '0,/^\s*location \/ {/s//    include snippets\/linkguessr-live.conf;\n\n    location \/ {/' "$SITE"
+# Les navigateurs joignent les salons par live.linkguessr.com (CNAME vers la VM) : les pare-feu se méfient
+# des domaines de DNS dynamique comme duckdns.org. Certificat : certbot --nginx -d … -d live.linkguessr.com.
+grep -q "live.linkguessr.com" "$SITE" || sed -i 's/server_name linkguessr.duckdns.org;/server_name linkguessr.duckdns.org live.linkguessr.com;/' "$SITE"
 nginx -t && systemctl reload nginx
 
 systemctl daemon-reload
