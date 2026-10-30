@@ -129,7 +129,7 @@ function Room({ code }) {
     };
   }, [code]);
 
-  // Toujours pas de salon après 8 s : sans doute un bloqueur (la connexion part vers linkguessr.duckdns.org).
+  // Toujours pas de salon après 8 s : sans doute un bloqueur ou un pare-feu.
   useEffect(() => {
     if (!joined || room) return undefined;
     const id = setTimeout(() => setSlow(true), 8000);

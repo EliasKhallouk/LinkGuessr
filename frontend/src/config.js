@@ -3,7 +3,8 @@
 // Pour viser une autre API : VITE_API_BASE_URL dans frontend/.env.local.
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "/v1";
 
-// Salons en direct : WebSocket directement vers la VM (Vercel ne relaie pas les WebSockets).
-export const LIVE_URL = import.meta.env.VITE_LIVE_URL?.replace(/\/$/, "") || "wss://linkguessr.duckdns.org/live";
+// Salons en direct : WebSocket directement vers la VM (Vercel ne relaie pas les WebSockets), par
+// live.linkguessr.com (CNAME) : jamais duckdns.org dans le code du site, dont les pare-feu se méfient.
+export const LIVE_URL = import.meta.env.VITE_LIVE_URL?.replace(/\/$/, "") || "wss://live.linkguessr.com/live";
 
 export const apiUrl = (path) => `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;

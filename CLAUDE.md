@@ -9,6 +9,7 @@ Site : https://linkguessr.com (www et link-guessr.vercel.app redirigent dessus, 
 Navigateur ── linkguessr.com (Vercel : front React + middleware + /api/og)
                  ├─ /v1/*     → api/proxy.js → VM (API, réponses mises en cache par Vercel)
                  └─ /umami/*  → VM (Umami, mesure d'audience sans cookie)
+Navigateur ── live.linkguessr.com (CNAME → VM) : WebSocket des salons en direct (Vercel ne les relaie pas)
 VM Oracle (linkguessr.duckdns.org, ARM, 1 cœur, 6 Go) : Nginx → FastAPI (graphe en RAM) → PostgreSQL
                                                        Nginx → Umami v3 (service umami, base « umami »)
 PC local : pipeline (dumps frwiki + Wikidata) → parquet → `lg load` dans Postgres
