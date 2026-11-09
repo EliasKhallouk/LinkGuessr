@@ -1,4 +1,4 @@
-"""Sitemap pour les moteurs de recherche : les pages fixes et une page par personne reliée au réseau.
+"""Sitemap pour les moteurs de recherche : les pages fixes et les pages des personnes les plus connectées.
 
 Servi sous linkguessr.com/sitemap.xml (relais Vercel), découpé en fichiers de 25 000 adresses.
 """
@@ -11,6 +11,7 @@ from .core import pool, state
 router = APIRouter()
 SITE = "https://linkguessr.com"
 PER_FILE = 25_000  # ~2,5 Mo : sous la limite de taille des réponses des fonctions Vercel
+MAX_PEOPLE = 10_000  # pas tout le réseau : les robots épuisaient le quota de requêtes Vercel
 STATIC_PAGES = ["/", "/explorer", "/qui-est-cache", "/relier", "/combien", "/salon", "/lab", "/a-propos", "/contact",
                 "/politique-de-confidentialite", "/mentions-legales"]
 CACHE = "public, max-age=3600, s-maxage=86400"
@@ -29,7 +30,8 @@ def _xml(body: str) -> Response:
 def _count() -> int:
     if "sitemap_count" not in state:
         with pool.connection() as conn:
-            state["sitemap_count"] = conn.execute("SELECT count(*) AS n FROM person WHERE degree > 0").fetchone()["n"]
+            n = conn.execute("SELECT count(*) AS n FROM person WHERE degree > 0").fetchone()["n"]
+            state["sitemap_count"] = min(n, MAX_PEOPLE)
     return state["sitemap_count"]
 
 
@@ -53,8 +55,8 @@ def sitemap_people(index: int):
         raise HTTPException(404, "Sitemap inconnu")
     with pool.connection() as conn:
         rows = conn.execute(
-            "SELECT qid FROM person WHERE degree > 0 ORDER BY id OFFSET %s LIMIT %s",
-            (index * PER_FILE, PER_FILE),
+            "SELECT qid FROM person WHERE degree > 0 ORDER BY degree DESC, id OFFSET %s LIMIT %s",
+            (index * PER_FILE, min(PER_FILE, _count() - index * PER_FILE)),
         ).fetchall()
     lastmod = _lastmod()
     urls = "\n".join(f"  <url><loc>{SITE}/personne/{r['qid']}</loc><lastmod>{lastmod}</lastmod></url>" for r in rows)
