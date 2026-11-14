@@ -34,8 +34,9 @@ const UA = `LinkGuessr/1.0 (${SITE})`;
 
 const escape = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-async function api(path) {
-  const r = await fetch(`${API}${path}`, { headers: { "User-Agent": UA } });
+// ua : User-Agent du visiteur, relayé à la VM pour savoir quel robot parcourt les pages.
+async function api(path, ua) {
+  const r = await fetch(`${API}${path}`, { headers: { "User-Agent": UA, "X-Original-UA": (ua || "-").slice(0, 300) } });
   if (!r.ok) throw new Error(String(r.status));
   return r.json();
 }
@@ -55,7 +56,7 @@ async function explorerMeta(url) {
     image: `/api/og?${new URLSearchParams({ type: "explorer", de, a, ...(mode && { mode }) })}` };
 }
 
-async function metaFor(url) {
+async function metaFor(url, ua) {
   const pathname = url.pathname.replace(/\/$/, "") || "/";
   if (pathname === "/explorer" && url.searchParams.get("de") && url.searchParams.get("a")) {
     const shared = await explorerMeta(url).catch(() => null);  // lien périmé : aperçu de la page Explorer
@@ -70,7 +71,7 @@ async function metaFor(url) {
   if (page) return { title: `${page.title} · LinkGuessr`, description: page.description, image: "/api/og" };
   const parts = url.pathname.split("/").filter(Boolean);
   if (parts[0] === "jour") {
-    const d = await api(`/daily/archive/${encodeURIComponent(parts[1])}`);
+    const d = await api(`/daily/archive/${encodeURIComponent(parts[1])}`, ua);
     const a = d.persons[d.path[0]].name;
     const b = d.persons[d.path[d.path.length - 1]].name;
     return { title: `Défi du jour #${d.number} : qui relie ${a} et ${b} ? · LinkGuessr`,
@@ -100,7 +101,7 @@ async function metaFor(url) {
       // Seulement les deux bouts du chemin : la personne cachée ne doit pas apparaître dans l'aperçu.
       const ends = (url.searchParams.get("chemin") || "").split("-");
       const [qa, qb] = [ends[0], ends[ends.length - 1]];
-      const [ca, cb] = await Promise.all([api(`/person/${qa}/card`), api(`/person/${qb}/card`)]);
+      const [ca, cb] = await Promise.all([api(`/person/${qa}/card`, ua), api(`/person/${qb}/card`, ua)]);
       const tries = Number(url.searchParams.get("essais")) || 0;
       const found = url.searchParams.get("trouve") === "1";
       return { title: `Qui est caché entre ${ca.person.name} et ${cb.person.name} ? · LinkGuessr`,
@@ -110,7 +111,7 @@ async function metaFor(url) {
     }
     if (game === "relais") {
       const [qa, qb] = (url.searchParams.get("paire") || "").split("-");
-      const [ca, cb] = await Promise.all([api(`/person/${qa}/card`), api(`/person/${qb}/card`)]);
+      const [ca, cb] = await Promise.all([api(`/person/${qa}/card`, ua), api(`/person/${qb}/card`, ua)]);
       return { title: `Défi : relier ${ca.person.name} à ${cb.person.name} en moins de ${score} coups · LinkGuessr`,
         description: `Quelqu'un l'a fait en ${score} ${score === 1 ? "coup" : "coups"}. Saute de personne en personne : tu fais mieux ?`,
         image: `/api/og?type=duel&paire=${qa}-${qb}&score=${score}` };
@@ -120,7 +121,7 @@ async function metaFor(url) {
       image: `/api/og?type=nombre&score=${score}` };
   }
   if (parts[0] === "personne") {
-    const { person: p, closest } = await api(`/person/${encodeURIComponent(parts[1])}/card`);
+    const { person: p, closest } = await api(`/person/${encodeURIComponent(parts[1])}/card`, ua);
     const near = closest.slice(0, 3).map((c) => c.name).join(", ");
     return { title: `${p.name} : ses liens avec ${near}… · LinkGuessr`,
       // Résumé lisible pour les robots qui n'exécutent pas le JavaScript (remplacé par l'application au chargement).
@@ -145,7 +146,7 @@ export default async function middleware(request) {
   const page = await fetch(new URL("/index.html", url));
   let html = await page.text();
   try {
-    const meta = await metaFor(url);
+    const meta = await metaFor(url, request.headers.get("user-agent"));
     if (meta) {
       const image = new URL(meta.image, url).toString();
       const tags = [
