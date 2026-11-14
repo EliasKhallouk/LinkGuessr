@@ -238,22 +238,25 @@ def _init_worker(dump: str, title_to_qid: dict[str, str], page_to_qid: dict[int,
     _W["page_to_qid"] = page_to_qid
 
 
-def _process_block(span: tuple[int, int]) -> tuple[list[dict], list[dict]]:
+def block_pages(dump: str, span: tuple[int, int], page_to_qid: dict[int, str]):
+    """Biographies d'un bloc du dump : (qid, wikitexte)."""
     start, end = span
-    with open(_W["dump"], "rb") as f:
+    with open(dump, "rb") as f:
         f.seek(start)
         raw = f.read(end - start) if end > 0 else f.read()
     xml = bz2.BZ2Decompressor().decompress(raw).decode("utf-8")
     root = ET.fromstring(f"<root>{xml}</root>")
-
-    link_rows, page_rows = [], []
     for page in root.iter("page"):
         if page.findtext("ns") != "0" or page.find("redirect") is not None:
             continue
-        qid = _W["page_to_qid"].get(int(page.findtext("id")))
-        if not qid:
-            continue
-        text = page.findtext("revision/text") or ""
+        qid = page_to_qid.get(int(page.findtext("id")))
+        if qid:
+            yield qid, page.findtext("revision/text") or ""
+
+
+def _process_block(span: tuple[int, int]) -> tuple[list[dict], list[dict]]:
+    link_rows, page_rows = [], []
+    for qid, text in block_pages(_W["dump"], span, _W["page_to_qid"]):
         links, info = analyze_page(text, _W["title_to_qid"], qid)
         page_rows.append({"qid": qid, **info})
         for target, e in links.items():
@@ -261,16 +264,19 @@ def _process_block(span: tuple[int, int]) -> tuple[list[dict], list[dict]]:
     return link_rows, page_rows
 
 
-def extract_links(workers: int | None = None) -> None:
-    humans = pl.read_parquet(work_path("humans.parquet"))
-    page_to_qid = dict(zip(humans["page_id"].to_list(), humans["qid"].to_list()))
+def human_titles(humans: pl.DataFrame) -> dict[str, str]:
+    """Titre d'article (ou de redirection) → QID de la personne."""
     title_to_qid = dict(zip(humans["title"].to_list(), humans["qid"].to_list()))
     # Les liens vers une redirection (ex. « Zizou ») comptent pour la personne visée.
     redirects = pl.read_parquet(work_path("redirects.parquet")).join(
         humans.select(pl.col("title").alias("to_title"), "qid"), on="to_title", how="inner")
     for src, qid in zip(redirects["from_title"].to_list(), redirects["qid"].to_list()):
         title_to_qid.setdefault(src, qid)
+    return title_to_qid
 
+
+def human_blocks(page_to_qid: dict[int, str]) -> tuple[list[tuple[int, int]], int]:
+    """Blocs du dump qui contiennent au moins une biographie, et nombre total de blocs."""
     # Index multistream : « offset:page_id:titre ». Un bloc s'étend jusqu'à l'offset suivant.
     offsets_with_humans: set[int] = set()
     all_offsets: set[int] = set()
@@ -283,8 +289,15 @@ def extract_links(workers: int | None = None) -> None:
                 offsets_with_humans.add(offset)
     ordered = sorted(all_offsets)
     next_offset = dict(zip(ordered, ordered[1:] + [-1]))
-    spans = [(o, next_offset[o]) for o in sorted(offsets_with_humans)]
-    print(f"{len(spans):,} blocs à lire sur {len(ordered):,}, {len(title_to_qid):,} titres reconnus")
+    return [(o, next_offset[o]) for o in sorted(offsets_with_humans)], len(ordered)
+
+
+def extract_links(workers: int | None = None) -> None:
+    humans = pl.read_parquet(work_path("humans.parquet"))
+    page_to_qid = dict(zip(humans["page_id"].to_list(), humans["qid"].to_list()))
+    title_to_qid = human_titles(humans)
+    spans, n_blocks = human_blocks(page_to_qid)
+    print(f"{len(spans):,} blocs à lire sur {n_blocks:,}, {len(title_to_qid):,} titres reconnus")
 
     dump = str(dump_path("pages-articles-multistream.xml.bz2"))
     parts = work_path("text_links_parts")

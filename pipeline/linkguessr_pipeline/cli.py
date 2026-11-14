@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from . import build, check, download, entities, graph, humans, links, pageviews, pages, refs, status
+from . import build, check, download, entities, graph, humans, links, pageviews, pages, refs, sentences, status
 from .config import work_path
 
 
@@ -23,6 +23,10 @@ def main() -> None:
 
     p = sub.add_parser("links", help="liens entre personnes depuis le texte des articles (dump XML)")
     p.add_argument("--workers", type=int, help="processus en parallèle (défaut : tous les cœurs)")
+
+    p = sub.add_parser("sentences", help="toutes les phrases qui citent une personne liée (Lab, dump XML)")
+    p.add_argument("--workers", type=int, help="processus en parallèle (défaut : tous les cœurs)")
+    p.add_argument("--limit", type=int, help="ne lire que les N premiers blocs (test)")
 
     p = sub.add_parser("refs", help="lieux, professions, clubs, prix... cités par les fiches")
     p.add_argument("--workers", type=int, default=2)
@@ -54,6 +58,8 @@ def main() -> None:
         entities.fetch_human_entities(args.workers, args.limit)
     elif args.cmd == "links":
         links.extract_links(args.workers)
+    elif args.cmd == "sentences":
+        sentences.extract_sentences(args.workers, args.limit)
     elif args.cmd == "refs":
         refs.fetch_refs(args.workers)
     elif args.cmd == "pageviews-dump":

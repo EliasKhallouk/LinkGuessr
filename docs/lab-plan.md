@@ -48,6 +48,39 @@ Conséquences pour le plan :
 6. **Peu de faits datés** (18,7 %) : les affiliations « avec chevauchement de périodes » (1.4) ne couvriront
    qu'une partie des coéquipiers et des gouvernements ; à mesurer en début de v2.
 
+### 0.1 Nouveau cap (15 novembre 2026) : le classifieur de liens d'abord
+
+Objectif de l'utilisateur : monter en compétence en apprentissage automatique et valoriser le travail (CV,
+article). Le typage des liens passe donc avant les analyses de réseau de la v1, qui l'utiliseront ensuite.
+Répartition : Claude écrit la préparation des données, l'outil d'annotation et l'export ; l'utilisateur écrit
+le cœur du modèle (base, affinage, évaluation), relu par Claude. Code du modèle en scripts
+(`lab/linkguessr_lab/typing/`), notebooks pour l'exploration et l'analyse d'erreurs seulement.
+
+**Unité** : la phrase (`link_sentences.parquet`). On annote et on prédit par phrase ; le type d'un lien A–B est
+la réunion des types de ses phrases (apprentissage multi-instances, Riedel et al. 2010).
+
+**Grille** (remplace la typologie à 10 classes de la v2, étape 4) : chaque sous-type est défini par un critère,
+pas par un domaine (le domaine des personnes est déjà connu), et les sous-types d'une famille couvrent tous ses cas.
+
+| Famille | Question | Sous-types |
+|---|---|---|
+| Personnel | quel lien de vie ? | famille · couple · proches |
+| Travail | quelle place dans le travail de l'autre ? | formation · collaboration · hiérarchie (et succession) |
+| Conflit | sous quelle forme ? | compétition (règles, vainqueur) · lutte (hostilité en actes) · critique (paroles, écrits) |
+| Par les œuvres | quel rôle joue l'œuvre ? | sujet (l'un est le sujet de l'œuvre de l'autre) · matériau (l'un se sert de l'œuvre de l'autre) |
+| Mention | pourquoi nommé, sans relation ? | source · comparaison · co-mention (énumération, repère de contexte, même événement sans interaction) |
+| Inclassable | — | rien ne convient ou phrase trop pauvre ; au-delà de ≈ 5 % du jeu d'or, la grille est revue |
+
+- **Multi-étiquettes** par phrase (souvent 1, parfois 2 : « sa femme et partenaire de scène ») ; co-mention et
+  inclassable sont exclusifs.
+- **Axe « se sont-ils côtoyés ? »** : oui / non / incertain, jugé d'après la phrase seule. « Non » est donné
+  d'office quand les vies ne se chevauchent pas (dates).
+- **Modèle** : un encodeur (CamemBERT), deux têtes : sous-types (14 sorties, sigmoïdes) et côtoyés (3 classes).
+- **Annotation** : pré-annotation par un LLM corrigée à la main (à déclarer dans la méthode) ; une deuxième
+  personne annote 300 phrases pour l'accord inter-annotateurs.
+
+Suite : guide d'annotation, tirage stratifié des 1 500 phrases, outil d'annotation, puis modèle de base.
+
 ---
 
 ## 1. Inventaire des données
@@ -81,6 +114,10 @@ Tout sort de `pipeline/data/work/<DUMP_DATE>/final/*.parquet` (mêmes tables que
 1. **Une seule phrase par lien.** `snippet` est la phrase de la *première* mention. Si Zidane cite Materazzi trois
    fois, on n'a que la première phrase, pas forcément la plus parlante. Pour le typage, c'est la principale limite.
    Les liens présents seulement dans l'infobox ou une légende d'image ont une phrase pauvre ou vide.
+   **Levée le 15/11/2026** par `lg sentences` (`link_sentences.parquet`) : une ligne par occurrence (chaque lien,
+   paramètre d'infobox « conjoint : X », légende, et mention du nom sans lien après le premier lien). Les
+   pronoms ne sont pas résolus. Les mentions sans lien ont leurs propres erreurs (homonymes, noms communs) :
+   leur précision est à mesurer sur le jeu d'or, colonne `variant` à l'appui.
 2. **Pas de type pour les liens textuels.** C'est le manque central de la problématique (voir 1.3).
 3. **Les œuvres ne sont pas des nœuds.** Deux acteurs du même film ne sont reliés que si un article cite l'autre.
    Les propriétés Wikidata de collaboration sont portées par les œuvres (P161 distribution, P57 réalisateur,

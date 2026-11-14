@@ -23,6 +23,7 @@ uv sync
 | `uv run lg pageviews-dump` | ~4 h, **sur la VM** | Lit en flux les 12 fichiers mensuels de pages vues (~6 Go chacun), garde frwiki |
 | `uv run lg pageviews` | ~1 min | Joint les vues mensuelles aux biographies (redirections comprises) |
 | `uv run lg links` | ~20 min (8 cœurs) | Liens entre personnes dans le texte des articles, avec contexte |
+| `uv run lg sentences` | ~30 min (8 cœurs) | **Lab seulement** (facultatif) : toutes les phrases qui citent une personne liée — chaque lien, infobox, légendes, mentions du nom sans lien — dans `link_sentences.parquet` (ni Postgres ni site) |
 | `uv run lg build` | ~10 min | Fiches structurées, faits datés, relations typées |
 | `uv run lg graph` | ~5 min | Identifiants, arêtes pondérées, degré, PageRank, communautés, popularité |
 | `uv run lg check` | ~1 min | Vérifie les tables finales contre le schéma Postgres (aussi fait au début de `load`) |
