@@ -4,8 +4,49 @@ Document de travail à valider, rédigé le 30 octobre 2026 à partir du code du
 données du dump `20261001`. Rien n'est encore codé. Les chiffres marqués « ≈ » sont déduits du code et pas
 mesurés : ils sont à confirmer au début de la v1 (voir l'étape 0).
 
-Sommaire : 1. Données · 2. Analyses candidates · 3. Feuille de route · 4. Architecture · 5. Page d'analyse ·
-6. Rigueur et éthique · 7. Mes questions · Annexe : références.
+Sommaire : 0. Étalonnage · 1. Données · 2. Analyses candidates · 3. Feuille de route · 4. Architecture ·
+5. Page d'analyse · 6. Rigueur et éthique · 7. Mes questions · Annexe : références.
+
+---
+
+## 0. Étalonnage (mesuré le 14 novembre 2026, dump `20261001`)
+
+`cd lab && uv run lab etalonnage` (36 s, < 1 Go de RAM). Sortie complète :
+`pipeline/data/lab/20261001/etalonnage.json`. Ces chiffres remplacent les « ≈ » du reste du document.
+
+| Mesure | Plan | Mesuré |
+|---|---|---|
+| Personnes | 765 000 | 764 791 |
+| Arêtes (tous les liens) | ≈ 5 M, degré moyen ≈ 13 | **3 891 641**, degré moyen 10,2, médian 4, max 4 930 |
+| Liens forts / Wikidata seule | — | 738 317 / 283 374 arêtes |
+| Personnes sans aucun lien | — | **142 756 (18,7 %)** |
+| Composante géante, tous les liens | « 0,987 » (exemple) | **603 890 personnes (79,0 %)** |
+| Composante géante, liens forts / Wikidata | — | 41,4 % / 17,6 % |
+| Liens textuels | ≈ 5 à 7 M | 4 414 283 ; phrase vide ou < 20 caractères 5,6 % ; infobox seule 3,6 % |
+| Relations Wikidata | à mesurer | 529 115 (283 374 paires) : famille 122 501 paires, succession 79 086, transmission 43 432, couple 24 910, influence 12 403, autre 5 554, **collaboration 2 338** |
+| Faits datés | à mesurer | 6 990 051, dont 18,7 % avec une année de début |
+| Personnes sans domaine | à mesurer | 4,5 % ; 28,5 % ont plusieurs domaines |
+| Genre | — | 604 473 hommes, 157 083 femmes ; non-binaire 297, femme trans 577, homme trans 153 (trop peu pour conclure) |
+| Parcours en largeur complet | 0,2 à 1 s | igraph 0,37 s, scipy 0,34 s, **networkit 0,21 s** (1 fil) |
+| Distance moyenne (20 sources, sans intervalle) | — | 5,44 liens ; maximum observé 23 |
+| Événements de jeu (VM) | selon l'audience | ≈ 1 500 au 14/11 (Combien ? 12 sessions, Relier 4) : analyse 7 reportée |
+
+Conséquences pour le plan :
+
+1. **Une personne sur cinq est hors de la composante géante** (surtout des personnes sans lien). Toutes les
+   distances se calculent dans la composante géante, et chaque page le dit avec l'effectif.
+2. **Les trois modes n'ont pas la même population** (79 %, 41 %, 18 %). Comparer ℓ entre modes revient à comparer
+   des réseaux de personnes différentes : on compare aussi sur les personnes communes aux trois composantes, et
+   l'efficacité globale (moyenne de 1/d) plutôt que ℓ seule.
+3. **Coût des calculs divisé par deux à cinq** : 2 000 sources ≈ 7 min avec networkit (et moins avec ses 8 fils),
+   les 30 000 parcours de l'analyse 4 ≈ 2 h. networkit est retenu (il s'installe sous Windows).
+4. **La collaboration Wikidata est quasi vide** (2 338 paires) : l'étape « collaborations sur des œuvres »
+   (question 13) devient nécessaire pour cette classe.
+5. **Les sections de liste dépassent la liste prévue** : « Filmographie partielle », « Longs métrages », « En
+   double dames » (tableaux de tennis), « Au cinéma »… Le test de robustesse 6.1 demande une détection plus large
+   (titres de sections classés à la main, une fois pour toutes).
+6. **Peu de faits datés** (18,7 %) : les affiliations « avec chevauchement de périodes » (1.4) ne couvriront
+   qu'une partie des coéquipiers et des gouvernements ; à mesurer en début de v2.
 
 ---
 
@@ -608,6 +649,11 @@ déjà utilisé par Explorer.
 ---
 
 ## 7. Mes questions avant de commencer
+
+Réponses au 14 novembre 2026 : (1) étape 0 faite, voir section 0 ; (2) 8 cœurs logiques, 8 Go, GPU RTX 3070
+(le classifieur peut tourner sur le PC) ; (4) dépôt public sur GitHub, code du Lab sous licence MIT ; (7) trop
+peu de parties pour l'instant, analyse 7 reportée ; (8) **bilingue FR/EN** ; (9) **Observable Plot** ;
+(10) Claude rédige, l'utilisateur valide. Restent ouvertes : 3, 5, 6, 11, 12, 13.
 
 1. **Chiffres réels** : je n'ai pas accès aux données d'ici (elles sont sur ton PC). Veux-tu lancer l'étape 0
    (un petit script que j'écrirai) ou me donner le nombre d'arêtes, de `text_link`, de `relation` par famille, la

@@ -1,0 +1,29 @@
+[project]
+name = "linkguessr-lab"
+version = "0.1.0"
+description = "Analyses du réseau des personnes de Wikipédia FR, publiées dans le Lab de LinkGuessr"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+    "polars>=1.0",
+    "pyarrow>=17",
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "python-igraph>=0.11",
+    "psutil>=6.0",
+]
+
+[project.optional-dependencies]
+# Comparé à igraph et scipy pendant l'étalonnage ; gardé seulement s'il est nettement plus rapide.
+networkit = ["networkit>=11.0"]
+
+[project.scripts]
+lab = "linkguessr_lab.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+# L'antivirus (Avast) intercepte le TLS : on utilise le magasin de certificats du système.
+native-tls = true
