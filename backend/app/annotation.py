@@ -78,8 +78,8 @@ def item(request: Request, t: str = Query(..., max_length=100), id: int | None =
     who = annotator(request, t)
     where = _order(who["scope"])
     with pool.connection() as conn:
-        ids = [r[0] for r in conn.execute(f"SELECT id FROM app.annot_item {where} ORDER BY accord, id").fetchall()]
-        done = {r[0]: r for r in conn.execute(
+        ids = [r["id"] for r in conn.execute(f"SELECT id FROM app.annot_item {where} ORDER BY accord, id").fetchall()]
+        done = {r.pop("item_id"): r for r in conn.execute(
             "SELECT item_id, labels, cotoyes, wrong, doubt, comment FROM app.annot_label WHERE annotator = %s",
             (who["name"],)).fetchall()}
         if not ids:
@@ -90,16 +90,14 @@ def item(request: Request, t: str = Query(..., max_length=100), id: int | None =
                 return {"finished": True, "total": len(ids), "done": len(ids), "annotator": who["name"]}
         if id not in ids:
             raise HTTPException(404, "Phrase introuvable.")
-        accord, data, suggestion = conn.execute(
-            "SELECT accord, data, suggestion FROM app.annot_item WHERE id = %s", (id,)).fetchone()
+        row = conn.execute("SELECT accord, data, suggestion FROM app.annot_item WHERE id = %s", (id,)).fetchone()
     pos = ids.index(id)
-    prev = done.get(id)
     return {
         "id": id, "annotator": who["name"], "total": len(ids), "done": len(done), "position": pos + 1,
         "prev_id": ids[pos - 1] if pos else None, "next_id": ids[pos + 1] if pos + 1 < len(ids) else None,
-        "item": data, "accord": accord,
-        "suggestion": None if accord else suggestion,
-        "label": dict(zip(["labels", "cotoyes", "wrong", "doubt", "comment"], prev[1:])) if prev else None,
+        "item": row["data"], "accord": row["accord"],
+        "suggestion": None if row["accord"] else row["suggestion"],
+        "label": done.get(id),
         "families": FAMILIES,
     }
 
@@ -123,7 +121,7 @@ def save(body: LabelIn, request: Request):
         raise HTTPException(400, error)
     with pool.connection() as conn:
         row = conn.execute("SELECT accord FROM app.annot_item WHERE id = %s", (body.id,)).fetchone()
-        if not row or (who["scope"] == "accord" and not row[0]):
+        if not row or (who["scope"] == "accord" and not row["accord"]):
             raise HTTPException(404, "Phrase introuvable.")
         conn.execute(
             """INSERT INTO app.annot_label (item_id, annotator, labels, cotoyes, wrong, doubt, comment, seconds)
@@ -166,12 +164,10 @@ def suggest(path: Path) -> None:
 def export() -> None:
     with pool.connection() as conn:
         for r in conn.execute(
-                """SELECT l.item_id, l.annotator, l.labels, l.cotoyes, l.wrong, l.doubt, l.comment, l.seconds,
+                """SELECT l.item_id AS ordre, l.annotator, l.labels, l.cotoyes, l.wrong, l.doubt, l.comment, l.seconds,
                           l.updated_at, i.accord, i.suggestion
                    FROM app.annot_label l JOIN app.annot_item i ON i.id = l.item_id ORDER BY l.item_id, l.annotator"""):
-            keys = ["ordre", "annotator", "labels", "cotoyes", "wrong", "doubt", "comment", "seconds",
-                    "updated_at", "accord", "suggestion"]
-            sys.stdout.write(json.dumps(dict(zip(keys, r)), ensure_ascii=False, default=str) + "\n")
+            sys.stdout.write(json.dumps(r, ensure_ascii=False, default=str) + "\n")
 
 
 def main() -> None:

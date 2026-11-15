@@ -50,7 +50,8 @@ def test_page_servie_sans_indexation(client):
 
 
 class FakeConn:
-    """Base en mémoire qui répond aux requêtes de app.annotation (et seulement à elles)."""
+    """Base en mémoire qui répond aux requêtes de app.annotation (et seulement à elles).
+    Lignes en dictionnaires, comme le pool de l'API (row_factory=dict_row)."""
 
     def __init__(self, items, labels):
         self.items, self.labels = items, labels
@@ -65,17 +66,17 @@ class FakeConn:
         rows = []
         if sql.startswith("SELECT id FROM app.annot_item"):
             ids = [i for i, it in self.items.items() if "WHERE accord" not in sql or it["accord"]]
-            rows = [(i,) for i in sorted(ids, key=lambda i: (self.items[i]["accord"], i))]
+            rows = [{"id": i} for i in sorted(ids, key=lambda i: (self.items[i]["accord"], i))]
         elif sql.startswith("SELECT item_id, labels"):
-            rows = [(i, *v) for (i, who), v in self.labels.items() if who == params[0]]
+            rows = [{"item_id": i, **v} for (i, who), v in self.labels.items() if who == params[0]]
         elif sql.startswith("SELECT accord, data, suggestion"):
-            it = self.items[params[0]]
-            rows = [(it["accord"], it["data"], it["suggestion"])]
+            rows = [dict(self.items[params[0]])]
         elif sql.startswith("SELECT accord FROM"):
-            rows = [(self.items[params[0]]["accord"],)] if params[0] in self.items else []
+            rows = [{"accord": self.items[params[0]]["accord"]}] if params[0] in self.items else []
         elif sql.lstrip().startswith("INSERT INTO app.annot_label"):
             i, who, labels, cotoyes, wrong, doubt, comment, _ = params
-            self.labels[(i, who)] = (labels, cotoyes, wrong, doubt, comment)
+            self.labels[(i, who)] = {"labels": labels, "cotoyes": cotoyes, "wrong": wrong, "doubt": doubt,
+                                     "comment": comment}
         return type("R", (), {"fetchall": lambda s: rows, "fetchone": lambda s: rows[0] if rows else None})()
 
 
