@@ -11,11 +11,15 @@ dependencies = [
     "scipy>=1.14",
     "python-igraph>=0.11",
     "psutil>=6.0",
+    "scikit-learn>=1.5",
 ]
 
 [project.optional-dependencies]
 # Comparé à igraph et scipy pendant l'étalonnage ; gardé seulement s'il est nettement plus rapide.
 networkit = ["networkit>=11.0"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
 
 [project.scripts]
 lab = "linkguessr_lab.cli:main"
