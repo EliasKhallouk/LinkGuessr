@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel, Field
 
-from . import admin, daily, duel, game, live, seo
+from . import admin, annotation, daily, duel, game, live, seo
 from .clues import clues
 from .eras import ERAS, load_eras
 from .config import CORS_ORIGIN_REGEX, CORS_ORIGINS, DUEL_KEY
@@ -62,6 +62,7 @@ app.include_router(daily.admin_router)
 app.include_router(admin.router)
 app.include_router(seo.router)
 app.include_router(live.router)
+app.include_router(annotation.router)
 
 
 @app.get("/health")

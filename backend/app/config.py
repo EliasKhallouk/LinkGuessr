@@ -11,3 +11,9 @@ CORS_ORIGIN_REGEX = os.environ.get("CORS_ORIGIN_REGEX") or None
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
 # Clé AES des liens de duel « Qui est caché ? » (python -m app.duel en génère une ; vide = liens désactivés).
 DUEL_KEY = os.environ.get("DUEL_KEY", "")
+# Annotateurs du Lab : « nom:jeton:portée » séparés par des virgules ; portée « tout » ou « accord »
+# (seulement les phrases de l'accord inter-annotateurs, sans proposition du modèle). Vide = outil désactivé.
+ANNOT_TOKENS = {
+    tok: {"name": name, "scope": scope}
+    for name, tok, scope in (e.strip().split(":") for e in os.environ.get("ANNOT_TOKENS", "").split(",") if e.strip())
+}

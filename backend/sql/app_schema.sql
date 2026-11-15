@@ -74,3 +74,24 @@ CREATE TABLE IF NOT EXISTS app.feedback (
 );
 CREATE INDEX IF NOT EXISTS feedback_time_idx ON app.feedback (created_at);
 CREATE INDEX IF NOT EXISTS game_event_kind_idx ON app.game_event ((payload->>'event'), created_at);
+
+-- Lab : annotation des phrases du jeu d'or (classifieur de liens, lab/annotation/guide.md).
+-- Phrases publiques de Wikipédia ; les annotateurs sont identifiés par un jeton (ANNOT_TOKENS), sans compte.
+CREATE TABLE IF NOT EXISTS app.annot_item (
+    id          integer PRIMARY KEY,               -- ordre de présentation
+    accord      boolean NOT NULL,                  -- annotée à l'aveugle par les deux annotateurs
+    data        jsonb NOT NULL,                    -- phrase, A, B, section, dates, strate, poids…
+    suggestion  jsonb                              -- proposition du LLM (jamais montrée pour l'accord)
+);
+CREATE TABLE IF NOT EXISTS app.annot_label (
+    item_id     integer NOT NULL REFERENCES app.annot_item (id),
+    annotator   text NOT NULL,
+    labels      text[] NOT NULL DEFAULT '{}',
+    cotoyes     text CHECK (cotoyes IN ('oui', 'non', 'incertain')),
+    wrong       boolean NOT NULL DEFAULT false,    -- mauvaise personne ou phrase cassée
+    doubt       boolean NOT NULL DEFAULT false,
+    comment     text,
+    seconds     integer,                           -- temps passé sur la phrase
+    updated_at  timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (item_id, annotator)
+);

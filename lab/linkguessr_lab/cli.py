@@ -11,6 +11,12 @@ def main() -> None:
     p.add_argument("--dump", default="20261001", help="date du dump (dossier pipeline/data/work/<dump>)")
     p.add_argument("--sources", type=int, default=20, help="parcours chronométrés par bibliothèque")
 
+    p = sub.add_parser("tirage", help="tirage stratifié des phrases du jeu d'or (annotation)")
+    p.add_argument("--dump", default="20261001")
+
     args = parser.parse_args()
     if args.command == "etalonnage":
         etalonnage.run(args.dump, args.sources)
+    elif args.command == "tirage":
+        from .typing import sample
+        sample.run(args.dump)

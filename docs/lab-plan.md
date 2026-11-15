@@ -75,7 +75,7 @@ pas par un domaine (le domaine des personnes est déjà connu), et les sous-type
   inclassable sont exclusifs.
 - **Axe « se sont-ils côtoyés ? »** : oui / non / incertain, jugé d'après la phrase seule. « Non » est donné
   d'office quand les vies ne se chevauchent pas (dates).
-- **Modèle** : un encodeur (CamemBERT), deux têtes : sous-types (14 sorties, sigmoïdes) et côtoyés (3 classes).
+- **Modèle** : un encodeur (CamemBERT), deux têtes : sous-types (15 sorties : 14 sous-types + inclassable, sigmoïdes) et côtoyés (3 classes).
 - **Annotation** : pré-annotation par un LLM corrigée à la main (à déclarer dans la méthode) ; une deuxième
   personne annote 300 phrases pour l'accord inter-annotateurs.
 

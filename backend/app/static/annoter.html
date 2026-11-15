@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Annotation · LinkGuessr Lab</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --card: #fff; --text: #1d1d1f; --muted: #6b6b70; --line: #e2e2e0;
+    --accent: #3b5bdb; --accent-soft: #e7ecff; --a: #fff1c2; --b: #d3f0dc; --warn: #b54708; --warn-soft: #fff4e5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416; --card: #1e1e21; --text: #ececee; --muted: #a0a0a8; --line: #333338;
+      --accent: #8da2ff; --accent-soft: #262d4d; --a: #4d4220; --b: #1f4630; --warn: #ffb066; --warn-soft: #3a2a17;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 16px; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  header h1 { font-size: 18px; margin: 0; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 16px; }
+  .progress div { height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .people { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 600; }
+  .people .a { background: var(--a); padding: 2px 8px; border-radius: 6px; }
+  .people .b { background: var(--b); padding: 2px 8px; border-radius: 6px; }
+  .meta { margin-top: 6px; }
+  .tag { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; font-size: 13px; color: var(--muted); margin-right: 4px; }
+  .sentence { font-size: 18px; line-height: 1.6; margin: 12px 0 0; }
+  mark.a { background: var(--a); color: inherit; border-radius: 3px; padding: 0 2px; }
+  mark.b { background: var(--b); color: inherit; border-radius: 3px; padding: 0 2px; }
+  .banner { background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; font-size: 14px; margin-bottom: 12px; }
+  .banner.blind { background: var(--warn-soft); color: var(--warn); }
+  .family { margin-bottom: 10px; }
+  .family h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  button.chip { font: inherit; font-size: 15px; border: 1px solid var(--line); background: var(--card); color: var(--text);
+    border-radius: 999px; padding: 6px 12px; cursor: pointer; min-height: 40px; }
+  button.chip kbd { font: 12px ui-monospace, monospace; color: var(--muted); margin-left: 6px; }
+  button.chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.chip.on kbd { color: #dfe4ff; }
+  button.chip.sugg:not(.on) { border-style: dashed; border-color: var(--accent); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  textarea { width: 100%; font: inherit; font-size: 15px; border: 1px solid var(--line); border-radius: 8px; padding: 8px;
+    background: var(--card); color: var(--text); min-height: 44px; resize: vertical; }
+  .actions { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; position: sticky; bottom: 0;
+    background: var(--bg); padding: 12px 0; }
+  button.nav { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 8px; padding: 10px 16px; cursor: pointer; }
+  button.save { font: inherit; font-weight: 600; border: 0; background: var(--accent); color: #fff; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
+  .error { color: var(--warn); font-size: 14px; min-height: 20px; }
+  a { color: var(--accent); }
+  @media (max-width: 600px) { .sentence { font-size: 17px; } button.chip kbd { display: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Annotation des liens</h1>
+    <span class="muted" id="who"></span>
+  </header>
+  <div class="progress"><div id="bar"></div></div>
+  <div id="app"><p class="muted">Chargement…</p></div>
+</main>
+<script>
+const NAMES = { famille: "famille", couple: "couple", proches: "proches", formation: "formation",
+  collaboration: "collaboration", hierarchie: "hiérarchie", competition: "compétition", lutte: "lutte",
+  critique: "critique", sujet: "sujet", materiau: "matériau", source: "source", comparaison: "comparaison",
+  co_mention: "co-mention", inclassable: "inclassable" };
+const KEYS = "azertyuiopqsdfg";
+const ALONE = ["co_mention", "inclassable"];
+const KIND = { lien: "lien", infobox: "infobox", legende: "légende d'image", nom: "nom sans lien" };
+const GUIDE = "https://github.com/EliasKhallouk/LinkGuessr/blob/main/lab/annotation/guide.md";
+const token = new URLSearchParams(location.search).get("t") || "";
+let cur = null, state = null, shownAt = 0;
+
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const years = (b, d) => b == null ? "" : ` (${b}–${d ?? ""})`;
+
+function variants(name) {
+  const full = String(name || "").replace(/\s*\([^)]*\)$/, "").trim();
+  const words = full.split(/\s+/);
+  const out = [full];
+  if (words.length > 1 && words.at(-1).length >= 4 && !/^[IVXLC]+$|^Ier$/.test(words.at(-1))) out.push(words.at(-1));
+  return out.filter(Boolean);
+}
+
+function highlight(text, item) {
+  let html = esc(text);
+  for (const [cls, name] of [["b", item.b_name], ["a", item.a_name]]) {
+    for (const v of variants(name)) {
+      const pattern = esc(v).replace(/[.*+?^$()|[\]\\{}]/g, "\\$&");
+      const re = new RegExp("(?<![\\p{L}>-])(" + pattern + ")(?![\\p{L}-])", "gu");
+      html = html.replace(re, '<mark class="' + cls + '">$1</mark>');
+    }
+  }
+  return html;
+}
+
+async function load(id) {
+  const q = new URLSearchParams({ t: token });
+  if (id != null) q.set("id", id);
+  const r = await fetch(`/annot/item?${q}`);
+  const data = await r.json();
+  if (!r.ok) { document.getElementById("app").innerHTML = `<div class="card">${esc(data.detail || "Erreur")}</div>`; return; }
+  document.getElementById("who").textContent = `${data.annotator} · ${data.done} / ${data.total}`;
+  document.getElementById("bar").style.width = `${(100 * data.done) / data.total}%`;
+  if (data.finished) {
+    document.getElementById("app").innerHTML = `<div class="card"><p><strong>Terminé, merci !</strong> Toutes les phrases sont annotées.</p></div>`;
+    return;
+  }
+  cur = data;
+  const src = data.label || data.suggestion || {};
+  state = {
+    labels: new Set(src.labels || []),
+    cotoyes: data.item.vies_chevauchent === false && !data.label ? "non" : (src.cotoyes ?? null),
+    wrong: Boolean(data.label?.wrong), doubt: Boolean(data.label?.doubt), comment: data.label?.comment || "",
+  };
+  shownAt = Date.now();
+  render();
+  window.scrollTo(0, 0);
+}
+
+function render() {
+  const d = cur, it = d.item, sugg = new Set(d.suggestion?.labels || []);
+  let k = 0;
+  const families = Object.entries(d.families).map(([fam, labels]) => `
+    <div class="family"><h3>${esc(fam)}</h3><div class="chips">
+      ${labels.map((l) => `<button class="chip ${state.labels.has(l) ? "on" : ""} ${sugg.has(l) ? "sugg" : ""}" data-label="${l}">
+        ${NAMES[l]}<kbd>${KEYS[k++]}</kbd></button>`).join("")}
+    </div></div>`).join("");
+  const banner = d.accord
+    ? `<div class="banner blind">Phrase de l'accord : annote-la seul, sans proposition.</div>`
+    : d.suggestion && !d.label ? `<div class="banner">Les cases en pointillés sont la proposition du modèle : vérifie-la, elle se trompe parfois.</div>` : "";
+  const coto = ["oui", "non", "incertain"].map((v, i) =>
+    `<button class="chip ${state.cotoyes === v ? "on" : ""}" data-coto="${v}">${v}<kbd>${i + 1}</kbd></button>`).join("");
+  document.getElementById("app").innerHTML = `
+    ${banner}
+    <div class="card">
+      <div class="people"><span class="a">A · ${esc(it.a_name)}${years(it.a_birth_year, it.a_death_year)}</span>
+        <span aria-hidden="true">→</span><span class="b">B · ${esc(it.b_name)}${years(it.b_birth_year, it.b_death_year)}</span></div>
+      <div class="meta"><span class="tag">section : ${esc(it.section)}</span><span class="tag">${KIND[it.kind] || it.kind}</span>
+        ${it.vies_chevauchent === false ? '<span class="tag">vies sans chevauchement</span>' : ""}</div>
+      <p class="sentence">${highlight(it.sentence, it)}</p>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <button class="chip ${state.wrong ? "on" : ""}" data-flag="wrong">mauvaise personne / phrase cassée<kbd>w</kbd></button>
+        <button class="chip ${state.doubt ? "on" : ""}" data-flag="doubt">doute<kbd>x</kbd></button>
+      </div>
+      <div ${state.wrong ? 'style="opacity:.4;pointer-events:none"' : ""}>
+        ${families}
+        <div class="family"><h3>Se sont-ils côtoyés ?</h3><div class="chips">${coto}</div></div>
+      </div>
+      <textarea id="comment" placeholder="Commentaire (facultatif)">${esc(state.comment)}</textarea>
+      <div class="error" id="error"></div>
+    </div>
+    <div class="actions">
+      <div class="row"><button class="nav" id="prev" ${d.prev_id == null ? "disabled" : ""}>← Précédente</button>
+        <button class="nav" id="next" ${d.next_id == null ? "disabled" : ""}>Suivante →</button></div>
+      <button class="save" id="save">Valider ↵</button>
+    </div>
+    <p class="muted">Phrase ${d.position} / ${d.total} · <a href="${GUIDE}" target="_blank" rel="noopener">guide d'annotation</a></p>`;
+  document.querySelectorAll("[data-label]").forEach((b) => b.onclick = () => toggle(b.dataset.label));
+  document.querySelectorAll("[data-coto]").forEach((b) => b.onclick = () => { state.cotoyes = b.dataset.coto; render(); });
+  document.querySelectorAll("[data-flag]").forEach((b) => b.onclick = () => { state[b.dataset.flag] = !state[b.dataset.flag]; render(); });
+  document.getElementById("comment").oninput = (e) => { state.comment = e.target.value; };
+  document.getElementById("prev").onclick = () => load(d.prev_id);
+  document.getElementById("next").onclick = () => load(d.next_id);
+  document.getElementById("save").onclick = save;
+}
+
+function toggle(label) {
+  if (state.labels.has(label)) state.labels.delete(label);
+  else if (ALONE.includes(label)) state.labels = new Set([label]);
+  else { ALONE.forEach((l) => state.labels.delete(l)); state.labels.add(label); }
+  render();
+}
+
+async function save() {
+  const body = { t: token, id: cur.id, labels: [...state.labels], cotoyes: state.cotoyes, wrong: state.wrong,
+    doubt: state.doubt, comment: state.comment, seconds: Math.round((Date.now() - shownAt) / 1000) };
+  const r = await fetch("/annot/label", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) { document.getElementById("error").textContent = (await r.json()).detail || "Erreur"; return; }
+  load();  // la première phrase pas encore annotée
+}
+
+document.addEventListener("keydown", (e) => {
+  if (!cur || e.target.tagName === "TEXTAREA" || e.ctrlKey || e.metaKey || e.altKey) return;
+  const key = e.key.toLowerCase();
+  const labels = Object.values(cur.families).flat();
+  if (KEYS.includes(key) && key.length === 1) { toggle(labels[KEYS.indexOf(key)]); e.preventDefault(); }
+  else if (/^(Digit|Numpad)[123]$/.test(e.code)) { state.cotoyes = ["oui", "non", "incertain"][Number(e.code.at(-1)) - 1]; render(); }
+  else if (key === "w") { state.wrong = !state.wrong; render(); }
+  else if (key === "x") { state.doubt = !state.doubt; render(); }
+  else if (e.key === "Enter") { save(); e.preventDefault(); }
+  else if (e.key === "ArrowLeft" && cur.prev_id != null) load(cur.prev_id);
+  else if (e.key === "ArrowRight" && cur.next_id != null) load(cur.next_id);
+});
+
+if (!token) document.getElementById("app").innerHTML = `<div class="card">Ce lien d'annotation est incomplet : demande le lien complet.</div>`;
+else load();
+</script>
+</body>
+</html>

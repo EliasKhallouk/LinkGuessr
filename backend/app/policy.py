@@ -66,6 +66,7 @@ HOUR = "public, max-age=60, s-maxage=3600, stale-while-revalidate=3600"
 CACHE = [
     ("/random_", "no-store"),
     ("/admin", "no-store"),
+    ("/annot", "no-store"),  # annotations du Lab : propres à chaque annotateur
     ("/health", "no-store"),
     ("/daily/guess", "no-store"),
     ("/person/", DAY),
