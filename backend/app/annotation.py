@@ -150,14 +150,15 @@ def load(path: Path) -> None:
 
 
 def suggest(path: Path) -> None:
-    """Propositions du modèle : une ligne JSON par phrase, {"ordre", "labels", "cotoyes"}."""
+    """Propositions du modèle : une ligne JSON par phrase, {"ordre", "labels", "cotoyes"} ou {"ordre", "wrong": true}."""
     n = 0
     with pool.connection() as conn:
         for l in path.read_text(encoding="utf-8").splitlines():
             if l.strip():
                 s = json.loads(l)
                 n += conn.execute("UPDATE app.annot_item SET suggestion = %s WHERE id = %s AND NOT accord",
-                                  (Jsonb({"labels": s["labels"], "cotoyes": s.get("cotoyes")}), s["ordre"])).rowcount
+                                  (Jsonb({"labels": s.get("labels", []), "cotoyes": s.get("cotoyes"),
+                                          "wrong": bool(s.get("wrong"))}), s["ordre"])).rowcount
     print(f"{n} propositions enregistrées")
 
 

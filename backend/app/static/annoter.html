@@ -117,7 +117,7 @@ async function load(id) {
   state = {
     labels: new Set(src.labels || []),
     cotoyes: data.item.vies_chevauchent === false && !data.label ? "non" : (src.cotoyes ?? null),
-    wrong: Boolean(data.label?.wrong), doubt: Boolean(data.label?.doubt), comment: data.label?.comment || "",
+    wrong: Boolean(src.wrong), doubt: Boolean(data.label?.doubt), comment: data.label?.comment || "",
   };
   shownAt = Date.now();
   render();
@@ -148,7 +148,7 @@ function render() {
     </div>
     <div class="card">
       <div class="row" style="margin-bottom:12px">
-        <button class="chip ${state.wrong ? "on" : ""}" data-flag="wrong">mauvaise personne / phrase cassée<kbd>w</kbd></button>
+        <button class="chip ${state.wrong ? "on" : ""} ${d.suggestion?.wrong ? "sugg" : ""}" data-flag="wrong">mauvaise personne / phrase cassée<kbd>w</kbd></button>
         <button class="chip ${state.doubt ? "on" : ""}" data-flag="doubt">doute<kbd>x</kbd></button>
       </div>
       <div ${state.wrong ? 'style="opacity:.4;pointer-events:none"' : ""}>

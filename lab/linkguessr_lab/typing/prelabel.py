@@ -1,7 +1,7 @@
 """Pré-annotation par lots : affiche les phrases hors accord sans proposition, dans un format compact.
 
 Les propositions sont écrites à la main par le LLM dans annotation/suggestions.jsonl
-({"ordre", "labels", "cotoyes"}), puis chargées sur la VM (python -m app.annotation suggest).
+({"ordre", "labels", "cotoyes", "wrong"?}), puis chargées sur la VM (python -m app.annotation suggest).
 Reprise : les phrases déjà présentes dans suggestions.jsonl ne sont plus proposées.
 """
 import json
