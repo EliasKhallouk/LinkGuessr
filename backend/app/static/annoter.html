@@ -28,6 +28,7 @@
   .people { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 600; }
   .people .a { background: var(--a); padding: 2px 8px; border-radius: 6px; }
   .people .b { background: var(--b); padding: 2px 8px; border-radius: 6px; }
+  .people a.wiki { font-weight: 400; font-size: .8em; margin-left: 4px; }
   .meta { margin-top: 6px; }
   .tag { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; font-size: 13px; color: var(--muted); margin-right: 4px; }
   .sentence { font-size: 18px; line-height: 1.6; margin: 12px 0 0; }
@@ -88,6 +89,13 @@ function variants(name) {
   return out.filter(Boolean);
 }
 
+// Lien vers l'article Wikipédia FR, par Wikidata (on n'a que le QID, pas le titre exact).
+function wiki(qid) {
+  if (!/^Q\d+$/.test(qid || "")) return "";
+  return ` <a class="wiki" href="https://www.wikidata.org/wiki/Special:GoToLinkedPage/frwiki/${qid}" target="_blank"
+    rel="noopener" title="Ouvrir l'article Wikipédia">Wikipédia ↗</a>`;
+}
+
 function highlight(text, item) {
   let html = esc(text);
   for (const [cls, name] of [["b", item.b_name], ["a", item.a_name]]) {
@@ -140,8 +148,8 @@ function render() {
   document.getElementById("app").innerHTML = `
     ${banner}
     <div class="card">
-      <div class="people"><span class="a">A · ${esc(it.a_name)}${years(it.a_birth_year, it.a_death_year)}</span>
-        <span aria-hidden="true">→</span><span class="b">B · ${esc(it.b_name)}${years(it.b_birth_year, it.b_death_year)}</span></div>
+      <div class="people"><span class="a">A · ${esc(it.a_name)}${years(it.a_birth_year, it.a_death_year)}${wiki(it.source_qid)}</span>
+        <span aria-hidden="true">→</span><span class="b">B · ${esc(it.b_name)}${years(it.b_birth_year, it.b_death_year)}${wiki(it.target_qid)}</span></div>
       <div class="meta"><span class="tag">section : ${esc(it.section)}</span><span class="tag">${KIND[it.kind] || it.kind}</span>
         ${it.vies_chevauchent === false ? '<span class="tag">vies sans chevauchement</span>' : ""}</div>
       <p class="sentence">${highlight(it.sentence, it)}</p>
